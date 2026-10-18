@@ -38,7 +38,12 @@
 - [x] EML backward-compatible hash, opaque Outlook source IDs.
 - [x] Skip existing unread mail during COM intake to avoid fixed-batch starvation.
 - [x] Opt-in EML source added to Windows entrypoint, with synthetic inbox.
-- [ ] W2 tests PASS on Linux and Windows.
-- [ ] Windows native Rust EML intake and alert idempotency PASS.
-- [ ] W2 PR merged and main CI PASS.
+- [x] W2 Python tests PASS: 57 total on Linux, 17 W2-specific on Windows (runs 39149185749, 39149185769).
+- [x] Windows native Rust EML intake and alert idempotency PASS: 3 EML, 3 alerts, 0 duplicates on rerun.
+- [x] W2 PR #3 merged (740df08842737afbbb73f737a04e5f5553efde5f); main CI must be rechecked on final HEAD.
 - [ ] Live Outlook and push notice authorized and verified.
+
+## Session W2 checkpoint
+- PR #3 merged; real Outlook and SMTP remain explicitly untested.
+- W2 tests: Linux full Python suite 57 PASS, Windows W2 suite 17 PASS, Windows PowerShell+Rust synthetic E2E passed, zero duplicates on second run.
+- Next W3 priority: approval-safe deadline confirmation, actual approved notification channel, scheduled Windows acceptance. IT permission remains a blocker for real Outlook/SMTP.
