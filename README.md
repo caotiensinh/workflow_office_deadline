@@ -101,3 +101,20 @@ The task defaults to **no Outlook scanning** and **no outgoing email**, until ex
 ## Safety limits
 
 Do NOT use with real student/personnel records until the institution approves the data handling, retention, privacy classification, deployment policy and login model. `evidence_ref` check is *existence only*, not proof that law or regulations are correct. Office integrations and actual notice delivery are not included in the verified demo. Approval is always explicitly human-initiated.
+
+## W2 synthetic EML intake (automatic offline demo)
+
+After building Rust on Windows:
+
+```powershell
+.\windows\run_once.ps1 -ImportEmlDir .\examples\w2_inbox -DbPath .\data\w2.sqlite3 -OutDir .\notifications
+```
+
+Running this twice imports three cases and queues three notifications without duplicating them. Extracted deadlines are candidates only and must be verified by a human.
+
+```powershell
+$env:PYTHONPATH = "$PWD\python"
+python -m unittest discover -s tests -p test_intake_w2.py -v
+```
+
+See [Phase W2 workflow and limits](docs/PHASE_W2.md). Live Outlook and real notification delivery require a separate approved acceptance test.

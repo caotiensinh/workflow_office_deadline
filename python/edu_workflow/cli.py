@@ -80,7 +80,7 @@ def main(argv=None):
             if args.cmd=='import-eml': cases=read_eml_folder(args.dir)
             else:
                 from .outlook_classic import unread_cases
-                cases=unread_cases(args.limit,args.owner)
+                cases=unread_cases(args.limit,args.owner,existing_ids={c['case_id'] for c,_ in get_cases(con)})
             total=0; new=0
             for c in cases:
                 total+=1; new+=add_case(con,c,'read_only_adapter')

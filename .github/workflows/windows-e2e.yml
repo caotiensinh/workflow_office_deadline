@@ -44,3 +44,34 @@ jobs:
           print('Windows native E2E PASS: 5 cases; 6 durable notices; second run idempotent')
           '@ | python -
           if ($LASTEXITCODE -ne 0) { throw 'Windows E2E assertion failed' }
+      - name: W2 actual Windows EML intake and Rust deadline E2E
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $env:PYTHONPATH = Join-Path $PWD 'python'
+          python -m unittest discover -s tests -p test_intake_w2.py -v
+          if ($LASTEXITCODE -ne 0) { throw 'W2 intake tests failed' }
+          $db = Join-Path $env:RUNNER_TEMP 'w2-inbox.sqlite'
+          $out = Join-Path $env:RUNNER_TEMP 'w2-notifications'
+          $eml = Join-Path $PWD 'examples\w2_inbox'
+          & .\windows\run_once.ps1 -DbPath $db -OutDir $out -ImportEmlDir $eml -At '2026-10-19T09:00:00+09:00'
+          if ($LASTEXITCODE -ne 0) { throw 'W2 initial run failed' }
+          & .\windows\run_once.ps1 -DbPath $db -OutDir $out -ImportEmlDir $eml -At '2026-10-19T09:00:00+09:00'
+          if ($LASTEXITCODE -ne 0) { throw 'W2 repeated run failed' }
+          @'
+          import json, os, pathlib, sqlite3
+          root = pathlib.Path(os.environ["RUNNER_TEMP"])
+          db = sqlite3.connect(root / "w2-inbox.sqlite")
+          db.row_factory = sqlite3.Row
+          cases = [json.loads(x["payload"]) for x in db.execute("SELECT payload FROM cases")]
+          assert len(cases) == 3, cases
+          assert all(c["kind"] == "EMAIL" and c["status"] == "TRIAGE" for c in cases)
+          assert sum(bool(c["due_at"]) for c in cases) == 1, cases
+          assert all(c["due_verified"] is False for c in cases)
+          assert db.execute("SELECT COUNT(*) FROM alerts WHERE state='SENT'").fetchone()[0] == 3
+          assert db.execute("SELECT COUNT(*) FROM alerts").fetchone()[0] == 3
+          notices = list((root/"w2-notifications").glob("*.json"))
+          assert len(notices) == 3
+          print("W2 E2E PASS: 3 private-safe cases, 3 notifications, 0 duplicates on rerun")
+          '@ | python -
+          if ($LASTEXITCODE -ne 0) { throw 'W2 Windows E2E acceptance failed' }
