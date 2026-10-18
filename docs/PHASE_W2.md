@@ -15,10 +15,10 @@ Offline-first, read-only automatic import from an approved EML folder or explici
 - Local file notification is not a real push notification. SMTP requires approved credentials/recipients and UNKNOWN recovery.
 
 ## Acceptance
-- [ ] W2 Python tests PASS in Linux CI.
-- [ ] Windows synthetic COM tests and EML → Rust → file notification end-to-end PASS.
-- [ ] Repeated import yields no duplicate cases/alerts.
-- [ ] PR merged and main CI PASS.
+- [x] W2 Python tests PASS in Linux CI: 57 tests.
+- [x] Windows synthetic COM tests and EML → Rust → file notification end-to-end PASS.
+- [x] Repeated import yields no duplicate cases/alerts.
+- [x] PR #3 and #4 merged; PR CI validated.
 - [ ] Institution-approved Outlook and production alert channel tested (external blocker).
 
 ## Limits

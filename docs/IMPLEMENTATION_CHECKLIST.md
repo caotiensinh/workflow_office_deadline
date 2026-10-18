@@ -33,7 +33,7 @@
 - Windows E2E covers synthetic 5-case import, native Rust decision cycle, 6 durable notifications and zero new duplicates on rerun.
 - This is **not** live Microsoft Outlook/SMTP/Task Scheduler acceptance. Avoid entering any real confidential school data before authorization.
 
-## Phase W2 — Email intake (pending CI)
+## Phase W2 — Email intake (verified on hosted CI)
 - [x] Multi-marker deadline parser; conflict and incomplete marker fails closed.
 - [x] EML backward-compatible hash, opaque Outlook source IDs.
 - [x] Skip existing unread mail during COM intake to avoid fixed-batch starvation.
@@ -47,3 +47,11 @@
 - PR #3 merged; real Outlook and SMTP remain explicitly untested.
 - W2 tests: Linux full Python suite 57 PASS, Windows W2 suite 17 PASS, Windows PowerShell+Rust synthetic E2E passed, zero duplicates on second run.
 - Next W3 priority: approval-safe deadline confirmation, actual approved notification channel, scheduled Windows acceptance. IT permission remains a blocker for real Outlook/SMTP.
+
+## Phase W2b — Safe recurring task registration
+- [x] Added opt-in EML or Outlook Classic source to Windows Task Scheduler registration.
+- [x] Rejected dual-source selection; PlanOnly performs no mutation.
+- [x] Existing task overwrite needs explicit ReplaceExisting.
+- [x] Windows hosted plan-only and validation checks PASS (run 39149550506).
+- [ ] IT-authorized real Windows Task Scheduler registration with user-session monitoring PASS.
+- [ ] Actual recipient notification (approved SMTP or desktop notifier) E2E PASS.
