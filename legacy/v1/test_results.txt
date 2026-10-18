@@ -1,0 +1,20 @@
+test_approval_human_decision (test_workflow_engine.WorkflowTests.test_approval_human_decision) ... ok
+test_approval_requires_evidence (test_workflow_engine.WorkflowTests.test_approval_requires_evidence) ... ok
+test_bad_timezone_rejected (test_workflow_engine.WorkflowTests.test_bad_timezone_rejected) ... ok
+test_completed_no_notifications (test_workflow_engine.WorkflowTests.test_completed_no_notifications) ... ok
+test_d1_alert (test_workflow_engine.WorkflowTests.test_d1_alert) ... ok
+test_d3_alert (test_workflow_engine.WorkflowTests.test_d3_alert) ... ok
+test_due_today (test_workflow_engine.WorkflowTests.test_due_today) ... ok
+test_duplicate_case_rejected (test_workflow_engine.WorkflowTests.test_duplicate_case_rejected) ... ok
+test_missing_evidence_gate (test_workflow_engine.WorkflowTests.test_missing_evidence_gate) ... ok
+test_no_inferred_deadline (test_workflow_engine.WorkflowTests.test_no_inferred_deadline) ... ok
+test_overdue (test_workflow_engine.WorkflowTests.test_overdue) ... ok
+test_reject (test_workflow_engine.WorkflowTests.test_reject) ... ok
+test_same_day_deduplication (test_workflow_engine.WorkflowTests.test_same_day_deduplication) ... ok
+test_sensitive_masking (test_workflow_engine.WorkflowTests.test_sensitive_masking) ... ok
+test_unapproved_has_no_action_execution (test_workflow_engine.WorkflowTests.test_unapproved_has_no_action_execution) ... ok
+
+----------------------------------------------------------------------
+Ran 15 tests in 0.008s
+
+OK

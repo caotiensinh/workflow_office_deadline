@@ -1,0 +1,27 @@
+name: Hybrid Workflow CI
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  python-reference:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: PYTHONPATH=python python -m unittest discover -s tests -v
+  rust-and-integration:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - run: cargo test --manifest-path rust-core/Cargo.toml --verbose
+      - run: cargo build --manifest-path rust-core/Cargo.toml --release
+      - run: PYTHONPATH=python python -m edu_workflow.cli --db /tmp/edu-github-demo.sqlite import-json --file examples/cases.json
+      - run: PYTHONPATH=python python -m edu_workflow.cli --db /tmp/edu-github-demo.sqlite tick --backend rust --rust-bin rust-core/target/release/edu_rules --at 2026-10-19T09:00:00+09:00
+      - run: PYTHONPATH=python python -m edu_workflow.cli --db /tmp/edu-github-demo.sqlite alerts

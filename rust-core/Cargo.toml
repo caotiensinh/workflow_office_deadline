@@ -1,0 +1,10 @@
+[package]
+name = "edu_rules"
+version = "0.2.0"
+edition = "2021"
+license = "MIT"
+description = "Dependency-free, deterministic educational workflow policy engine"
+
+[[bin]]
+name = "edu_rules"
+path = "src/main.rs"
