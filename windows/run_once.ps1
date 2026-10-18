@@ -1,8 +1,9 @@
-# Read-only by default. Scheduled run must never silently fall back to Python policy.
+# Read-only sources; scheduled run must never silently fall back to Python policy.
 param(
   [string]$Python = 'python',
   [ValidateSet('file','smtp','console')][string]$Channel = 'file',
   [switch]$ImportOutlookClassic,
+  [string]$ImportEmlDir = '',
   [string]$DbPath = '',
   [string]$OutDir = '',
   [string]$At = ''
@@ -14,6 +15,13 @@ if ([string]::IsNullOrWhiteSpace($DbPath)) { $DbPath = Join-Path $Project 'data\
 if ([string]::IsNullOrWhiteSpace($OutDir)) { $OutDir = Join-Path $Project 'notifications' }
 $Rust = Join-Path $Project 'rust-core\target\release\edu_rules.exe'
 if (!(Test-Path $Rust)) { throw 'Rust engine not compiled. Run: cargo build --release --manifest-path rust-core\Cargo.toml' }
+if ($ImportOutlookClassic -and -not [string]::IsNullOrWhiteSpace($ImportEmlDir)) {
+  throw 'Only one intake source can be selected per scheduled run'
+}
+if (-not [string]::IsNullOrWhiteSpace($ImportEmlDir)) {
+  & $Python -m edu_workflow.cli --db $DbPath import-eml --dir $ImportEmlDir
+  if ($LASTEXITCODE -ne 0) { throw "EML import failed: $LASTEXITCODE" }
+}
 if ($ImportOutlookClassic) {
   & $Python -m edu_workflow.cli --db $DbPath import-outlook-classic
   if ($LASTEXITCODE -ne 0) { throw "Outlook import failed: $LASTEXITCODE" }

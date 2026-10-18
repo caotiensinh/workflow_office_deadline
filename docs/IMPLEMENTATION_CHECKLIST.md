@@ -32,3 +32,13 @@
 - Hosted test evidence: Linux CI https://github.com/caotiensinh/workflow_office_deadline/actions/runs/39147471023 and Windows E2E https://github.com/caotiensinh/workflow_office_deadline/actions/runs/39147470982.
 - Windows E2E covers synthetic 5-case import, native Rust decision cycle, 6 durable notifications and zero new duplicates on rerun.
 - This is **not** live Microsoft Outlook/SMTP/Task Scheduler acceptance. Avoid entering any real confidential school data before authorization.
+
+## Phase W2 — Email intake (pending CI)
+- [x] Multi-marker deadline parser; conflict and incomplete marker fails closed.
+- [x] EML backward-compatible hash, opaque Outlook source IDs.
+- [x] Skip existing unread mail during COM intake to avoid fixed-batch starvation.
+- [x] Opt-in EML source added to Windows entrypoint, with synthetic inbox.
+- [ ] W2 tests PASS on Linux and Windows.
+- [ ] Windows native Rust EML intake and alert idempotency PASS.
+- [ ] W2 PR merged and main CI PASS.
+- [ ] Live Outlook and push notice authorized and verified.
