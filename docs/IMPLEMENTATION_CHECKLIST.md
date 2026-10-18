@@ -8,7 +8,8 @@
 - [x] Editable specifications and project requirements written.
 
 ## Pending external verification
-- [ ] Rust native compilation, test and parity via hosted CI.
+- [x] Rust native unit tests, release build and Python↔Rust CLI integration on hosted Ubuntu CI (run #39145381931).
+- [ ] Rust and Python behavior parity verified on approved Windows host.
 - [ ] Windows/PowerShell scheduled task tested on permitted endpoint.
 - [ ] Real Outlook Classic COM read-only integration approved and tested.
 - [ ] New Outlook OAuth delegated consent and Graph connector, if necessary.

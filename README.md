@@ -5,7 +5,7 @@
 ## What is working vs blocked
 
 - **Verified here:** Python reference rules, data ingestion, deadline alerts, deduplication, local file notification spool, human-decision and missing-evidence guards, privacy masking, DOCX structural checks, SQLite audit; 40 Python tests PASS.
-- **NOT verified here:** Rust compiler was unavailable in the authoring runtime (`cargo`/`rustc` absent); Rust binary and cargo tests are supplied as source only.
+- **Verified via GitHub Actions:** Rust native unit tests, Rust release build, and Python-to-compiled-Rust CLI smoke passed on Ubuntu CI (run #39145381931). The authoring sandbox did not have a Rust compiler; Windows hardware remains unverified.
 - **Not connected:** Customer Outlook mailbox, new Outlook Graph, SMTP service, To Do, local LLM, school information systems, Windows scheduler and production RBAC.
 
 ## Build Rust (Windows PowerShell)

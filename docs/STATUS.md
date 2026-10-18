@@ -12,9 +12,15 @@
 - SMTP exception: UNKNOWN state, no blind repeat send.
 - Python-to-compiled-process protocol bridge: tests with a simulated executable (NOT Rust compiler).
 
+## GitHub CI PASS — 2026-10-19
+
+- Push CI https://github.com/caotiensinh/workflow_office_deadline/actions/runs/39145381931: python-reference SUCCESS; rust-and-integration SUCCESS.
+- Pull-request CI https://github.com/caotiensinh/workflow_office_deadline/actions/runs/39145396201: both jobs SUCCESS.
+- This proves Ubuntu GitHub runner behavior, not organization-managed Windows deployment.
+
 ## NOT PASS — engineering work remains
 
-- `cargo`/`rustc` not installed on this sandbox; Rust source and its native unit tests are **NOT compiled or run**. GitHub Actions workflow present but not executed/pushed.
+- Rust was not compiled in the original local authoring sandbox. **Subsequently VERIFIED** in GitHub Actions: cargo native tests, release build and Python→compiled Rust smoke, run #39145381931.
 - No real Microsoft 365/Outlook To Do/SharePoint/Graph credentials or explicit integration permission.
 - Classic Outlook COM adapter untested (requires user Windows workstation and approved pywin32).
 - Windows task registration untested (authoring host is Linux).
@@ -25,8 +31,8 @@
 
 ## Next valid acceptance sequence
 
-1. Compile `cargo test`, format lint and Rust binary on Windows runner.
-2. Run Python CLI E2E using compiled Rust and assert 6/0 alert totals.
+1. Re-run `cargo test`, release build and Python↔Rust parity on an approved Windows runner; GitHub Ubuntu CI is PASS.
+2. Check Rust/Python E2E alert totals on Windows after using synthetic data.
 3. Check institution's endpoint security and scheduled-task permission; test a 15-minute run with local synthetic cases.
 4. Choose Outlook Classic COM vs Graph after verifying the user's Outlook version and IT permissions.
 5. Enable and verify authorized email notifications with non-sensitive test recipient; resolve failure/unknown deliveries by inspection.
