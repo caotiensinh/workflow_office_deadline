@@ -75,3 +75,24 @@ jobs:
           print("W2 E2E PASS: 3 private-safe cases, 3 notifications, 0 duplicates on rerun")
           '@ | python -
           if ($LASTEXITCODE -ne 0) { throw 'W2 Windows E2E acceptance failed' }
+      - name: W2b safely preview scheduled EML and Outlook intake
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $source = Join-Path $PWD 'examples\w2_inbox'
+          $json = & .\windows\install_task.ps1 -PlanOnly -ImportEmlDir $source
+          $plan = $json | ConvertFrom-Json
+          if ($plan.source -ne 'eml' -or $plan.interval_minutes -ne 15) { throw 'invalid EML task plan' }
+          if (-not $plan.command.Contains('-ImportEmlDir')) { throw 'EML intake not scheduled' }
+          if ($plan.notification_channel -ne 'file' -or $plan.replaces_existing) { throw 'unsafe defaults' }
+          $outlook = (& .\windows\install_task.ps1 -PlanOnly -ImportOutlookClassic) | ConvertFrom-Json
+          if ($outlook.source -ne 'outlook-classic') { throw 'Outlook option not planned' }
+          if (-not $outlook.command.Contains('-ImportOutlookClassic')) { throw 'Outlook argument missing' }
+          $caught = $false
+          try {
+            & .\windows\install_task.ps1 -PlanOnly -ImportOutlookClassic -ImportEmlDir $source
+          } catch {
+            $caught = $true
+          }
+          if (-not $caught) { throw 'conflicting source arguments accepted' }
+          Write-Host 'W2b Task Scheduler command preview PASS; no task registration performed'
