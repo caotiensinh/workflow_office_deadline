@@ -1,0 +1,46 @@
+name: Windows Synthetic E2E
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  windows-rust-python:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Build and test native Rust engine
+        run: |
+          cargo test --manifest-path rust-core/Cargo.toml
+          cargo build --release --manifest-path rust-core/Cargo.toml
+      - name: Import synthetic cases and invoke actual PowerShell runner twice
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $env:PYTHONPATH = Join-Path $PWD 'python'
+          $db = Join-Path $env:RUNNER_TEMP 'workflow-demo.sqlite'
+          $out = Join-Path $env:RUNNER_TEMP 'workflow-notifications'
+          python -m edu_workflow.cli --db $db import-json --file examples/cases.json
+          if ($LASTEXITCODE -ne 0) { throw 'sample import failed' }
+          & .\windows\run_once.ps1 -DbPath $db -OutDir $out -At '2026-10-19T09:00:00+09:00'
+          if ($LASTEXITCODE -ne 0) { throw 'first run failed' }
+          & .\windows\run_once.ps1 -DbPath $db -OutDir $out -At '2026-10-19T09:00:00+09:00'
+          if ($LASTEXITCODE -ne 0) { throw 'second run failed' }
+          @'
+          import json, pathlib, sqlite3, os
+          db=pathlib.Path(os.environ['RUNNER_TEMP'])/'workflow-demo.sqlite'
+          out=pathlib.Path(os.environ['RUNNER_TEMP'])/'workflow-notifications'
+          conn=sqlite3.connect(db)
+          assert conn.execute('SELECT COUNT(*) FROM cases').fetchone()[0] == 5
+          assert conn.execute("SELECT COUNT(*) FROM alerts WHERE state='SENT'").fetchone()[0] == 6
+          assert len(list(out.glob('*.json'))) == 6
+          for path in out.glob('*.json'):
+              body=json.loads(path.read_text(encoding='utf-8'))
+              assert body['id'] == path.stem
+          print('Windows native E2E PASS: 5 cases; 6 durable notices; second run idempotent')
+          '@ | python -
+          if ($LASTEXITCODE -ne 0) { throw 'Windows E2E assertion failed' }
