@@ -1,0 +1,7 @@
+[
+  {"case_id":"EDU-001","kind":"EMAIL","data_class":"INTERNAL","safe_title":"Nộp báo cáo tháng 10","owner":"owner@example.invalid","due_at":"2026-10-22T17:00:00+09:00","due_verified":true,"status":"IN_PROGRESS","approval_status":"NOT_REQUIRED","evidence_ref":"MAIL-DEMO-01"},
+  {"case_id":"EDU-002","kind":"DOCUMENT","data_class":"INTERNAL","safe_title":"Kiểm tra giáo án mẫu","owner":"owner@example.invalid","due_at":"2026-10-20T16:00:00+09:00","due_verified":true,"status":"READY_FOR_APPROVAL","approval_status":"PENDING","evidence_ref":"DOC-DEMO-02"},
+  {"case_id":"EDU-003","kind":"HR","data_class":"RESTRICTED","safe_title":"KHÔNG XUẤT HIỆN TRONG CẢNH BÁO","owner":"reviewer@example.invalid","due_at":"2026-10-18T16:00:00+09:00","due_verified":true,"status":"READY_FOR_APPROVAL","approval_status":"PENDING","evidence_ref":null},
+  {"case_id":"EDU-004","kind":"REGULATION","data_class":"CONFIDENTIAL","safe_title":"KHÔNG XUẤT HIỆN TRONG CẢNH BÁO","owner":"owner@example.invalid","due_at":null,"due_verified":false,"status":"TRIAGE","approval_status":"NOT_REQUIRED","evidence_ref":"RULE-DEMO-04"},
+  {"case_id":"EDU-005","kind":"SCHEDULE","data_class":"INTERNAL","safe_title":"Lịch phỏng vấn mô phỏng","owner":"owner@example.invalid","due_at":"2026-10-20T12:00:00+09:00","due_verified":true,"status":"COMPLETED","approval_status":"APPROVED","evidence_ref":"CAL-DEMO-05"}
+]

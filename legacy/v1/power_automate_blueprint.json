@@ -1,0 +1,37 @@
+{
+  "name": "Education AI Workflow - Microsoft 365 Production Blueprint",
+  "version": "1.0",
+  "artifact_type": "NON_IMPORTABLE_IMPLEMENTATION_SPEC",
+  "warning": "This is NOT a Power Automate solution export. Build in an authorized tenant after permission, licensing and DLP checks.",
+  "timezone": "Tokyo Standard Time",
+  "prerequisites": [
+    "Microsoft 365 work/school mailbox with Outlook connector access",
+    "Power Automate environment with standard connector permissions",
+    "SharePoint List available and accessible with delegated permissions",
+    "Approvals connector and Dataverse dependencies allowed by policy",
+    "DLP permits intended Outlook / SharePoint / To Do / Approvals connector combinations",
+    "Data classification and retention policy approved by school/education authority"
+  ],
+  "lists": {
+    "CaseRegistry": ["case_id", "source_system", "source_key", "kind", "data_class", "safe_title", "owner_id", "due_at_utc", "due_tz", "due_verified", "due_source_ref", "status", "priority", "evidence_ref", "regulation_version", "approval_status", "approved_by", "approved_at_utc", "to_do_id", "calendar_event_id", "record_version"],
+    "NotificationLedger": ["event_key", "case_id", "stage", "recipient", "delivery_status", "provider_message_id", "sent_at_utc", "attempt_count"],
+    "EventLog": ["event_id", "case_id", "event_type", "actor_id", "flow_run_id", "occurred_at_utc", "before_state", "after_state", "result_code", "source_ref"],
+    "RegulationRegistry": ["regulation_id", "version", "issuing_body", "effective_from", "effective_to", "approved_by", "source_location"]
+  },
+  "flows": [
+    {"id":"PA-01","name":"Email intake","type":"automated","trigger":"Office 365 Outlook: When a new email arrives (V3)","actions":["scope filter","classify metadata without leaking sensitive content","deduplicate by stable source key","upsert CaseRegistry","if deadline verified: Microsoft To-Do (Business) Add a to-do (V3)","write EventLog"],"requires_ai":false},
+    {"id":"PA-02","name":"Deadline alerts","type":"scheduled","trigger":"Recurrence daily 09:00 and 14:00, Tokyo Standard Time","actions":["read active CaseRegistry","compute D-3 / D-1 / D0 / overdue stages","check NotificationLedger event key","create safe internal reminder only","write ledger and audit","dead-letter failures"],"requires_ai":false},
+    {"id":"PA-03","name":"Document compliance checklist","type":"automated","trigger":"SharePoint: When a file is created or modified","actions":["check file metadata and checklist version","build completeness report","review exception if missing","hold external submission until approval"],"requires_ai":false},
+    {"id":"PA-04","name":"Regulation evidence gate","type":"automated","trigger":"SharePoint CaseRegistry request kind = REGULATION","actions":["load approved versioned source","check regulation version and evidence refs","issue NEEDS_REVIEW on missing support","block unsupported approvals"],"requires_ai":false},
+    {"id":"PA-05","name":"HR evidence assist","type":"automated","trigger":"approved sample-data intake","actions":["normalize objective observations","flag missing evidence","never score or decide","hold restricted release for authorized manager"],"requires_ai":false},
+    {"id":"PA-06","name":"Meeting options","type":"automated","trigger":"schedule request","actions":["Get calendar view of events (V3) for authorized calendars","calculate candidate slots","request approval before invitation","recheck conflicts before creating meeting"],"requires_ai":false},
+    {"id":"PA-07","name":"Approval gateway","type":"automated","trigger":"CaseRegistry status READY_FOR_APPROVAL","actions":["verify evidence/version/approver authorization","Start and wait for an approval when under 30-day run limit","record decision","execute only allowed approved side effect","record EventLog"],"requires_ai":false},
+    {"id":"PA-08","name":"Monitor and reconcile","type":"scheduled","trigger":"Recurrence daily 08:30, Tokyo Standard Time","actions":["review failed runs","check reminder ledger","detect missed source items","notify authorized administrators about errors"],"requires_ai":false}
+  ],
+  "approval_policy": {
+    "auto": ["internal task creation", "internal reminders", "safe metadata tagging", "draft document checklist"],
+    "human_required": ["external email send", "official submission", "calendar invitations to others", "personnel evaluation", "appointment decisions", "unsupported evidence cases"],
+    "forbidden": ["automatic personnel scoring", "self approval by AI", "processing private personnel files in unapproved consumer AI"]
+  },
+  "ai_adapter": {"enabled_by_default":false,"enable_only_after_approval":true,"output_contract":["case_id","extracted_fields","evidence","confidence","missing_inputs","draft","needs_human_review"]}
+}
