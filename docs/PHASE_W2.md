@@ -23,3 +23,12 @@ Offline-first, read-only automatic import from an approved EML folder or explici
 
 ## Limits
 Repository is public and contains fictional messages only. No live data, credentials, student or HR records. COM scans at most 5000 inbox items, and requires an interactive approved Windows session for real acceptance.
+
+## W2b scheduled intake and rollback safety
+
+- Run `windows/install_task.ps1 -PlanOnly -ImportEmlDir .\examples\w2_inbox` to inspect the generated command without touching Task Scheduler.
+- With IT permission and compiled Rust, omit `-PlanOnly` to register a current-user, limited-rights, recurring 15-minute job. This is **local file-only** delivery, not a push notification.
+- Use `-ImportOutlookClassic` instead of `-ImportEmlDir` only when an approved interactive Classic Outlook profile exists. Both at once are rejected.
+- Existing `EducationAIWorkflow` tasks are **not overwritten** by default. `-ReplaceExisting` is an explicit change-management decision.
+- Rollback: `windows/uninstall_task.ps1` removes that named task after operator inspection. No real task was installed in CI.
+- Preview mode is validated on Windows CI without modifying Task Scheduler. Real endpoint scheduling still needs IT access and observation.
