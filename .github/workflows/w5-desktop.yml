@@ -40,7 +40,12 @@ jobs:
           $preflight = Join-Path $env:RUNNER_TEMP 'w5-bundle-smoke.json'
           & $exe --db (Join-Path $env:RUNNER_TEMP 'w5-synthetic.sqlite3') --preflight-file $preflight
           if ($LASTEXITCODE -ne 0) { throw 'Portable Windows EXE preflight failed' }
-          if (!(Test-Path -LiteralPath $preflight -PathType Leaf)) { throw 'Windowed EXE did not write smoke proof' }
+          # A --windowed EXE can return before its GUI subprocess flushes its file.
+          # Poll only this synthetic preflight path; never inspect the user's desktop.
+          for ($i=0; $i -lt 40 -and !(Test-Path -LiteralPath $preflight -PathType Leaf); $i++) {
+            Start-Sleep -Milliseconds 250
+          }
+          if (!(Test-Path -LiteralPath $preflight -PathType Leaf)) { throw 'Windowed EXE did not write smoke proof within 10 seconds' }
           $p=Get-Content -LiteralPath $preflight -Raw | ConvertFrom-Json
           if ($p.packaged_entrypoint -ne 'OK' -or -not $p.tk_importable) {
             throw 'The one-file EXE cannot import Tkinter'
