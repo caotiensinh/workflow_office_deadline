@@ -1,0 +1,174 @@
+name: Self-hosted Windows W4 E2E (synthetic only)
+
+on:
+  push:
+    branches:
+      - test/selfhost-w4-e2e
+
+permissions:
+  contents: read
+
+concurrency:
+  group: workflow-office-deadline-w4-selfhost
+  cancel-in-progress: true
+
+jobs:
+  build-rust-windows:
+    runs-on: windows-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Test and compile real Rust rules engine
+        shell: pwsh
+        run: |
+          cargo test --manifest-path rust-core/Cargo.toml
+          if ($LASTEXITCODE -ne 0) { throw 'Rust tests failed on hosted Windows' }
+          cargo build --release --manifest-path rust-core/Cargo.toml
+          if ($LASTEXITCODE -ne 0) { throw 'Rust release compilation failed' }
+      - uses: actions/upload-artifact@v4
+        with:
+          name: edu-rules-native-windows
+          path: rust-core/target/release/edu_rules.exe
+          if-no-files-found: error
+          retention-days: 2
+  selfhost-windows-e2e:
+    needs: build-rust-windows
+    runs-on: [self-hosted, Windows]
+    timeout-minutes: 18
+    env:
+      CARGO_BUILD_JOBS: "2"
+      PYTHONPATH: python
+      PYTHONUTF8: "1"
+      PYTHONIOENCODING: "utf-8"
+    steps:
+      - name: Runner initialization diagnosis before checkout
+        shell: powershell
+        run: |
+          $ErrorActionPreference='Stop'
+          Write-Host "PREFLIGHT_WINDOWS_SELFHOSTED_RUNNER=$env:RUNNER_NAME"
+          Write-Host "WINDOWS_SESSION_ID=$((Get-Process -Id $PID).SessionId)"
+          Write-Host "WORKSPACE_REACHABLE=$(Test-Path -LiteralPath $env:GITHUB_WORKSPACE)"
+          Write-Host "TEMP_REACHABLE=$(Test-Path -LiteralPath $env:RUNNER_TEMP)"
+          Write-Host 'PREFLIGHT_STEP_PASS'
+      - name: Checkout isolated test branch
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Download Rust executable built and tested from this exact commit
+        uses: actions/download-artifact@v4
+        with:
+          name: edu-rules-native-windows
+          path: rust-core/target/release
+
+      - name: Provision isolated official embeddable Python without MSI/registry changes
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $root = Join-Path $env:RUNNER_TEMP 'education_w4_python312_portable'
+          $zip = Join-Path $env:RUNNER_TEMP 'education_w4_python312_portable.zip'
+          if (!(Test-Path -LiteralPath (Join-Path $root 'python.exe') -PathType Leaf)) {
+            New-Item -ItemType Directory -Force -Path $root | Out-Null
+            $uri = 'https://www.python.org/ftp/python/3.12.10/python-3.12.10-embed-amd64.zip'
+            Invoke-WebRequest -Uri $uri -OutFile $zip -UseBasicParsing -TimeoutSec 90
+            Expand-Archive -LiteralPath $zip -DestinationPath $root -Force
+          }
+          $pth = Join-Path $root 'python312._pth'
+          if (!(Test-Path -LiteralPath $pth -PathType Leaf)) { throw 'Invalid Python embedded ZIP: missing python312._pth' }
+          $packageDir = Join-Path $env:GITHUB_WORKSPACE 'python'
+          @('python312.zip','.', $packageDir) | Set-Content -LiteralPath $pth -Encoding ascii
+          $exe = Join-Path $root 'python.exe'
+          & $exe -c 'import sys,sqlite3,unittest; import edu_workflow; print(sys.version)'
+          if ($LASTEXITCODE -ne 0) { throw 'Portable CPython cannot import the project or SQLite' }
+          $env:PATH = "$root;$env:PATH"
+          Add-Content -Path $env:GITHUB_PATH -Value $root -Encoding utf8
+          Write-Host 'PORTABLE_PYTHON_READY_NO_REGISTRY'
+      - name: Inspect tools and bounded test session
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $env:EDU_W4_RESULTS = Join-Path $env:RUNNER_TEMP ("workflow-office-w4-{0}-{1}" -f $env:GITHUB_RUN_ID,$env:GITHUB_RUN_ATTEMPT)
+          Add-Content -Path $env:GITHUB_ENV -Value "EDU_W4_RESULTS=$env:EDU_W4_RESULTS" -Encoding utf8
+          New-Item -ItemType Directory -Force -Path $env:EDU_W4_RESULTS | Out-Null
+          if ($env:RUNNER_OS -ne 'Windows') { throw 'Must be a Windows runner' }
+          Write-Host "Runner = $env:RUNNER_NAME; SessionId = $((Get-Process -Id $PID).SessionId)"
+          Write-Host 'Scope: synthetic EML only. No live Outlook, SMTP, Task Scheduler mutation, cameras or production services.'
+          $python = Get-Command python -ErrorAction SilentlyContinue
+          if (-not $python) { throw 'BLOCKED: portable Python is not on PATH in this runner job.' }
+          python --version
+          $rules = Join-Path $env:GITHUB_WORKSPACE 'rust-core\target\release\edu_rules.exe'
+          if (!(Test-Path -LiteralPath $rules -PathType Leaf)) { throw 'BLOCKED: Rust executable artifact not downloaded' }
+          Write-Host "Rust executable verified locally: $((Get-FileHash -LiteralPath $rules -Algorithm SHA256).Hash)"
+
+      - name: Full Python W1-W4 regression tests on actual self-hosted Windows
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          @'
+          import os, pathlib, sys, unittest
+          output = pathlib.Path(os.environ["EDU_W4_RESULTS"]) / "python_tests.txt"
+          suite = unittest.defaultTestLoader.discover("tests")
+          with output.open("w", encoding="utf-8") as fh:
+              report = unittest.TextTestRunner(stream=fh, verbosity=2).run(suite)
+          for line in output.read_text(encoding="utf-8", errors="replace").splitlines()[-30:]:
+              print(line)
+          print("SELFHOST_PYTHON_TESTS", suite.countTestCases(), "PASS" if report.wasSuccessful() else "FAIL")
+          sys.exit(0 if report.wasSuccessful() else 1)
+          '@ | python -
+          if ($LASTEXITCODE -ne 0) { throw 'Self-hosted Python regression tests genuinely failed; inspect python_tests.txt' }
+
+      - name: Confirm native Rust binary can execute on this self-hosted Windows machine
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $bin = Join-Path $env:GITHUB_WORKSPACE 'rust-core\target\release\edu_rules.exe'
+          if (!(Test-Path -LiteralPath $bin -PathType Leaf)) { throw 'Native Rust exe missing' }
+          $hash = (Get-FileHash -LiteralPath $bin -Algorithm SHA256).Hash
+          Write-Host "RUST_BINARY_ON_SELFHOST_SHA256=$hash"
+          Write-Host 'Build and unit tests ran on hosted Windows; next step executes this exact Rust exe on MRCAO.'
+
+      - name: Functional self-hosted E2E — EML to Rust to notifications and approval gate
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          python tests\selfhost_w4_e2e.py "$env:EDU_W4_RESULTS"
+          if ($LASTEXITCODE -ne 0) { throw "Self-hosted W4 functional E2E failed: $LASTEXITCODE" }
+
+      - name: Probe real Tk desktop window only when runner has interactive session
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          python tests\selfhost_w4_gui_probe.py "$env:EDU_W4_RESULTS"
+          if ($LASTEXITCODE -ne 0) { throw 'Own Tkinter window probe failed (may require interactive user session)' }
+
+      - name: E2E summary
+        if: always()
+        shell: powershell
+        run: |
+          $target = Join-Path $env:EDU_W4_RESULTS 'result.json'
+          $gui = Join-Path $env:EDU_W4_RESULTS 'gui_result.json'
+          if (Test-Path -LiteralPath $target) {
+            $report = Get-Content -LiteralPath $target -Raw | ConvertFrom-Json
+            Write-Host "Core E2E: $($report.status); GUI session: $($report.gui_session)"
+            Add-Content -Path $env:GITHUB_STEP_SUMMARY -Value "Core E2E: $($report.status)"
+          } else {
+            Add-Content -Path $env:GITHUB_STEP_SUMMARY -Value 'Core E2E: NOT RUN/FAILED'
+          }
+          if (Test-Path -LiteralPath $gui) {
+            $ui=Get-Content -LiteralPath $gui -Raw | ConvertFrom-Json
+            Write-Host "Real GUI probe: $($ui.status)"
+            Add-Content -Path $env:GITHUB_STEP_SUMMARY -Value "GUI probe: $($ui.status)"
+          } else {
+            Add-Content -Path $env:GITHUB_STEP_SUMMARY -Value 'GUI probe: NOT RUN/FAILED'
+          }
+
+      - name: Preserve synthetic-only test evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: selfhost-w4-e2e-evidence
+          path: ${{ env.EDU_W4_RESULTS }}\*.json
+          if-no-files-found: warn
+          retention-days: 7
