@@ -61,3 +61,11 @@ Static review of `open_store()` confirmed that the SQLite API creates a new file
 - [x] Added `tests/w5_real_tk_smoke.py` and a CI step running it via `xvfb-run -a` on Ubuntu, alongside the existing 102-test unittest suite.
 - [ ] GitHub Actions Linux Xvfb job still must PASS on the PR HEAD; actual test of user-visible Windows fonts, mouse, bell and login startup is not replaced by Xvfb.
 - The local Xvfb screenshot uses a fictional case ID only and is **not an actual Windows desktop screenshot**.
+
+## Final W5 CI acceptance — 2026-10-20
+
+PR #9 merged to main as `fbe8aaffebdf791a9c040d05e550bc599cfd1ee1` after green branch CI. Post-merge GitHub Actions all SUCCESS: Linux 102/102 + real Tk Xvfb smoke #39327397812, Windows legacy #39327397881, Windows W4 #39327397739, Windows W5 build + standalone GUI preflight + sandbox Startup install/rollback #39327397726.
+
+The earlier W5 Startup job failure was a test-driver bug: a stale native `$LASTEXITCODE` was inspected after invoking a PowerShell script which had actually created the shortcut. Replaced with direct output-artifact verification and repeated the full workflow to PASS (branch #39327099946 and post-merge #39327397726). W5 EXE is unsigned and must not be presented as production-ready. The only self-hosted W5 check was **read-only Session 0 probe** on MRCAO; the Windows W5 executable/Startup E2E was executed on `windows-latest`, not MRCAO. Actual signed-in Windows GUI remains unverified.
+
+See [W5 acceptance report](W5_TEST_REPORT.md) for the complete evidence table and remaining approval gates.
