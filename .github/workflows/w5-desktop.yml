@@ -2,7 +2,14 @@ name: W5 Windows Desktop Package & User-Session Safety
 
 on:
   push:
+    branches: [main]
   pull_request:
+    branches: [main]
+
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
@@ -84,27 +91,3 @@ jobs:
           path: dist/EDUNotifications.exe
           if-no-files-found: error
           retention-days: 7
-
-  session-zero-preflight:
-    # Never run arbitrary PR contents on the user's self-hosted runner.
-    if: github.event_name == 'push' && github.ref == 'refs/heads/feat/w5-interactive-desktop-acceptance'
-    runs-on: [self-hosted, Windows]
-    timeout-minutes: 6
-    steps:
-      - name: Measure actual runner desktop session without modifying it
-        shell: powershell
-        run: |
-          $ErrorActionPreference='Stop'
-          $sid = (Get-Process -Id $PID).SessionId
-          $report = [ordered]@{
-            runner = $env:RUNNER_NAME
-            session_id = $sid
-            can_show_interactive_gui = [bool]($sid -ne 0)
-            changes_made = $false
-          }
-          $report | ConvertTo-Json -Compress | Write-Host
-          if ($sid -eq 0) {
-            Write-Host 'W5_SESSION0_CONFIRMED: no screenshot/GUI acceptance possible in service desktop'
-          } else {
-            Write-Host 'W5_INTERACTIVE_SESSION_PRESENT: GUI acceptance can be attempted separately with authorization'
-          }
