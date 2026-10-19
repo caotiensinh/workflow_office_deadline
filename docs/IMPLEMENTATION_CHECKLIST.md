@@ -122,3 +122,11 @@
 - [x] Reran 7/7 W5 isolated fake-Tk tests locally: PASS. This uses a mirrored module and stubs, **not** the full GitHub Actions 100-test suite.
 - [ ] GitHub-hosted Linux/Windows and MRCAO CI on the corrected W5 HEAD: still unverified while runners are unassigned.
 - [ ] W5 EXE packaging and actual signed-in Windows window: not yet verified.
+
+### W5 GitHub Actions incident and queue reduction
+- [x] Verified official incident `8tzbpcnl75jp`: GitHub Actions scheduling degraded since 2026-10-19 15:49 UTC; reports mention delayed workflow processing.
+- [x] De-duplicated PR/main CI events for four workflows, added scoped concurrency and separated read-only MRCAO Session 0 preflight.
+- [x] Confirmed 7/7 isolated Python fake-Tk UI tests PASS, with test-only callback assertion fixes committed.
+- [ ] New W5 PR CI Linux 100/100 and Windows packaged EXE/Startup sandbox: **QUEUED / NOT RUN**, not PASS.
+- [ ] MRCAO Session ID preflight in new isolated workflow: **QUEUED / NOT RUN**.
+- [ ] PR #9 merge on approved green gates only; original full-suite self-hosted W4 acceptance remains valid at prior verified SHA only.
