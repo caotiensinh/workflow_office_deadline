@@ -72,3 +72,14 @@
 - [x] Explicit CI guard requires W1/W2/W3 regression files and a 75-test minimum.
 - [x] CI regression guard verified on PR (#39251101968) and main (#39251244897).
 - [ ] Real school Windows endpoint, Outlook, SSO and push notices still require institutional permission.
+
+## Phase W4 — Interactive local desktop notifications (pending CI)
+- [x] Added SQLite alert reader; status and case-revision checks hide stale/closed notifications.
+- [x] Per-user ACK/SNOOZE receipts persisted with audit, never as workflow approvals.
+- [x] UNKNOWN delivery incidents are CRITICAL and cannot be acknowledged as delivered.
+- [x] Added Japanese Tkinter center and Windows foreground launcher (no network, no service).
+- [x] Added 18 W4 regression tests, Windows Rust→notification E2E and 93-test minimum CI guard.
+- [ ] Full W1–W4 Python, Rust and Windows CI PASS.
+- [ ] Phase W4 merged and final main CI PASS.
+- [ ] Visual test with signed-in Windows desktop user (Tk bell/focus and buttons).
+- [ ] Institution-approved real Outlook/SMTP/SSO and endpoint security acceptance.
