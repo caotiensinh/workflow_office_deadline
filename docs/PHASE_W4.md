@@ -36,3 +36,10 @@ Requires Python 3.11+ with Tkinter and a signed-in user desktop. Closing the cen
 
 ## Rollback / troubleshooting
 Close the notification window to stop polling. It does not stop the Rust worker; stop or uninstall the separately configured scheduled task only after checking its current settings. If the window cannot open, verify Tkinter, Python PATH, SQLite path and interactive desktop session. A receipt failure leaves the alert visible because the local DB transaction rolls back. Backup the SQLite database before institutional rollout.
+
+## Verified W4 results (2026-10-19)
+- Python 93/93 and Rust integration: https://github.com/caotiensinh/workflow_office_deadline/actions/runs/39253715289
+- Windows W4 tests 18/18, Tk import, synthetic Rust→SQLite notifications 3/3, ACK/SNOOZE persistence: https://github.com/caotiensinh/workflow_office_deadline/actions/runs/39253715207
+- Windows W1-W3 regression E2E: https://github.com/caotiensinh/workflow_office_deadline/actions/runs/39253715141
+- A prior attempt lost W1/W3 test files by staging on an old tree. The regression guard failed, and W4 was rebuilt from latest main.
+- NOT verified: live GUI visibility/focus/bell in a real signed-in Windows session, Outlook/SMTP integration, enterprise identity or scheduled service.

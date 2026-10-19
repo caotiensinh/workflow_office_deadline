@@ -73,13 +73,18 @@
 - [x] CI regression guard verified on PR (#39251101968) and main (#39251244897).
 - [ ] Real school Windows endpoint, Outlook, SSO and push notices still require institutional permission.
 
-## Phase W4 — Interactive local desktop notifications (pending CI)
+## Phase W4 — Interactive local desktop notifications (CI verified; field validation pending)
 - [x] Added SQLite alert reader; status and case-revision checks hide stale/closed notifications.
 - [x] Per-user ACK/SNOOZE receipts persisted with audit, never as workflow approvals.
 - [x] UNKNOWN delivery incidents are CRITICAL and cannot be acknowledged as delivered.
 - [x] Added Japanese Tkinter center and Windows foreground launcher (no network, no service).
 - [x] Added 18 W4 regression tests, Windows Rust→notification E2E and 93-test minimum CI guard.
-- [ ] Full W1–W4 Python, Rust and Windows CI PASS.
-- [ ] Phase W4 merged and final main CI PASS.
+- [x] Full W1–W4 Python tests 93/93, Rust build, Windows W4 tests 18/18 and Windows legacy E2E PASS.
+- [x] W4 PR #7 merged as a0647f7b51e080232bb1bb7f35db0238aabc0822; all post-merge CI green (#39253715289, #39253715207, #39253715141).
 - [ ] Visual test with signed-in Windows desktop user (Tk bell/focus and buttons).
 - [ ] Institution-approved real Outlook/SMTP/SSO and endpoint security acceptance.
+
+## W4 root-cause & field status
+- [x] Initial old-tree commit unintentionally dropped W1/W3 tests; CI guard caught it and tree was rebuilt from live main, then 93 tests passed.
+- [x] Windows hosted Python Tkinter import and synthetic Rust→SQLite→ACK/SNOOZE passed (18/18 W4 tests, 3 notices, 0 business decisions).
+- [ ] Actual Tk GUI, Windows bell/focus and signed-in workstation behavior still require manual or authorized interactive UI acceptance.
