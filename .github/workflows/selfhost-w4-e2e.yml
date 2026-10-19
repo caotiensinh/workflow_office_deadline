@@ -1,0 +1,114 @@
+name: Self-hosted Windows W4 E2E (synthetic only)
+
+on:
+  push:
+    branches:
+      - test/selfhost-w4-e2e
+
+permissions:
+  contents: read
+
+concurrency:
+  group: workflow-office-deadline-w4-selfhost
+  cancel-in-progress: false
+
+jobs:
+  selfhost-windows-e2e:
+    runs-on: [self-hosted, Windows]
+    timeout-minutes: 18
+    env:
+      CARGO_BUILD_JOBS: "2"
+      PYTHONPATH: python
+      EDU_W4_RESULTS: ${{ runner.temp }}\workflow-office-w4-${{ github.run_id }}-${{ github.run_attempt }}
+    steps:
+      - name: Checkout isolated test branch
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Inspect tools and bounded test session
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          New-Item -ItemType Directory -Force -Path $env:EDU_W4_RESULTS | Out-Null
+          if ($env:RUNNER_OS -ne 'Windows') { throw 'Must be a Windows runner' }
+          Write-Host "Runner = $env:RUNNER_NAME; SessionId = $((Get-Process -Id $PID).SessionId)"
+          Write-Host 'Scope: synthetic EML only. No live Outlook, SMTP, Task Scheduler mutation, cameras or production services.'
+          $python = Get-Command python -ErrorAction SilentlyContinue
+          $cargo = Get-Command cargo -ErrorAction SilentlyContinue
+          if (-not $python) { throw 'BLOCKED: Python is not installed/on PATH in this self-hosted runner account.' }
+          if (-not $cargo) { throw 'BLOCKED: Cargo/Rust is not installed/on PATH in this self-hosted runner account.' }
+          python --version
+          cargo --version
+          if ($LASTEXITCODE -ne 0) { throw 'Cargo unusable' }
+
+      - name: Full Python W1-W4 regression tests on actual self-hosted Windows
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          python -m unittest discover -s tests -v 2>&1 | Out-File -FilePath (Join-Path $env:EDU_W4_RESULTS 'python_tests.txt') -Encoding utf8
+          if ($LASTEXITCODE -ne 0) {
+            Get-Content -Path (Join-Path $env:EDU_W4_RESULTS 'python_tests.txt') -Tail 35
+            throw 'Self-hosted Python tests failed'
+          }
+          Get-Content -Path (Join-Path $env:EDU_W4_RESULTS 'python_tests.txt') -Tail 6
+
+      - name: Build and test real Rust engine on self-hosted Windows
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          cargo test --manifest-path rust-core\Cargo.toml -- --test-threads=2 2>&1 | Out-File -FilePath (Join-Path $env:EDU_W4_RESULTS 'rust_tests.txt') -Encoding utf8
+          if ($LASTEXITCODE -ne 0) {
+            Get-Content -Path (Join-Path $env:EDU_W4_RESULTS 'rust_tests.txt') -Tail 40
+            throw 'Self-hosted Rust tests failed'
+          }
+          cargo build --release --manifest-path rust-core\Cargo.toml 2>&1 | Out-File -FilePath (Join-Path $env:EDU_W4_RESULTS 'rust_build.txt') -Encoding utf8
+          if ($LASTEXITCODE -ne 0) {
+            Get-Content -Path (Join-Path $env:EDU_W4_RESULTS 'rust_build.txt') -Tail 40
+            throw 'Rust release build failed'
+          }
+          Get-Content -Path (Join-Path $env:EDU_W4_RESULTS 'rust_tests.txt') -Tail 6
+
+      - name: Functional self-hosted E2E — EML to Rust to notifications and approval gate
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          python tests\selfhost_w4_e2e.py "$env:EDU_W4_RESULTS"
+          if ($LASTEXITCODE -ne 0) { throw "Self-hosted W4 functional E2E failed: $LASTEXITCODE" }
+
+      - name: Probe real Tk desktop window only when runner has interactive session
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          python tests\selfhost_w4_gui_probe.py "$env:EDU_W4_RESULTS"
+          if ($LASTEXITCODE -ne 0) { throw 'Own Tkinter window probe failed (may require interactive user session)' }
+
+      - name: E2E summary
+        if: always()
+        shell: powershell
+        run: |
+          $target = Join-Path $env:EDU_W4_RESULTS 'result.json'
+          $gui = Join-Path $env:EDU_W4_RESULTS 'gui_result.json'
+          if (Test-Path -LiteralPath $target) {
+            $report = Get-Content -LiteralPath $target -Raw | ConvertFrom-Json
+            Write-Host "Core E2E: $($report.status); GUI session: $($report.gui_session)"
+            Add-Content -Path $env:GITHUB_STEP_SUMMARY -Value "Core E2E: $($report.status)"
+          } else {
+            Add-Content -Path $env:GITHUB_STEP_SUMMARY -Value 'Core E2E: NOT RUN/FAILED'
+          }
+          if (Test-Path -LiteralPath $gui) {
+            $ui=Get-Content -LiteralPath $gui -Raw | ConvertFrom-Json
+            Write-Host "Real GUI probe: $($ui.status)"
+            Add-Content -Path $env:GITHUB_STEP_SUMMARY -Value "GUI probe: $($ui.status)"
+          } else {
+            Add-Content -Path $env:GITHUB_STEP_SUMMARY -Value 'GUI probe: NOT RUN/FAILED'
+          }
+
+      - name: Preserve synthetic-only test evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: selfhost-w4-e2e-evidence
+          path: ${{ env.EDU_W4_RESULTS }}\*.json
+          if-no-files-found: warn
+          retention-days: 7
