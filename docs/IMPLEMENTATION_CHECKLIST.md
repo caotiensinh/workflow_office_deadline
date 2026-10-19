@@ -115,3 +115,10 @@
 - [ ] Confirm Linux Python >=100 tests and Rust integration; Windows W1–W4 regression CI PASS on W5 HEAD.
 - [ ] Confirm MRCAO real Session ID from preflight, without changing the signed-in user Startup folder.
 - [ ] Only merge PR #9 after required CI finishes successfully.
+
+### W5 isolated test checkpoint — 2026-10-20
+- [x] Reproduced 2 failing Tk-controller tests in isolated local Python harness (wrong ACK/SNOOZE argument index; ACK test also asserted no fourth argument).
+- [x] Corrected three assertions in `tests/test_ui_w5.py` at W5 commit `5494441ba17ff853f15e087f5535cf4840c92280`.
+- [x] Reran 7/7 W5 isolated fake-Tk tests locally: PASS. This uses a mirrored module and stubs, **not** the full GitHub Actions 100-test suite.
+- [ ] GitHub-hosted Linux/Windows and MRCAO CI on the corrected W5 HEAD: still unverified while runners are unassigned.
+- [ ] W5 EXE packaging and actual signed-in Windows window: not yet verified.

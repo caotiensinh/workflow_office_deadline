@@ -37,3 +37,8 @@ GitHub Actions service-based Windows runners execute in Session 0 and cannot dis
 - W5 now includes seven controller/preflight tests; total required Python regressions: **100**. The CI guard requires the W1–W5 test suites to remain present.
 - Python GUI launcher explicitly refuses Session 0, and hosted CI's sandbox Startup test is separate from production login. No app was installed on MRCAO.
 - A real user-visible notification must still be checked within a signed-in interactive Windows session and after an actual logout/login cycle, with organizational authorization.
+
+## W5 isolated regression finding — 2026-10-20
+Before GitHub CI runners became available, seven fake-Tk controller tests were reconstructed in an isolated local Python environment against the current W5 desktop controller. Two tests failed due to test-only argument indexing: `mark_notification(conn, alert_id, actor, choice)` was asserted as if `choice` were argument 3 rather than argument 4. A related ACK assertion incorrectly expected no fourth argument. All three assertions were corrected in commit `5494441ba17ff853f15e087f5535cf4840c92280`; rerunning the seven isolated tests yielded 7/7 PASS.
+
+This is **not** a GitHub Actions run, not an EXE package test and not visual acceptance. Required hosted CI checks on PR #9 were still queued with no runner assignment when inspected, including Ubuntu, Windows and self-hosted labels. The current public GitHub status page reports Actions operational, so no root cause for these repository jobs is asserted. Verify repository Actions permissions, current runner availability and any account budget/storage policy if the queue does not move; do not merge an unverified build.
