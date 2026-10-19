@@ -39,6 +39,10 @@ jobs:
               raise SystemExit(f'Safety test regression: expected at least 102 cases, found {count}')
           print(f'Regression test manifest PASS ({count} tests)')
           PY
+      - name: W5 real Tk widgets in isolated virtual X display
+        run: |
+          command -v xvfb-run
+          PYTHONPATH=python xvfb-run -a python tests/w5_real_tk_smoke.py
       - run: PYTHONPATH=python python -m unittest discover -s tests -v
   rust-and-integration:
     runs-on: ubuntu-latest

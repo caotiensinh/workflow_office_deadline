@@ -55,3 +55,9 @@ This is **not** a GitHub Actions run, not an EXE package test and not visual acc
 ## W5 database path validation (2026-10-20)
 
 Static review of `open_store()` confirmed that the SQLite API creates a new file when an invalid GUI path is supplied. W5 now rejects a missing, symbolic-link or non-SQLite database **before creating the Tk window or calling open_store**, preventing a false empty-work queue. Two new negative tests cover nonexistent and invalid database files. Existing fake-Tk controller tests mock the validated database path and remain unchanged in behavior. The local mirrored 40 reference tests + 9 W5 tests passed (49/49), but this is **not** the complete 102-test suite or a Windows EXE acceptance. The full CI guard is now 102 and remains pending Actions scheduling.
+
+## W5 real Tk rendering smoke (Linux/Xvfb)
+- [x] Executed actual Tkinter window with a synthetic SQLite header and fake event adapter on an isolated local Xvfb display (2026-10-20): **PASS**. Verified rendered 790x460 window, Japanese labels, Treeview row, ACK click removing the row, and cleanup on WM_DELETE_WINDOW.
+- [x] Added `tests/w5_real_tk_smoke.py` and a CI step running it via `xvfb-run -a` on Ubuntu, alongside the existing 102-test unittest suite.
+- [ ] GitHub Actions Linux Xvfb job still must PASS on the PR HEAD; actual test of user-visible Windows fonts, mouse, bell and login startup is not replaced by Xvfb.
+- The local Xvfb screenshot uses a fictional case ID only and is **not an actual Windows desktop screenshot**.

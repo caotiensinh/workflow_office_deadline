@@ -136,3 +136,9 @@
 - [x] Fail closed on invalid/missing/symlink DB before launching Tk, with two W5 regression tests.
 - [x] Local mirrored Python reference + UI tests: 49/49 PASS (40 older reference + 9 W5, not the full repository suite).
 - [ ] Hosted CI 102/102 and W5 Windows one-file EXE + Startup E2E: QUEUED / NOT VERIFIED.
+
+### W5 real-widget smoke gate
+- [x] Real Tk widget smoke PASS under a local isolated Xvfb display (Japanese title and labels, alert visible, ACK removes it, DB connection closes).
+- [x] Linux CI now includes `xvfb-run -a python tests/w5_real_tk_smoke.py` in addition to the minimum 102 unit tests.
+- [ ] Verify the Xvfb job and full hosted CI on the latest PR commit when Actions scheduling is available.
+- [ ] Confirm signed-in Windows desktop UI separately; MRCAO Session 0 cannot satisfy this.
