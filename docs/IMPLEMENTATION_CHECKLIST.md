@@ -88,3 +88,13 @@
 - [x] Initial old-tree commit unintentionally dropped W1/W3 tests; CI guard caught it and tree was rebuilt from live main, then 93 tests passed.
 - [x] Windows hosted Python Tkinter import and synthetic Rust→SQLite→ACK/SNOOZE passed (18/18 W4 tests, 3 notices, 0 business decisions).
 - [ ] Actual Tk GUI, Windows bell/focus and signed-in workstation behavior still require manual or authorized interactive UI acceptance.
+
+## Phase W4-S — Real Windows self-hosted E2E (2026-10-19)
+- [x] GitHub Actions assigned job to `MRCAO` (runner ID 2, Windows self-hosted).
+- [x] 93/93 Python tests PASS on MRCAO (run #39275696459).
+- [x] Rust source compiled/tested on hosted Windows and exact-commit native binary executed on MRCAO.
+- [x] EML x3, second import 0, alerts x3, no duplicates, ACK/SNOOZE, human confirmation, Rust D-3 reminder, audit, 0 automated approvals.
+- [x] Public PR #8 merged after hosted CI and MRCAO E2E success.
+- [x] Log documents Windows locale and POSIX fixture portability bugs and their fixes.
+- [ ] Interactive Tk GUI test on signed-in Windows desktop; service runner Session 0 is NOT a GUI acceptance.
+- [ ] IT-approved Outlook mailbox, actual push/email, SSO, scheduler and privacy production gates.
