@@ -62,7 +62,13 @@
 - [x] CLI requires verifier allowlist and exact ISO deadline confirmation token.
 - [x] Exception-only masked review queue and negative boundary tests added.
 - [x] Hosted Windows synthetic confirmation → Rust D−3 → approval → audit test prepared.
-- [ ] W3 full Linux Python/Rust CI PASS.
-- [ ] W3 native Windows end-to-end PASS.
-- [ ] W3 merged, post-merge main CI PASS.
+- [x] W3 full Linux Python/Rust CI PASS (75/75 Python; Actions #39250582011).
+- [x] W3 native Windows E2E PASS: confirmed deadline, Rust D−3, atomic approval and audit (Actions #39250581975).
+- [x] W3 PR #5 merged to main at ca3ffdafb17be6a2220c98ba64d14952ba391786.
+- [ ] Post-merge main CI after this regression-guard PR PASS.
 - [ ] Real school SSO, Outlook, SMTP and Windows endpoint acceptance (requires external authorization).
+
+## Root-cause prevention
+- [x] Explicit CI guard requires W1/W2/W3 regression files and a 75-test minimum.
+- [ ] CI regression guard verified on PR and main.
+- [ ] Real school Windows endpoint, Outlook, SSO and push notices still require institutional permission.
