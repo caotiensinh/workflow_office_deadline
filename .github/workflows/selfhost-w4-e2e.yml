@@ -41,6 +41,8 @@ jobs:
     env:
       CARGO_BUILD_JOBS: "2"
       PYTHONPATH: python
+      PYTHONUTF8: "1"
+      PYTHONIOENCODING: "utf-8"
     steps:
       - name: Runner initialization diagnosis before checkout
         shell: powershell
@@ -105,16 +107,15 @@ jobs:
         run: |
           $ErrorActionPreference = 'Stop'
           @'
-          import os, pathlib, subprocess, sys
+          import os, pathlib, sys, unittest
           output = pathlib.Path(os.environ["EDU_W4_RESULTS"]) / "python_tests.txt"
+          suite = unittest.defaultTestLoader.discover("tests")
           with output.open("w", encoding="utf-8") as fh:
-              completed = subprocess.run(
-                  [sys.executable, "-m", "unittest", "discover", "-s", "tests", "-v"],
-                  stdout=fh, stderr=subprocess.STDOUT, check=False
-              )
-          for line in output.read_text(encoding="utf-8", errors="replace").splitlines()[-20:]:
+              report = unittest.TextTestRunner(stream=fh, verbosity=2).run(suite)
+          for line in output.read_text(encoding="utf-8", errors="replace").splitlines()[-30:]:
               print(line)
-          sys.exit(completed.returncode)
+          print("SELFHOST_PYTHON_TESTS", suite.countTestCases(), "PASS" if report.wasSuccessful() else "FAIL")
+          sys.exit(0 if report.wasSuccessful() else 1)
           '@ | python -
           if ($LASTEXITCODE -ne 0) { throw 'Self-hosted Python regression tests genuinely failed; inspect python_tests.txt' }
 
