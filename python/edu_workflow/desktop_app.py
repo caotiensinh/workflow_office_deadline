@@ -27,11 +27,28 @@ def _interactive_desktop_available():
     return sid.value != 0
 
 
+
+def _require_existing_workflow_db(path):
+    """Fail closed: GUI cannot silently create an empty database on wrong path."""
+    db=Path(path)
+    if db.is_symlink() or not db.is_file():
+        raise FileNotFoundError('Workflow database not found; run the background worker first')
+    try:
+        with db.open('rb') as stream:
+            signature=stream.read(16)
+    except OSError as exc:
+        raise RuntimeError('Workflow database is not readable by this account') from exc
+    if signature != b'SQLite format 3\x00':
+        raise ValueError('Workflow database is not a valid SQLite file')
+    return db
+
+
 def launch(db_path, poll_seconds=15):
     if not 5 <= poll_seconds <= 3600:
         raise ValueError('poll_seconds must be in 5..3600')
     if not _interactive_desktop_available():
         raise RuntimeError('No interactive Windows user session (Session 0 is service-only)')
+    verified_db=_require_existing_workflow_db(db_path)
     try:
         import tkinter as tk
         from tkinter import ttk, messagebox
@@ -60,7 +77,7 @@ def launch(db_path, poll_seconds=15):
     ttk.Label(root,textvariable=caption).pack(anchor='w',pady=(8,4))
     controls=ttk.Frame(root)
     controls.pack(fill='x')
-    conn=open_store(Path(db_path))
+    conn=open_store(verified_db)
     account=getpass.getuser()
     cache={}
     surfaced=set()

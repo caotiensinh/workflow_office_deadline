@@ -130,3 +130,9 @@
 - [ ] New W5 PR CI Linux 100/100 and Windows packaged EXE/Startup sandbox: **QUEUED / NOT RUN**, not PASS.
 - [ ] MRCAO Session ID preflight in new isolated workflow: **QUEUED / NOT RUN**.
 - [ ] PR #9 merge on approved green gates only; original full-suite self-hosted W4 acceptance remains valid at prior verified SHA only.
+
+### W5 database safety correction (2026-10-20)
+- [x] Guard against wrong SQLite path: never auto-create a new empty workflow DB when the desktop GUI starts.
+- [x] Fail closed on invalid/missing/symlink DB before launching Tk, with two W5 regression tests.
+- [x] Local mirrored Python reference + UI tests: 49/49 PASS (40 older reference + 9 W5, not the full repository suite).
+- [ ] Hosted CI 102/102 and W5 Windows one-file EXE + Startup E2E: QUEUED / NOT VERIFIED.

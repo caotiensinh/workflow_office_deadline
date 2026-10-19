@@ -51,3 +51,7 @@ This is **not** a GitHub Actions run, not an EXE package test and not visual acc
 - The read-only MRCAO Session 0 preflight moved to a separate feature-branch-only workflow and does not checkout PR code or mutate real Windows Startup/Task Scheduler.
 - Last observed W5 PR head: `385f21fdd4c3fed2e5e08e7c2af23615e88732f5`; CI remains queued without assigned hosted/self-hosted runners and **cannot be marked PASS**.
 - Continue on the current checklist after GitHub Actions scheduling recovers; do not merge the unverified unsigned EXE release.
+
+## W5 database path validation (2026-10-20)
+
+Static review of `open_store()` confirmed that the SQLite API creates a new file when an invalid GUI path is supplied. W5 now rejects a missing, symbolic-link or non-SQLite database **before creating the Tk window or calling open_store**, preventing a false empty-work queue. Two new negative tests cover nonexistent and invalid database files. Existing fake-Tk controller tests mock the validated database path and remain unchanged in behavior. The local mirrored 40 reference tests + 9 W5 tests passed (49/49), but this is **not** the complete 102-test suite or a Windows EXE acceptance. The full CI guard is now 102 and remains pending Actions scheduling.

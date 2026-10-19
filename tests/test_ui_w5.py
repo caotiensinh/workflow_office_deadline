@@ -89,6 +89,31 @@ def notification(code="VERIFY_DEADLINE",state="SENT",id="a"*64):
 
 
 class W5UIControllerTests(unittest.TestCase):
+    def test_missing_database_rejected_before_starting_gui(self):
+        import tempfile
+        from pathlib import Path
+        with tempfile.TemporaryDirectory() as folder:
+            missing=Path(folder)/"absent.sqlite3"
+            with (patch.object(desktop_app,"_interactive_desktop_available",return_value=True),
+                  patch.object(desktop_app,"open_store") as store):
+                with self.assertRaises(FileNotFoundError):
+                    desktop_app.launch(missing)
+                store.assert_not_called()
+            self.assertFalse(missing.exists())
+
+    def test_invalid_database_rejected_without_modifying_file(self):
+        import tempfile
+        from pathlib import Path
+        with tempfile.TemporaryDirectory() as folder:
+            broken=Path(folder)/"invalid.sqlite3"
+            broken.write_bytes(b"Not SQLite")
+            with (patch.object(desktop_app,"_interactive_desktop_available",return_value=True),
+                  patch.object(desktop_app,"open_store") as store):
+                with self.assertRaisesRegex(ValueError,"not a valid SQLite"):
+                    desktop_app.launch(broken)
+                store.assert_not_called()
+            self.assertEqual(broken.read_bytes(),b"Not SQLite")
+
     def test_session_zero_must_refuse_gui(self):
         with patch.object(desktop_app,"_interactive_desktop_available",return_value=False):
             with self.assertRaisesRegex(RuntimeError,"Session 0"):
@@ -117,6 +142,7 @@ class W5UIControllerTests(unittest.TestCase):
         with (patch.dict(sys.modules,{"tkinter":module,"tkinter.ttk":ttk,
                                       "tkinter.messagebox":boxes}),
               patch.object(desktop_app,"_interactive_desktop_available",return_value=True),
+              patch.object(desktop_app,"_require_existing_workflow_db",return_value="synthetic.sqlite3"),
               patch.object(desktop_app,"open_store",return_value=fakeconn),
               patch.object(desktop_app,"getpass") as getpass,
               patch.object(desktop_app,"list_notifications",side_effect=lambda *_:list(rows)),
