@@ -41,7 +41,8 @@ jobs:
           python -m pip install "pyinstaller>=6.12,<7"
           if ($LASTEXITCODE -ne 0) { throw 'PyInstaller dependency setup failed' }
           & .\windows\build_desktop.ps1 -Python 'python'
-          if ($LASTEXITCODE -ne 0) { throw 'W5 desktop executable packaging failed' }
+          # PowerShell scripts throw on failure; $LASTEXITCODE only tracks native programs.
+          # Validate generated binary below instead of trusting a stale exit code.
           $exe = Join-Path $PWD 'dist\EDUNotifications.exe'
           if (!(Test-Path -LiteralPath $exe -PathType Leaf)) { throw 'Desktop EXE missing' }
           $preflight = Join-Path $env:RUNNER_TEMP 'w5-bundle-smoke.json'
@@ -71,7 +72,8 @@ jobs:
             throw 'Unsafe or incorrect startup preview'
           }
           & .\windows\manage_desktop_startup.ps1 -Install -Executable $exe -DbPath $db -TestStartupDir $dir
-          if ($LASTEXITCODE -ne 0) { throw 'Isolated Startup shortcut creation failed' }
+          # No $LASTEXITCODE here: install is a PowerShell script and throws on failure.
+          # Verify the created link and its target instead.
           $file = Join-Path $dir 'EDU_Workflow_Notifications.lnk'
           if (!(Test-Path -LiteralPath $file)) { throw 'Expected W5 shortcut missing' }
           $sh = New-Object -ComObject WScript.Shell
