@@ -34,6 +34,10 @@ jobs:
         with:
           persist-credentials: false
 
+      - name: Prepare isolated Python 3.12 on self-hosted runner
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
       - name: Inspect tools and bounded test session
         shell: powershell
         run: |
