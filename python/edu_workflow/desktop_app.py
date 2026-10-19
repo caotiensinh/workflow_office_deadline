@@ -143,7 +143,23 @@ def main():
     parser=argparse.ArgumentParser(description='Windows local notification center; no network or automatic approval')
     parser.add_argument('--db',required=True)
     parser.add_argument('--poll-seconds',type=int,default=15)
+    parser.add_argument('--preflight-file',help=argparse.SUPPRESS)
     options=parser.parse_args()
+    if options.preflight_file:
+        # Non-UI self-check for the --windowed EXE: its stdout may be None.
+        import json
+        import sys
+        try:
+            import tkinter
+            tk_ready=True
+        except ImportError:
+            tk_ready=False
+        report={'packaged_entrypoint':'OK',
+                'platform':sys.platform,
+                'tk_importable':tk_ready,
+                'interactive_user_session':_interactive_desktop_available()}
+        Path(options.preflight_file).write_text(json.dumps(report),encoding='utf-8')
+        return
     launch(options.db,options.poll_seconds)
 
 
