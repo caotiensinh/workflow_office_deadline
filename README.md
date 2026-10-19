@@ -124,3 +124,15 @@ See [Phase W2 workflow and limits](docs/PHASE_W2.md). Live Outlook and real noti
 Use `python -m edu_workflow.cli --db .\data\w2.sqlite3 review-queue` to list only cases requiring a person to verify a deadline, supply missing evidence, or approve a decision. `confirm-deadline` requires `EDU_VERIFIER_USERS`, `--method source-reviewed` (or institution-reviewed), and an exact typed case ID + timestamp. `decide` requires `EDU_APPROVER_USERS` and a typed decision. All are revision-bound and recorded in SQLite audit. See [Phase W3](docs/PHASE_W3.md).
 
 **Environment warning:** Hosted CI uses synthetic records and does not certify Microsoft Outlook mailbox access, institution SSO or production notification delivery.
+
+## Phase W4: local Windows desktop notification center
+
+The local Tkinter window displays only masked, current-revision alerts from SQLite; ACK means viewed, NOT business approval. Snooze hides until expiration. UNKNOWN SMTP results are critical and not dismissible as delivered.
+
+```powershell
+# After a synthetic Rust run_once.ps1 has populated .\data\workflow.sqlite3:
+.\windows\start_desktop.ps1 -PlanOnly
+.\windows\start_desktop.ps1
+```
+
+Or double-click `windows/START_NOTIFICATIONS.cmd` on a signed-in Windows desktop. The UI polls every 15 seconds while open; it will **not** show notifications when closed or on a noninteractive Task Scheduler runner. Read [the W4 specification](docs/PHASE_W4.md).

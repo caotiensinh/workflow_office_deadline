@@ -1,0 +1,65 @@
+name: W4 Windows Desktop Alert E2E
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  desktop-model:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Verify GUI import and W4 regression tests
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $env:PYTHONPATH = Join-Path $PWD 'python'
+          python -c "import tkinter; import edu_workflow.desktop_app; print('Tkinter import PASS; interactive desktop not asserted')"
+          if ($LASTEXITCODE -ne 0) { throw 'Tkinter import failed' }
+          python -m unittest discover -s tests -p test_desktop_w4.py -v
+          if ($LASTEXITCODE -ne 0) { throw 'W4 model tests failed' }
+      - name: Compile Rust and verify Windows SQLite/file-spool notification lifecycle
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          cargo build --release --manifest-path rust-core/Cargo.toml
+          if ($LASTEXITCODE -ne 0) { throw 'Rust build failed' }
+          $db = Join-Path $env:RUNNER_TEMP 'desktop-w4.sqlite3'
+          $out = Join-Path $env:RUNNER_TEMP 'notices-w4'
+          & .\windows\run_once.ps1 -DbPath $db -OutDir $out -ImportEmlDir .\examples\w2_inbox -At '2026-10-19T09:00:00+09:00'
+          if ($LASTEXITCODE -ne 0) { throw 'Rust-driven intake failed' }
+          $preview = (& .\windows\start_desktop.ps1 -PlanOnly -DbPath $db) | ConvertFrom-Json
+          if ($preview.mode -ne 'interactive-desktop' -or $preview.performs_approvals -or $preview.sends_network) { throw 'Unsafe desktop preview defaults' }
+          $env:PYTHONPATH = Join-Path $PWD 'python'
+          @'
+          import pathlib,os,json
+          from datetime import datetime,timezone,timedelta
+          from edu_workflow.store import open_store
+          from edu_workflow.desktop_center import list_notifications,mark_notification
+          db=pathlib.Path(os.environ['RUNNER_TEMP'])/'desktop-w4.sqlite3'
+          c=open_store(db)
+          try:
+              user='windows-w4-ci'
+              rows=list_notifications(c,user)
+              assert len(rows)==3,rows
+              assert all(r['delivery_state']=='SENT' for r in rows)
+              a,b=rows[0]['alert_id'],rows[1]['alert_id']
+              now=datetime(2026,10,19,12,tzinfo=timezone(timedelta(hours=9)))
+              assert mark_notification(c,a,user,'ACK',at=now)
+              assert mark_notification(c,b,user,'SNOOZE',at=now,snooze_minutes=30)
+              c.close()
+              c=open_store(db)
+              assert len(list_notifications(c,user,at=now+timedelta(minutes=1)))==1
+              assert len(list_notifications(c,user,at=now+timedelta(minutes=31)))==2
+              assert len(list_notifications(c,'second-user'))==3
+              assert c.execute('SELECT COUNT(*) FROM decisions').fetchone()[0]==0
+              assert c.execute("SELECT COUNT(*) FROM audit WHERE event IN ('DESKTOP_ACK','DESKTOP_SNOOZE')").fetchone()[0]==2
+              print('W4 Windows E2E PASS: 3 notices, ACK/SNOOZE persisted, other actor unaffected, 0 decisions')
+          finally:
+              c.close()
+          '@ | python -
+          if ($LASTEXITCODE -ne 0) { throw 'W4 Windows notifications E2E failed' }
