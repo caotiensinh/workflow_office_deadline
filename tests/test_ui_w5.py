@@ -165,8 +165,8 @@ class W5UIControllerTests(unittest.TestCase):
             FakeButton.all["確認済み"].command()
             mark.assert_called_once()
             args=mark.call_args.args
-            self.assertEqual(args[2],"ACK")
-            self.assertEqual(args[3:] if len(args)>3 else (),())
+            self.assertEqual(args[3],"ACK")
+            self.assertEqual(len(args),4)
         self._run_ui(actions,rows)
 
     def test_unknown_cannot_ack_from_tk(self):
@@ -185,7 +185,7 @@ class W5UIControllerTests(unittest.TestCase):
             tree.chosen=(rows[0]["alert_id"],)
             FakeButton.all["30分後に再表示"].command()
             mark.assert_called_once()
-            self.assertEqual(mark.call_args.args[2],"SNOOZE")
+            self.assertEqual(mark.call_args.args[3],"SNOOZE")
         self._run_ui(actions,rows)
 
     def test_ack_requires_selected_notice(self):
