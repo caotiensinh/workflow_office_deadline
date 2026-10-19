@@ -56,7 +56,7 @@
 - [ ] IT-authorized real Windows Task Scheduler registration with user-session monitoring PASS.
 - [ ] Actual recipient notification (approved SMTP or desktop notifier) E2E PASS.
 
-## Phase W3 — Atomic human gate and W1 regression restoration (pending CI)
+## Phase W3 — Atomic human gate and W1 regression restoration (verified in CI)
 - [x] Recover verified W1 transactional store, crash-safe dispatch and 6 missing W1 regression tests.
 - [x] Deadline confirmation writes verification method, audit and optimistic revision in one transaction.
 - [x] CLI requires verifier allowlist and exact ISO deadline confirmation token.
@@ -65,10 +65,10 @@
 - [x] W3 full Linux Python/Rust CI PASS (75/75 Python; Actions #39250582011).
 - [x] W3 native Windows E2E PASS: confirmed deadline, Rust D−3, atomic approval and audit (Actions #39250581975).
 - [x] W3 PR #5 merged to main at ca3ffdafb17be6a2220c98ba64d14952ba391786.
-- [ ] Post-merge main CI after this regression-guard PR PASS.
+- [x] PR #6 merged and post-merge main CI PASS on commit 56c272d6d06a758e4972c0d155f7003098f3e919 (Linux #39251244897, Windows #39251244750).
 - [ ] Real school SSO, Outlook, SMTP and Windows endpoint acceptance (requires external authorization).
 
 ## Root-cause prevention
 - [x] Explicit CI guard requires W1/W2/W3 regression files and a 75-test minimum.
-- [ ] CI regression guard verified on PR and main.
+- [x] CI regression guard verified on PR (#39251101968) and main (#39251244897).
 - [ ] Real school Windows endpoint, Outlook, SSO and push notices still require institutional permission.
