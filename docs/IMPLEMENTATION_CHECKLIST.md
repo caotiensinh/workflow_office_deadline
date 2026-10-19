@@ -116,3 +116,11 @@
 - [ ] Release signing/distribution and installer verification for end-user deployment. CI EXE is **unsigned, synthetic-tested**, not a production installation.
 
 Next: Run W5 visual E2E on a separately authorized *interactive* Windows session; do not assume that runner service E2E proves window visibility. Historical checkpoint failures were fixed, but prior automated CI status entries below this W5 section are superseded by this verified section.
+
+## Phase W5B — Windows real-widget E2E (PR pending)
+- [x] Windows test harness creates fictional SQLite alert data, opens actual Tk window, performs Snooze/ACK through actual widgets and confirms audit/receipts.
+- [x] Session 0 protection: refuse to claim visible GUI success in service session.
+- [x] Added hosted Windows workflow gate and synthetic-only JSON proof.
+- [ ] Windows GitHub Actions real Tk E2E PASS, session nonzero, mapped window and durable database assertions.
+- [ ] PR merged and postmerge Linux/Windows CI green.
+- [ ] Real signed-in Windows workstation user acceptance, Startup after login and audible notice — not covered by hosted CI.

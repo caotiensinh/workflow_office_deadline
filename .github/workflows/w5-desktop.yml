@@ -34,6 +34,26 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'W5 UI-controller regressions failed' }
           python -m unittest discover -s tests -p test_desktop_w4.py -v
           if ($LASTEXITCODE -ne 0) { throw 'W4 notification regressions failed' }
+      - name: W5B real Windows Tk widget E2E with synthetic SQLite
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $env:PYTHONPATH = Join-Path $PWD 'python'
+          $report = Join-Path $env:RUNNER_TEMP 'w5b-windows-tk-e2e.json'
+          python tests/w5_windows_tk_widget_e2e.py --report $report
+          if ($LASTEXITCODE -ne 0) { throw 'W5B real Windows Tk widgets E2E failed' }
+          if (!(Test-Path -LiteralPath $report)) { throw 'W5B GUI evidence missing' }
+          $result = Get-Content -LiteralPath $report -Raw | ConvertFrom-Json
+          if ($result.status -ne 'PASS_WINDOWS_TK_WIDGET_E2E' -or -not $result.gui_window_mapped -or $result.approvals -ne 0) {
+            throw 'W5B Windows GUI E2E did not actually pass'
+          }
+          Write-Host "W5B_WINDOWS_TK_E2E_PASS session=$($result.windows_session_id)"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: W5B-Windows-Tk-Synthetic-Proof
+          path: ${{ runner.temp }}/w5b-windows-tk-e2e.json
+          if-no-files-found: error
+          retention-days: 7
       - name: Package self-contained Windows desktop app
         shell: pwsh
         run: |
