@@ -98,3 +98,14 @@
 - [x] Log documents Windows locale and POSIX fixture portability bugs and their fixes.
 - [ ] Interactive Tk GUI test on signed-in Windows desktop; service runner Session 0 is NOT a GUI acceptance.
 - [ ] IT-approved Outlook mailbox, actual push/email, SSO, scheduler and privacy production gates.
+
+## Phase W5 — Interactive Windows desktop delivery (CI pending)
+- [x] Session 0 refusal in desktop app (no fabricated visible-GUI success).
+- [x] Snooze expiry triggers one new on-screen bell when an alert becomes visible again.
+- [x] Added PyInstaller one-file Windows EXE package build.
+- [x] Added opt-in current-user Startup shortcut manager with preview and rollback.
+- [x] Added fake Tk UI-controller tests and isolated Startup-folder E2E CI.
+- [ ] Native Windows W5 CI packaging and Startup sandbox tests PASS.
+- [ ] Windows self-hosted runner Session 0 diagnostic PASS.
+- [ ] Phase W5 PR merged; postmerge main CI PASS.
+- [ ] Authorized real interactive signed-in user GUI and login-startup acceptance.

@@ -12,9 +12,26 @@ from .store import open_store
 from .desktop_center import list_notifications, mark_notification
 
 
+def _interactive_desktop_available():
+    """Fail closed on Windows Session 0; never present a fake UI PASS."""
+    import sys
+    if sys.platform != 'win32':
+        return True
+    import ctypes
+    from ctypes import wintypes
+    sid=wintypes.DWORD()
+    if not ctypes.windll.kernel32.ProcessIdToSessionId(
+        ctypes.windll.kernel32.GetCurrentProcessId(), ctypes.byref(sid)
+    ):
+        return False
+    return sid.value != 0
+
+
 def launch(db_path, poll_seconds=15):
     if not 5 <= poll_seconds <= 3600:
         raise ValueError('poll_seconds must be in 5..3600')
+    if not _interactive_desktop_available():
+        raise RuntimeError('No interactive Windows user session (Session 0 is service-only)')
     try:
         import tkinter as tk
         from tkinter import ttk, messagebox
@@ -58,6 +75,9 @@ def launch(db_path, poll_seconds=15):
             cache.update({a['alert_id']:a for a in alerts})
             previous=set(grid.get_children())
             current=set(cache)
+            # A snoozed notice leaves the visible list. Once it expires,
+            # treat it as newly visible again so the bell fires once.
+            surfaced.intersection_update(current)
             for item in previous-current:
                 grid.delete(item)
             for alert in alerts:

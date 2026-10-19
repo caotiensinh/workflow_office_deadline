@@ -1,0 +1,99 @@
+name: W5 Windows Desktop Package & User-Session Safety
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  desktop-package:
+    runs-on: windows-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: W5 Tk controller regression and user-session protection
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $env:PYTHONPATH = Join-Path $PWD 'python'
+          python -m unittest discover -s tests -p test_ui_w5.py -v
+          if ($LASTEXITCODE -ne 0) { throw 'W5 UI-controller regressions failed' }
+          python -m unittest discover -s tests -p test_desktop_w4.py -v
+          if ($LASTEXITCODE -ne 0) { throw 'W4 notification regressions failed' }
+      - name: Package self-contained Windows desktop app
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          python -m pip install "pyinstaller>=6.12,<7"
+          if ($LASTEXITCODE -ne 0) { throw 'PyInstaller dependency setup failed' }
+          & .\windows\build_desktop.ps1 -Python 'python'
+          if ($LASTEXITCODE -ne 0) { throw 'W5 desktop executable packaging failed' }
+          $exe = Join-Path $PWD 'dist\EDUNotifications.exe'
+          if (!(Test-Path -LiteralPath $exe -PathType Leaf)) { throw 'Desktop EXE missing' }
+          & $exe --help
+          if ($LASTEXITCODE -ne 0) { throw 'Portable Windows EXE failed CLI smoke test' }
+          Write-Host "W5_WINDOWS_EXE_SHA256=$((Get-FileHash -LiteralPath $exe -Algorithm SHA256).Hash)"
+      - name: Test safe Startup-folder preview, isolated install, rollback
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $exe = Join-Path $PWD 'dist\EDUNotifications.exe'
+          $db = Join-Path $env:RUNNER_TEMP 'w5-placeholder.sqlite3'
+          $dir = Join-Path $env:RUNNER_TEMP 'w5-startup-sandbox'
+          New-Item -ItemType File -Force -Path $db | Out-Null
+          $p = (& .\windows\manage_desktop_startup.ps1 -PlanOnly -Executable $exe -DbPath $db -TestStartupDir $dir) | ConvertFrom-Json
+          if ($p.action -ne 'preview' -or $p.modifies_registry -or $p.modifies_task_scheduler -or $p.requires_admin) {
+            throw 'Unsafe or incorrect startup preview'
+          }
+          & .\windows\manage_desktop_startup.ps1 -Install -Executable $exe -DbPath $db -TestStartupDir $dir
+          if ($LASTEXITCODE -ne 0) { throw 'Isolated Startup shortcut creation failed' }
+          $file = Join-Path $dir 'EDU_Workflow_Notifications.lnk'
+          if (!(Test-Path -LiteralPath $file)) { throw 'Expected W5 shortcut missing' }
+          $sh = New-Object -ComObject WScript.Shell
+          $link = $sh.CreateShortcut($file)
+          if ($link.TargetPath -ne $exe -or $link.Arguments -notlike '*--db*') { throw 'Bad W5 shortcut target' }
+          $refused = $false
+          try {
+            & .\windows\manage_desktop_startup.ps1 -Install -Executable $exe -DbPath $db -TestStartupDir $dir
+          } catch { $refused = $true }
+          if (-not $refused) { throw 'Existing shortcut overwrite was not blocked' }
+          & .\windows\manage_desktop_startup.ps1 -Remove -Executable $exe -DbPath $db -TestStartupDir $dir
+          if (Test-Path -LiteralPath $file) { throw 'Startup rollback failed' }
+          Write-Host 'W5_STARTUP_E2E_PASS: plan-only, isolated install, overwrite refusal, removal'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: W5-Windows-Unsigned-Desktop-EXE
+          path: dist/EDUNotifications.exe
+          if-no-files-found: error
+          retention-days: 7
+
+  session-zero-preflight:
+    # Never run arbitrary PR contents on the user's self-hosted runner.
+    if: github.event_name == 'push' && github.ref == 'refs/heads/feat/w5-interactive-desktop-acceptance'
+    runs-on: [self-hosted, Windows]
+    timeout-minutes: 6
+    steps:
+      - name: Measure actual runner desktop session without modifying it
+        shell: powershell
+        run: |
+          $ErrorActionPreference='Stop'
+          $sid = (Get-Process -Id $PID).SessionId
+          $report = [ordered]@{
+            runner = $env:RUNNER_NAME
+            session_id = $sid
+            can_show_interactive_gui = [bool]($sid -ne 0)
+            changes_made = $false
+          }
+          $report | ConvertTo-Json -Compress | Write-Host
+          if ($sid -eq 0) {
+            Write-Host 'W5_SESSION0_CONFIRMED: no screenshot/GUI acceptance possible in service desktop'
+          } else {
+            Write-Host 'W5_INTERACTIVE_SESSION_PRESENT: GUI acceptance can be attempted separately with authorization'
+          }
