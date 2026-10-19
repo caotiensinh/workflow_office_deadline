@@ -1,0 +1,31 @@
+name: W5 MRCAO Session Preflight (read-only)
+on:
+  push:
+    branches: [feat/w5-interactive-desktop-acceptance]
+permissions:
+  contents: read
+concurrency:
+  group: w5-session-${{ github.ref_name }}
+  cancel-in-progress: true
+jobs:
+  session-zero-preflight:
+    runs-on: [self-hosted, Windows]
+    timeout-minutes: 6
+    steps:
+      - name: Record current runner session without modifying system
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $sid = (Get-Process -Id $PID).SessionId
+          $summary = [ordered]@{
+            runner = $env:RUNNER_NAME
+            session_id = $sid
+            can_show_interactive_gui = [bool]($sid -ne 0)
+            modifies_system = $false
+          }
+          $summary | ConvertTo-Json -Compress | Write-Host
+          if ($sid -eq 0) {
+            Write-Host 'W5_SESSION0_CONFIRMED: GUI cannot be visibly tested in service desktop'
+          } else {
+            Write-Host 'W5_INTERACTIVE_SESSION_PRESENT: visible GUI requires separate authorized test'
+          }

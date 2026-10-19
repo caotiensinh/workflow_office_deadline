@@ -98,3 +98,47 @@
 - [x] Log documents Windows locale and POSIX fixture portability bugs and their fixes.
 - [ ] Interactive Tk GUI test on signed-in Windows desktop; service runner Session 0 is NOT a GUI acceptance.
 - [ ] IT-approved Outlook mailbox, actual push/email, SSO, scheduler and privacy production gates.
+
+## Phase W5 — Interactive Windows desktop delivery (CI pending)
+- [x] Session 0 refusal in desktop app (no fabricated visible-GUI success).
+- [x] Snooze expiry triggers one new on-screen bell when an alert becomes visible again.
+- [x] Added PyInstaller one-file Windows EXE package build.
+- [x] Added opt-in current-user Startup shortcut manager with preview and rollback.
+- [x] Added 7 fake Tk UI-controller/preflight tests, updated 100-test regression guard and isolated Startup-folder E2E CI.
+- [ ] Native Windows W5 CI packaging and Startup sandbox tests PASS.
+- [ ] Windows self-hosted runner Session 0 diagnostic PASS.
+- [ ] Phase W5 PR merged; postmerge main CI PASS.
+- [ ] Authorized real interactive signed-in user GUI and login-startup acceptance.
+
+### W5 CI checkpoint — not yet verified
+- [ ] Confirm W5 Windows EXE build and bundle preflight JSON on hosted Windows. Workflow run: https://github.com/caotiensinh/workflow_office_deadline/actions/runs/39280032889 (queued at last inspection).
+- [ ] Confirm Linux Python >=100 tests and Rust integration; Windows W1–W4 regression CI PASS on W5 HEAD.
+- [ ] Confirm MRCAO real Session ID from preflight, without changing the signed-in user Startup folder.
+- [ ] Only merge PR #9 after required CI finishes successfully.
+
+### W5 isolated test checkpoint — 2026-10-20
+- [x] Reproduced 2 failing Tk-controller tests in isolated local Python harness (wrong ACK/SNOOZE argument index; ACK test also asserted no fourth argument).
+- [x] Corrected three assertions in `tests/test_ui_w5.py` at W5 commit `5494441ba17ff853f15e087f5535cf4840c92280`.
+- [x] Reran 7/7 W5 isolated fake-Tk tests locally: PASS. This uses a mirrored module and stubs, **not** the full GitHub Actions 100-test suite.
+- [ ] GitHub-hosted Linux/Windows and MRCAO CI on the corrected W5 HEAD: still unverified while runners are unassigned.
+- [ ] W5 EXE packaging and actual signed-in Windows window: not yet verified.
+
+### W5 GitHub Actions incident and queue reduction
+- [x] Verified official incident `8tzbpcnl75jp`: GitHub Actions scheduling degraded since 2026-10-19 15:49 UTC; reports mention delayed workflow processing.
+- [x] De-duplicated PR/main CI events for four workflows, added scoped concurrency and separated read-only MRCAO Session 0 preflight.
+- [x] Confirmed 7/7 isolated Python fake-Tk UI tests PASS, with test-only callback assertion fixes committed.
+- [ ] New W5 PR CI Linux 100/100 and Windows packaged EXE/Startup sandbox: **QUEUED / NOT RUN**, not PASS.
+- [ ] MRCAO Session ID preflight in new isolated workflow: **QUEUED / NOT RUN**.
+- [ ] PR #9 merge on approved green gates only; original full-suite self-hosted W4 acceptance remains valid at prior verified SHA only.
+
+### W5 database safety correction (2026-10-20)
+- [x] Guard against wrong SQLite path: never auto-create a new empty workflow DB when the desktop GUI starts.
+- [x] Fail closed on invalid/missing/symlink DB before launching Tk, with two W5 regression tests.
+- [x] Local mirrored Python reference + UI tests: 49/49 PASS (40 older reference + 9 W5, not the full repository suite).
+- [ ] Hosted CI 102/102 and W5 Windows one-file EXE + Startup E2E: QUEUED / NOT VERIFIED.
+
+### W5 real-widget smoke gate
+- [x] Real Tk widget smoke PASS under a local isolated Xvfb display (Japanese title and labels, alert visible, ACK removes it, DB connection closes).
+- [x] Linux CI now includes `xvfb-run -a python tests/w5_real_tk_smoke.py` in addition to the minimum 102 unit tests.
+- [ ] Verify the Xvfb job and full hosted CI on the latest PR commit when Actions scheduling is available.
+- [ ] Confirm signed-in Windows desktop UI separately; MRCAO Session 0 cannot satisfy this.

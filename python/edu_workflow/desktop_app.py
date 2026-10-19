@@ -12,9 +12,43 @@ from .store import open_store
 from .desktop_center import list_notifications, mark_notification
 
 
+def _interactive_desktop_available():
+    """Fail closed on Windows Session 0; never present a fake UI PASS."""
+    import sys
+    if sys.platform != 'win32':
+        return True
+    import ctypes
+    from ctypes import wintypes
+    sid=wintypes.DWORD()
+    if not ctypes.windll.kernel32.ProcessIdToSessionId(
+        ctypes.windll.kernel32.GetCurrentProcessId(), ctypes.byref(sid)
+    ):
+        return False
+    return sid.value != 0
+
+
+
+def _require_existing_workflow_db(path):
+    """Fail closed: GUI cannot silently create an empty database on wrong path."""
+    db=Path(path)
+    if db.is_symlink() or not db.is_file():
+        raise FileNotFoundError('Workflow database not found; run the background worker first')
+    try:
+        with db.open('rb') as stream:
+            signature=stream.read(16)
+    except OSError as exc:
+        raise RuntimeError('Workflow database is not readable by this account') from exc
+    if signature != b'SQLite format 3\x00':
+        raise ValueError('Workflow database is not a valid SQLite file')
+    return db
+
+
 def launch(db_path, poll_seconds=15):
     if not 5 <= poll_seconds <= 3600:
         raise ValueError('poll_seconds must be in 5..3600')
+    if not _interactive_desktop_available():
+        raise RuntimeError('No interactive Windows user session (Session 0 is service-only)')
+    verified_db=_require_existing_workflow_db(db_path)
     try:
         import tkinter as tk
         from tkinter import ttk, messagebox
@@ -43,7 +77,7 @@ def launch(db_path, poll_seconds=15):
     ttk.Label(root,textvariable=caption).pack(anchor='w',pady=(8,4))
     controls=ttk.Frame(root)
     controls.pack(fill='x')
-    conn=open_store(Path(db_path))
+    conn=open_store(verified_db)
     account=getpass.getuser()
     cache={}
     surfaced=set()
@@ -58,6 +92,9 @@ def launch(db_path, poll_seconds=15):
             cache.update({a['alert_id']:a for a in alerts})
             previous=set(grid.get_children())
             current=set(cache)
+            # A snoozed notice leaves the visible list. Once it expires,
+            # treat it as newly visible again so the bell fires once.
+            surfaced.intersection_update(current)
             for item in previous-current:
                 grid.delete(item)
             for alert in alerts:
@@ -123,7 +160,23 @@ def main():
     parser=argparse.ArgumentParser(description='Windows local notification center; no network or automatic approval')
     parser.add_argument('--db',required=True)
     parser.add_argument('--poll-seconds',type=int,default=15)
+    parser.add_argument('--preflight-file',help=argparse.SUPPRESS)
     options=parser.parse_args()
+    if options.preflight_file:
+        # Non-UI self-check for the --windowed EXE: its stdout may be None.
+        import json
+        import sys
+        try:
+            import tkinter
+            tk_ready=True
+        except ImportError:
+            tk_ready=False
+        report={'packaged_entrypoint':'OK',
+                'platform':sys.platform,
+                'tk_importable':tk_ready,
+                'interactive_user_session':_interactive_desktop_available()}
+        Path(options.preflight_file).write_text(json.dumps(report),encoding='utf-8')
+        return
     launch(options.db,options.poll_seconds)
 
 

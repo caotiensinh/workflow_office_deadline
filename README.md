@@ -136,3 +136,13 @@ The local Tkinter window displays only masked, current-revision alerts from SQLi
 ```
 
 Or double-click `windows/START_NOTIFICATIONS.cmd` on a signed-in Windows desktop. The UI polls every 15 seconds while open; it will **not** show notifications when closed or on a noninteractive Task Scheduler runner. Read [the W4 specification](docs/PHASE_W4.md).
+
+## W5 — Standalone Windows desktop EXE and optional login startup
+
+The W5 GitHub Actions workflow builds an **unsigned** `EDUNotifications.exe` with bundled Python/Tkinter for an institution-approved interactive Windows user. The executable and SQLite database must be placed in an approved user-writable directory. The service runner `MRCAO` cannot display the GUI because it runs in Windows Session 0.
+
+Preview startup without changing Windows:
+```powershell
+.\windows\manage_desktop_startup.ps1 -PlanOnly -Executable "C:\ApprovedApp\EDUNotifications.exe" -DbPath "C:\ApprovedData\workflow.sqlite3"
+```
+After institutional approval, run `-Install` instead of `-PlanOnly` as the signed-in user; use `-Remove` to roll back. No registry or Task Scheduler changes. See [W5 acceptance guide](docs/PHASE_W5.md).

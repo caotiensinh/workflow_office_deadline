@@ -1,7 +1,14 @@
 name: Hybrid Workflow CI
 on:
   push:
+    branches: [main]
   pull_request:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 jobs:
@@ -21,15 +28,21 @@ jobs:
               'tests/test_intake_w2.py',
               'tests/test_delivery_integrity.py',
               'tests/test_approval_w3.py',
+              'tests/test_desktop_w4.py',
+              'tests/test_ui_w5.py',
           ]
           missing = [name for name in required if not pathlib.Path(name).is_file()]
           if missing:
               raise SystemExit(f'Missing safety regression suites: {missing}')
           count = unittest.defaultTestLoader.discover('tests').countTestCases()
-          if count < 93:
-              raise SystemExit(f'Safety test regression: expected at least 93 cases, found {count}')
+          if count < 102:
+              raise SystemExit(f'Safety test regression: expected at least 102 cases, found {count}')
           print(f'Regression test manifest PASS ({count} tests)')
           PY
+      - name: W5 real Tk widgets in isolated virtual X display
+        run: |
+          command -v xvfb-run
+          PYTHONPATH=python xvfb-run -a python tests/w5_real_tk_smoke.py
       - run: PYTHONPATH=python python -m unittest discover -s tests -v
   rust-and-integration:
     runs-on: ubuntu-latest
