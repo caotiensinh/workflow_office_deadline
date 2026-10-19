@@ -10,7 +10,7 @@ permissions:
 
 concurrency:
   group: workflow-office-deadline-w4-selfhost
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   selfhost-windows-e2e:
@@ -20,6 +20,15 @@ jobs:
       CARGO_BUILD_JOBS: "2"
       PYTHONPATH: python
     steps:
+      - name: Runner initialization diagnosis before checkout
+        shell: powershell
+        run: |
+          $ErrorActionPreference='Stop'
+          Write-Host "PREFLIGHT_WINDOWS_SELFHOSTED_RUNNER=$env:RUNNER_NAME"
+          Write-Host "WINDOWS_SESSION_ID=$((Get-Process -Id $PID).SessionId)"
+          Write-Host "WORKSPACE_REACHABLE=$(Test-Path -LiteralPath $env:GITHUB_WORKSPACE)"
+          Write-Host "TEMP_REACHABLE=$(Test-Path -LiteralPath $env:RUNNER_TEMP)"
+          Write-Host 'PREFLIGHT_STEP_PASS'
       - name: Checkout isolated test branch
         uses: actions/checkout@v4
         with:
