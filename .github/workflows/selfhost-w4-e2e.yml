@@ -13,7 +13,29 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  build-rust-windows:
+    runs-on: windows-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Test and compile real Rust rules engine
+        shell: pwsh
+        run: |
+          cargo test --manifest-path rust-core/Cargo.toml
+          if ($LASTEXITCODE -ne 0) { throw 'Rust tests failed on hosted Windows' }
+          cargo build --release --manifest-path rust-core/Cargo.toml
+          if ($LASTEXITCODE -ne 0) { throw 'Rust release compilation failed' }
+      - uses: actions/upload-artifact@v4
+        with:
+          name: edu-rules-native-windows
+          path: rust-core/target/release/edu_rules.exe
+          if-no-files-found: error
+          retention-days: 2
   selfhost-windows-e2e:
+    needs: build-rust-windows
     runs-on: [self-hosted, Windows]
     timeout-minutes: 18
     env:
@@ -33,6 +55,11 @@ jobs:
         uses: actions/checkout@v4
         with:
           persist-credentials: false
+      - name: Download Rust executable built and tested from this exact commit
+        uses: actions/download-artifact@v4
+        with:
+          name: edu-rules-native-windows
+          path: rust-core/target/release
 
       - name: Provision isolated official embeddable Python without MSI/registry changes
         shell: powershell
@@ -67,12 +94,11 @@ jobs:
           Write-Host "Runner = $env:RUNNER_NAME; SessionId = $((Get-Process -Id $PID).SessionId)"
           Write-Host 'Scope: synthetic EML only. No live Outlook, SMTP, Task Scheduler mutation, cameras or production services.'
           $python = Get-Command python -ErrorAction SilentlyContinue
-          $cargo = Get-Command cargo -ErrorAction SilentlyContinue
-          if (-not $python) { throw 'BLOCKED: Python is not installed/on PATH in this self-hosted runner account.' }
-          if (-not $cargo) { throw 'BLOCKED: Cargo/Rust is not installed/on PATH in this self-hosted runner account.' }
+          if (-not $python) { throw 'BLOCKED: portable Python is not on PATH in this runner job.' }
           python --version
-          cargo --version
-          if ($LASTEXITCODE -ne 0) { throw 'Cargo unusable' }
+          $rules = Join-Path $env:GITHUB_WORKSPACE 'rust-core\target\release\edu_rules.exe'
+          if (!(Test-Path -LiteralPath $rules -PathType Leaf)) { throw 'BLOCKED: Rust executable artifact not downloaded' }
+          Write-Host "Rust executable verified locally: $((Get-FileHash -LiteralPath $rules -Algorithm SHA256).Hash)"
 
       - name: Full Python W1-W4 regression tests on actual self-hosted Windows
         shell: powershell
@@ -85,21 +111,15 @@ jobs:
           }
           Get-Content -Path (Join-Path $env:EDU_W4_RESULTS 'python_tests.txt') -Tail 6
 
-      - name: Build and test real Rust engine on self-hosted Windows
+      - name: Confirm native Rust binary can execute on this self-hosted Windows machine
         shell: powershell
         run: |
           $ErrorActionPreference = 'Stop'
-          cargo test --manifest-path rust-core\Cargo.toml -- --test-threads=2 2>&1 | Out-File -FilePath (Join-Path $env:EDU_W4_RESULTS 'rust_tests.txt') -Encoding utf8
-          if ($LASTEXITCODE -ne 0) {
-            Get-Content -Path (Join-Path $env:EDU_W4_RESULTS 'rust_tests.txt') -Tail 40
-            throw 'Self-hosted Rust tests failed'
-          }
-          cargo build --release --manifest-path rust-core\Cargo.toml 2>&1 | Out-File -FilePath (Join-Path $env:EDU_W4_RESULTS 'rust_build.txt') -Encoding utf8
-          if ($LASTEXITCODE -ne 0) {
-            Get-Content -Path (Join-Path $env:EDU_W4_RESULTS 'rust_build.txt') -Tail 40
-            throw 'Rust release build failed'
-          }
-          Get-Content -Path (Join-Path $env:EDU_W4_RESULTS 'rust_tests.txt') -Tail 6
+          $bin = Join-Path $env:GITHUB_WORKSPACE 'rust-core\target\release\edu_rules.exe'
+          if (!(Test-Path -LiteralPath $bin -PathType Leaf)) { throw 'Native Rust exe missing' }
+          $hash = (Get-FileHash -LiteralPath $bin -Algorithm SHA256).Hash
+          Write-Host "RUST_BINARY_ON_SELFHOST_SHA256=$hash"
+          Write-Host 'Build and unit tests ran on hosted Windows; next step executes this exact Rust exe on MRCAO.'
 
       - name: Functional self-hosted E2E — EML to Rust to notifications and approval gate
         shell: powershell
