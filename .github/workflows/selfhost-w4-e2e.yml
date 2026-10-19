@@ -104,12 +104,19 @@ jobs:
         shell: powershell
         run: |
           $ErrorActionPreference = 'Stop'
-          python -m unittest discover -s tests -v 2>&1 | Out-File -FilePath (Join-Path $env:EDU_W4_RESULTS 'python_tests.txt') -Encoding utf8
-          if ($LASTEXITCODE -ne 0) {
-            Get-Content -Path (Join-Path $env:EDU_W4_RESULTS 'python_tests.txt') -Tail 35
-            throw 'Self-hosted Python tests failed'
-          }
-          Get-Content -Path (Join-Path $env:EDU_W4_RESULTS 'python_tests.txt') -Tail 6
+          @'
+          import os, pathlib, subprocess, sys
+          output = pathlib.Path(os.environ["EDU_W4_RESULTS"]) / "python_tests.txt"
+          with output.open("w", encoding="utf-8") as fh:
+              completed = subprocess.run(
+                  [sys.executable, "-m", "unittest", "discover", "-s", "tests", "-v"],
+                  stdout=fh, stderr=subprocess.STDOUT, check=False
+              )
+          for line in output.read_text(encoding="utf-8", errors="replace").splitlines()[-20:]:
+              print(line)
+          sys.exit(completed.returncode)
+          '@ | python -
+          if ($LASTEXITCODE -ne 0) { throw 'Self-hosted Python regression tests genuinely failed; inspect python_tests.txt' }
 
       - name: Confirm native Rust binary can execute on this self-hosted Windows machine
         shell: powershell
