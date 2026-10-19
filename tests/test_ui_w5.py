@@ -179,6 +179,40 @@ class W5UIControllerTests(unittest.TestCase):
         self._run_ui(actions,rows)
 
 
+    def test_snooze_button_is_visibility_only(self):
+        rows=[notification()]
+        def actions(window,tree,visible,events,mark):
+            tree.chosen=(rows[0]["alert_id"],)
+            FakeButton.all["30分後に再表示"].command()
+            mark.assert_called_once()
+            self.assertEqual(mark.call_args.args[2],"SNOOZE")
+        self._run_ui(actions,rows)
+
+    def test_ack_requires_selected_notice(self):
+        rows=[notification()]
+        def actions(window,tree,visible,events,mark):
+            FakeButton.all["確認済み"].command()
+            mark.assert_not_called()
+            self.assertEqual(events[0][0],"info")
+        self._run_ui(actions,rows)
+
+    def test_gui_bundle_preflight_writes_file_without_opening_window(self):
+        import json
+        import tempfile
+        from pathlib import Path
+        with tempfile.TemporaryDirectory() as temp:
+            dest=Path(temp)/"result.json"
+            with (patch.object(sys,"argv",["EDUNotifications","--db","synthetic.sqlite",
+                                           "--preflight-file",str(dest)]),
+                  patch.object(desktop_app,"_interactive_desktop_available",return_value=False),
+                  patch.dict(sys.modules,{"tkinter":types.ModuleType("tkinter")})):
+                desktop_app.main()
+            report=json.loads(dest.read_text(encoding="utf-8"))
+            self.assertEqual(report["packaged_entrypoint"],"OK")
+            self.assertTrue(report["tk_importable"])
+            self.assertFalse(report["interactive_user_session"])
+
+
 class FakeTreeInstances:
     instances=[]
 
