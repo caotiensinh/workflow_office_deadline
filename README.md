@@ -4,7 +4,7 @@
 
 ## What is working vs blocked
 
-- **Verified here:** Python reference rules, data ingestion, deadline alerts, deduplication, local file notification spool, human-decision and missing-evidence guards, privacy masking, DOCX structural checks, SQLite audit; 40 Python tests PASS.
+- **Verified on hosted CI:** Python, Rust and synthetic Windows workflow tests (75 Python tests on W3, native Rust build and rule evaluation, Windows PowerShell E2E). W3 restores W1 transactional case/decision writes and reliable notification handling, plus adds human deadline confirmation and a masked review queue.
 - **Verified via GitHub Actions:** Rust native unit tests, Rust release build, and Python-to-compiled-Rust CLI smoke passed on Ubuntu CI (run #39145381931). The authoring sandbox did not have a Rust compiler; Windows hardware remains unverified.
 - **Not connected:** Customer Outlook mailbox, new Outlook Graph, SMTP service, To Do, local LLM, school information systems, Windows scheduler and production RBAC.
 
@@ -118,3 +118,9 @@ python -m unittest discover -s tests -p test_intake_w2.py -v
 ```
 
 See [Phase W2 workflow and limits](docs/PHASE_W2.md). Live Outlook and real notification delivery require a separate approved acceptance test.
+
+## Phase W3: human exception and approval gate
+
+Use `python -m edu_workflow.cli --db .\data\w2.sqlite3 review-queue` to list only cases requiring a person to verify a deadline, supply missing evidence, or approve a decision. `confirm-deadline` requires `EDU_VERIFIER_USERS`, `--method source-reviewed` (or institution-reviewed), and an exact typed case ID + timestamp. `decide` requires `EDU_APPROVER_USERS` and a typed decision. All are revision-bound and recorded in SQLite audit. See [Phase W3](docs/PHASE_W3.md).
+
+**Environment warning:** Hosted CI uses synthetic records and does not certify Microsoft Outlook mailbox access, institution SSO or production notification delivery.
