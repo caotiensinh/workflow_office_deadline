@@ -37,8 +37,14 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'W5 desktop executable packaging failed' }
           $exe = Join-Path $PWD 'dist\EDUNotifications.exe'
           if (!(Test-Path -LiteralPath $exe -PathType Leaf)) { throw 'Desktop EXE missing' }
-          & $exe --help
-          if ($LASTEXITCODE -ne 0) { throw 'Portable Windows EXE failed CLI smoke test' }
+          $preflight = Join-Path $env:RUNNER_TEMP 'w5-bundle-smoke.json'
+          & $exe --db (Join-Path $env:RUNNER_TEMP 'w5-synthetic.sqlite3') --preflight-file $preflight
+          if ($LASTEXITCODE -ne 0) { throw 'Portable Windows EXE preflight failed' }
+          if (!(Test-Path -LiteralPath $preflight -PathType Leaf)) { throw 'Windowed EXE did not write smoke proof' }
+          $p=Get-Content -LiteralPath $preflight -Raw | ConvertFrom-Json
+          if ($p.packaged_entrypoint -ne 'OK' -or -not $p.tk_importable) {
+            throw 'The one-file EXE cannot import Tkinter'
+          }
           Write-Host "W5_WINDOWS_EXE_SHA256=$((Get-FileHash -LiteralPath $exe -Algorithm SHA256).Hash)"
       - name: Test safe Startup-folder preview, isolated install, rollback
         shell: pwsh
