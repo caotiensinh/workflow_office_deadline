@@ -53,14 +53,25 @@ class RuleTests(unittest.TestCase):
         with self.assertRaises(RuntimeError):evaluate([BASE],NOW,'rust','/does/not/exist')
     def test_bridge_parses_fake_rust(self):
         with tempfile.TemporaryDirectory() as d:
-            f=Path(d)/'fake_policy'
-            f.write_text('#!/usr/bin/env python3\nimport sys\nfor line in sys.stdin:\n p=line.split("\\t")\n if p[0]=="CASE": print("EVENT\\t"+p[1]+"\\tD_MINUS_3\\tINFO")\n')
-            f.chmod(0o755)
+            if os.name == 'nt':
+                # Native Windows .cmd executable; avoid POSIX-only shebang.
+                f=Path(d)/'fake_policy.cmd'
+                f.write_text('@echo off\r\necho EVENT\t582d31\tD_MINUS_3\tINFO\r\n', encoding='ascii')
+            else:
+                f=Path(d)/'fake_policy'
+                f.write_text('#!/usr/bin/env python3\nimport sys\nfor line in sys.stdin:\n p=line.split("\\t")\n if p[0]=="CASE": print("EVENT\\t"+p[1]+"\\tD_MINUS_3\\tINFO")\n')
+                f.chmod(0o755)
             out=evaluate([BASE],NOW,'rust',str(f))
             self.assertEqual(out['X-1'],[('D_MINUS_3','INFO')])
     def test_bridge_invalid_output(self):
         with tempfile.TemporaryDirectory() as d:
-            f=Path(d)/'bad';f.write_text('#!/bin/sh\necho BAD\n');f.chmod(0o755)
+            if os.name == 'nt':
+                f=Path(d)/'bad.cmd'
+                f.write_text('@echo off\r\necho BAD\r\n', encoding='ascii')
+            else:
+                f=Path(d)/'bad'
+                f.write_text('#!/bin/sh\necho BAD\n')
+                f.chmod(0o755)
             with self.assertRaises(RuntimeError):evaluate([BASE],NOW,'rust',str(f))
 
 class StoreTests(unittest.TestCase):
