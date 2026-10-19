@@ -30,3 +30,17 @@ Earlier W5 Startup E2E incorrectly checked `$LASTEXITCODE` immediately after cal
 - Real mail ingestion or production alert delivery.
 
 Next hard acceptance gate: run a consented interactive Windows E2E on an IT-approved test user session with synthetic DB, capture app-only evidence and confirm login startup/rollback. Do not launch GUI from MRCAO Session 0 or mistake Linux/Xvfb for visible Windows behavior.
+
+## W5B — Real Windows Tk widget test (2026-10-20)
+
+The real `desktop_app.launch` and SQLite model were exercised using **actual Tk widgets** on GitHub-hosted Windows Session 2 (no fake widget backend; no user desktop/global UI automation).
+
+- PR #10 merged: https://github.com/caotiensinh/workflow_office_deadline/pull/10
+- Windows W5B branch run: https://github.com/caotiensinh/workflow_office_deadline/actions/runs/39340376029 — SUCCESS.
+- Postmerge Windows W5B run: https://github.com/caotiensinh/workflow_office_deadline/actions/runs/39340624907 — SUCCESS.
+- Linux W1–W5, Rust and Tk Xvfb: #39340624948 — SUCCESS.
+- Windows W4: #39340624895 — SUCCESS; Windows legacy: #39340624887 — SUCCESS.
+- Detailed proof from Windows runner: `windows_session_id=2`, `gui_window_mapped=true`, `japanese_title=true`, `initial_notices=2`, `snooze_removed=true`, `ack_removed=true`, `audit_events=2`, `approvals=0`, `status=PASS_WINDOWS_TK_WIDGET_E2E`.
+- Workflow stores synthetic-only `W5B-Windows-Tk-Synthetic-Proof` JSON evidence artifact (limited retention).
+
+**NOT YET VERIFIED:** UI readability, sound, desktop focus/actual mouse and keyboard, and automatic login Startup on an authorized institution-managed Windows endpoint. MRCAO's service Session 0 remains unsuitable. No school personal information, mailbox or external SMTP was used.

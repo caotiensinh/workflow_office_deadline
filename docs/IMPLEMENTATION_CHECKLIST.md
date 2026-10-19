@@ -117,10 +117,10 @@
 
 Next: Run W5 visual E2E on a separately authorized *interactive* Windows session; do not assume that runner service E2E proves window visibility. Historical checkpoint failures were fixed, but prior automated CI status entries below this W5 section are superseded by this verified section.
 
-## Phase W5B — Windows real-widget E2E (PR pending)
+## Phase W5B — Windows real-widget E2E (code/CI accepted; actual user UAT pending)
 - [x] Windows test harness creates fictional SQLite alert data, opens actual Tk window, performs Snooze/ACK through actual widgets and confirms audit/receipts.
 - [x] Session 0 protection: refuse to claim visible GUI success in service session.
 - [x] Added hosted Windows workflow gate and synthetic-only JSON proof.
-- [ ] Windows GitHub Actions real Tk E2E PASS, session nonzero, mapped window and durable database assertions.
-- [ ] PR merged and postmerge Linux/Windows CI green.
+- [x] Windows GitHub Actions real Tk E2E PASS in hosted Session 2, 2 synthetic alerts, mapped window, Snooze+ACK, 2 audit events and 0 approvals (#39340376029).
+- [x] PR #10 MERGED; all four postmerge Linux and Windows CI workflows PASS (#39340624948, #39340624907, #39340624895, #39340624887).
 - [ ] Real signed-in Windows workstation user acceptance, Startup after login and audible notice — not covered by hosted CI.
