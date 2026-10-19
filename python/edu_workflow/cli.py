@@ -55,7 +55,8 @@ def parser():
 
 def human_confirm(expected):
     print(f'Type exactly: {expected}',file=sys.stderr)
-    entered=input('> ')
+    print('> ',file=sys.stderr,end='',flush=True)
+    entered=input()
     if entered != expected: raise PermissionError('human confirmation cancelled')
 
 
