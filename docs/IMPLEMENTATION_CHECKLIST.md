@@ -88,3 +88,13 @@
 - [x] Initial old-tree commit unintentionally dropped W1/W3 tests; CI guard caught it and tree was rebuilt from live main, then 93 tests passed.
 - [x] Windows hosted Python Tkinter import and synthetic Rust→SQLite→ACK/SNOOZE passed (18/18 W4 tests, 3 notices, 0 business decisions).
 - [ ] Actual Tk GUI, Windows bell/focus and signed-in workstation behavior still require manual or authorized interactive UI acceptance.
+
+
+## MRCAO self-hosted Windows acceptance (2026-10-20 JST)
+- [x] MRCAO job #39275696459 SUCCESS on actual self-hosted Windows.
+- [x] Python W1-W4 regression: 93/93 PASS on MRCAO.
+- [x] Rust compiled executable executed on MRCAO with synthetic EML, SQLite, ACK/Snooze, human confirmation and D_MINUS_3.
+- [x] Imported 3 synthetic emails, rerun imported 0, duplicate alerts 0, unintended approvals 0.
+- [x] No real Outlook, SMTP, camera/RTSP or Task Scheduler mutations.
+- [ ] GUI visual acceptance requires signed-in interactive Windows session; MRCAO runner uses Session 0.
+- [ ] Real institutional security, identity, Outlook and production notification acceptance remain blocked.
