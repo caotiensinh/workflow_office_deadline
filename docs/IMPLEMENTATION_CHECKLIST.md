@@ -104,8 +104,14 @@
 - [x] Snooze expiry triggers one new on-screen bell when an alert becomes visible again.
 - [x] Added PyInstaller one-file Windows EXE package build.
 - [x] Added opt-in current-user Startup shortcut manager with preview and rollback.
-- [x] Added fake Tk UI-controller tests and isolated Startup-folder E2E CI.
+- [x] Added 7 fake Tk UI-controller/preflight tests, updated 100-test regression guard and isolated Startup-folder E2E CI.
 - [ ] Native Windows W5 CI packaging and Startup sandbox tests PASS.
 - [ ] Windows self-hosted runner Session 0 diagnostic PASS.
 - [ ] Phase W5 PR merged; postmerge main CI PASS.
 - [ ] Authorized real interactive signed-in user GUI and login-startup acceptance.
+
+### W5 CI checkpoint — not yet verified
+- [ ] Confirm W5 Windows EXE build and bundle preflight JSON on hosted Windows. Workflow run: https://github.com/caotiensinh/workflow_office_deadline/actions/runs/39280032889 (queued at last inspection).
+- [ ] Confirm Linux Python >=100 tests and Rust integration; Windows W1–W4 regression CI PASS on W5 HEAD.
+- [ ] Confirm MRCAO real Session ID from preflight, without changing the signed-in user Startup folder.
+- [ ] Only merge PR #9 after required CI finishes successfully.

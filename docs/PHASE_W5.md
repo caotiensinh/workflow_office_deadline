@@ -20,7 +20,7 @@ Provide a portable Windows notification-center EXE and explicitly user-opted-in 
 5. Roll back with the matching \`-Remove\` options; it removes only this project's shortcut and does not alter the background Python/Rust worker.
 
 ## CI and field acceptance
-- [ ] W5 new Tk callback/regression suite and W4 model PASS.
+- [ ] W5 seven Tk callback/preflight regression tests and W4 model PASS (code committed; hosted CI pending).
 - [ ] One-file Windows desktop EXE built and \`--help\` smoke tested.
 - [ ] Startup test in **isolated** directory succeeds; no real user Startup changes.
 - [ ] On MRCAO, Session ID captured, UI availability truthfully reported.
@@ -30,3 +30,10 @@ Provide a portable Windows notification-center EXE and explicitly user-opted-in 
 
 ## Why real GUI acceptance is still separate
 GitHub Actions service-based Windows runners execute in Session 0 and cannot display a Tkinter window in another user's desktop session by design. Running a process from Session 0 cannot prove users saw an alert. Never launch in someone else's login session, inject clicks, read the real desktop, or alter account startup without explicit local consent. This project therefore reports **CI package and model PASS** separately from **interactive visual acceptance pending**.
+
+## Current acceptance checkpoint
+
+- Branch `feat/w5-interactive-desktop-acceptance`, PR #9: OPEN. The GitHub-hosted W5 packaging and regression jobs were still `queued` at the last check; **no verified W5 EXE or GUI acceptance yet**.
+- W5 now includes seven controller/preflight tests; total required Python regressions: **100**. The CI guard requires the W1–W5 test suites to remain present.
+- Python GUI launcher explicitly refuses Session 0, and hosted CI's sandbox Startup test is separate from production login. No app was installed on MRCAO.
+- A real user-visible notification must still be checked within a signed-in interactive Windows session and after an actual logout/login cycle, with organizational authorization.
