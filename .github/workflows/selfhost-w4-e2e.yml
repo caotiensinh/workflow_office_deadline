@@ -34,10 +34,28 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Prepare isolated Python 3.12 on self-hosted runner
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
+      - name: Provision isolated official embeddable Python without MSI/registry changes
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $root = Join-Path $env:RUNNER_TEMP 'education_w4_python312_portable'
+          $zip = Join-Path $env:RUNNER_TEMP 'education_w4_python312_portable.zip'
+          if (!(Test-Path -LiteralPath (Join-Path $root 'python.exe') -PathType Leaf)) {
+            New-Item -ItemType Directory -Force -Path $root | Out-Null
+            $uri = 'https://www.python.org/ftp/python/3.12.10/python-3.12.10-embed-amd64.zip'
+            Invoke-WebRequest -Uri $uri -OutFile $zip -UseBasicParsing -TimeoutSec 90
+            Expand-Archive -LiteralPath $zip -DestinationPath $root -Force
+          }
+          $pth = Join-Path $root 'python312._pth'
+          if (!(Test-Path -LiteralPath $pth -PathType Leaf)) { throw 'Invalid Python embedded ZIP: missing python312._pth' }
+          $packageDir = Join-Path $env:GITHUB_WORKSPACE 'python'
+          @('python312.zip','.', $packageDir) | Set-Content -LiteralPath $pth -Encoding ascii
+          $exe = Join-Path $root 'python.exe'
+          & $exe -c 'import sys,sqlite3,unittest; import edu_workflow; print(sys.version)'
+          if ($LASTEXITCODE -ne 0) { throw 'Portable CPython cannot import the project or SQLite' }
+          $env:PATH = "$root;$env:PATH"
+          Add-Content -Path $env:GITHUB_PATH -Value $root -Encoding utf8
+          Write-Host 'PORTABLE_PYTHON_READY_NO_REGISTRY'
       - name: Inspect tools and bounded test session
         shell: powershell
         run: |
