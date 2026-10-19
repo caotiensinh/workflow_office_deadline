@@ -12,6 +12,24 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+      - name: Protect critical regression suites against accidental deletion
+        run: |
+          PYTHONPATH=python python - <<'PY'
+          import pathlib, unittest
+          required = [
+              'tests/test_hybrid.py',
+              'tests/test_intake_w2.py',
+              'tests/test_delivery_integrity.py',
+              'tests/test_approval_w3.py',
+          ]
+          missing = [name for name in required if not pathlib.Path(name).is_file()]
+          if missing:
+              raise SystemExit(f'Missing safety regression suites: {missing}')
+          count = unittest.defaultTestLoader.discover('tests').countTestCases()
+          if count < 75:
+              raise SystemExit(f'Safety test regression: expected at least 75 cases, found {count}')
+          print(f'Regression test manifest PASS ({count} tests)')
+          PY
       - run: PYTHONPATH=python python -m unittest discover -s tests -v
   rust-and-integration:
     runs-on: ubuntu-latest
