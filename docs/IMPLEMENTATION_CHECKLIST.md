@@ -55,3 +55,14 @@
 - [x] Windows hosted plan-only and validation checks PASS (run 39149550506).
 - [ ] IT-authorized real Windows Task Scheduler registration with user-session monitoring PASS.
 - [ ] Actual recipient notification (approved SMTP or desktop notifier) E2E PASS.
+
+## Phase W3 — Atomic human gate and W1 regression restoration (pending CI)
+- [x] Recover verified W1 transactional store, crash-safe dispatch and 6 missing W1 regression tests.
+- [x] Deadline confirmation writes verification method, audit and optimistic revision in one transaction.
+- [x] CLI requires verifier allowlist and exact ISO deadline confirmation token.
+- [x] Exception-only masked review queue and negative boundary tests added.
+- [x] Hosted Windows synthetic confirmation → Rust D−3 → approval → audit test prepared.
+- [ ] W3 full Linux Python/Rust CI PASS.
+- [ ] W3 native Windows end-to-end PASS.
+- [ ] W3 merged, post-merge main CI PASS.
+- [ ] Real school SSO, Outlook, SMTP and Windows endpoint acceptance (requires external authorization).

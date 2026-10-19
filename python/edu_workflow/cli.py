@@ -7,7 +7,7 @@ import sys
 from datetime import datetime
 from pathlib import Path
 from .policy import JST,evaluate,parse_deadline,message_for
-from .store import open_store,add_case,get_cases,get_case,update_case,enqueue,alert_list,audit_list,decide
+from .store import open_store,add_case,get_cases,get_case,enqueue,alert_list,audit_list,decide,confirm_deadline,review_queue
 from .intake import read_eml_folder
 from .documents import validate_docx
 from .deliver import dispatch
@@ -34,6 +34,7 @@ def parser():
     sub.add_parser('cases')
     sub.add_parser('alerts')
     sub.add_parser('audit')
+    sub.add_parser('review-queue',help='Masked human-only exceptions: date verification, missing evidence and approval')
     delivery=sub.add_parser('deliver',help='Explicit notification sending; console never marks delivered')
     delivery.add_argument('--channel',choices=['file','smtp','console'],default='console')
     delivery.add_argument('--out-dir',default=str(ROOT/'notifications'))
@@ -41,6 +42,7 @@ def parser():
     due.add_argument('--case-id',required=True)
     due.add_argument('--due',required=True,help='ISO timestamp with +09:00')
     due.add_argument('--revision',type=int,required=True)
+    due.add_argument('--method',choices=['source-reviewed','institution-reviewed'],required=True)
     approval=sub.add_parser('decide',help='Human approval, bound to local account and revision')
     approval.add_argument('--case-id',required=True)
     approval.add_argument('--revision',type=int,required=True)
@@ -101,16 +103,22 @@ def main(argv=None):
             print(json.dumps([{k:r[k] for k in ('alert_id','case_id','code','severity','message','state','day')} for r in alert_list(con)],ensure_ascii=False,indent=2))
         elif args.cmd=='audit':
             print(json.dumps(audit_list(con),ensure_ascii=False,indent=2))
+        elif args.cmd=='review-queue':
+            print(json.dumps(review_queue(con),ensure_ascii=False,indent=2))
         elif args.cmd=='deliver':
             print(json.dumps(dispatch(con,args.channel,args.out_dir),ensure_ascii=False))
         elif args.cmd=='confirm-deadline':
+            actor=getpass.getuser()
+            allowed={name.strip().casefold() for name in os.environ.get('EDU_VERIFIER_USERS','').split(',') if name.strip()}
+            if actor.casefold() not in allowed:
+                raise PermissionError('deadline verifier local account not on EDU_VERIFIER_USERS allowlist')
             due=parse_deadline(args.due)
+            # Re-read before prompting to prevent operator confirmation of a stale revision.
             case,rev=get_case(con,args.case_id)
             if rev!=args.revision: raise RuntimeError('stale revision')
-            if case['status'] in {'COMPLETED','CANCELLED','REJECTED'}: raise ValueError('case closed')
-            human_confirm(f'CONFIRM {args.case_id}')
-            case['due_at']=due.isoformat(); case['due_verified']=True
-            version=update_case(con,case,rev,getpass.getuser(),'HUMAN_VERIFIED_DEADLINE')
+            human_confirm(f'CONFIRM {args.case_id} {due.isoformat()}')
+            case,version=confirm_deadline(con,args.case_id,due.isoformat(),actor,args.revision,
+                                          args.method.upper().replace('-','_'))
             print(json.dumps({'case_id':args.case_id,'revision':version,'due_at':case['due_at']}))
         elif args.cmd=='decide':
             actor=getpass.getuser()
