@@ -291,7 +291,7 @@ W13 is a readiness inspector, **not** authority to bypass managed PowerShell Exe
 - [x] Recheck active console before consent, after consent and before writing final self-attested GUI report; no automatic business approval.
 - [x] Add `--session-check-file` numeric-only packaged EXE diagnostic; no Outlook/SMTP/Task Scheduler, desktop capture, policy bypass or private account identifiers.
 - [x] Add 18 W19 synthetic safety regressions, raise Python CI floor to 290; keep Rust and W17/W18 Windows ZIP tests.
-- [ ] Verify exact PR head 4/4 CI, Windows packaged numeric diagnostic and ZIP integrity; merge and verify 4/4 exact postmerge main.
+- [x] **PR #36 MERGED** to `main` as `e637008f6955a6404e32b7fd4b83cf3c91bf1fc9` after exact PR head `fb2d6ef0a29dd3ffd83f1bb02112009d247c6230`, **4/4 PR CI SUCCESS**: Linux Python **290/290** + Rust #39441684432, W4 Windows #39441684454, Windows synthetic E2E #39441684467, W5 packaged EXE/session/ZIP #39441684381. Exact **postmerge 4/4 CI SUCCESS**: Linux #39441983385, Windows E2E #39441983272, W4 #39441983553, W5 #39441983384. Windows packaged numeric Win32 session inspection PASS without launching GUI, W18 final ZIP + 3 anti-tamper negatives PASS. Postmerge artifact #12274321978, ZIP SHA-256 `4B7715E89EC64FB310A0B8812B632FE6553D7267686BC0BFDF141B39696991A1`. No real human GUI/IT acceptance, no production signing.
 - [ ] IT-approved real signed-in Session 1 *human* GUI Japanese/audio/ACK/Snooze and login Startup; scheduler/Outlook/recipient/SSO/privacy/three pilots remain external.
 
 **Matching an active console session is only a prerequisite, not independent physical GUI or production acceptance.** See `docs/PHASE_W19.md`.
