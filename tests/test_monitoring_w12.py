@@ -159,8 +159,14 @@ class MonitoringTests(unittest.TestCase):
 
     def test_schema_mismatch(self):
         bad = self.dir / "empty.sqlite"
-        with sqlite3.connect(bad) as con:
+        # sqlite3 Connection context-manager commits but does NOT close;
+        # Windows holds a filesystem lock until the handle is explicitly closed.
+        con = sqlite3.connect(bad)
+        try:
             con.execute("CREATE TABLE unrelated(x int)")
+            con.commit()
+        finally:
+            con.close()
         x = snapshot(bad, at=NOW)
         self.assertEqual(x["incidents"][0]["code"], "SCHEMA_MISMATCH")
 
