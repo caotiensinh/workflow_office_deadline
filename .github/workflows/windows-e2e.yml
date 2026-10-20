@@ -69,6 +69,26 @@ jobs:
           }
           if (Test-Path -LiteralPath $unusedDb) { throw 'W9 schedule illegally created a database' }
           Write-Host 'W9_WF06_WINDOWS_OFFLINE_PROPOSAL_PASS_NO_DB_NO_INVITES'
+      - name: W16 hosted Windows session API probe and no-GUI-UAT guard
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $env:PYTHONPATH = Join-Path $PWD 'python'
+          python -m unittest discover -s tests -p test_session_w16.py -v
+          if ($LASTEXITCODE -ne 0) { throw 'W16 Windows safety tests failed' }
+          $output = Join-Path $env:RUNNER_TEMP 'w16-session-readonly.json'
+          if (Test-Path -LiteralPath $output) { throw 'W16 evidence already exists' }
+          python tests/w16_session_probe.py --inspect --output $output
+          if ($LASTEXITCODE -ne 0) { throw 'W16 native Windows session inspection failed' }
+          $result = Get-Content -LiteralPath $output -Raw | ConvertFrom-Json
+          if (-not $result.live_windows_api_observed -or $result.gui_accepted -or
+              $result.human_interaction_observed -or $result.task_scheduler_checked -or
+              $result.task_scheduler_accepted -or $result.production_accepted -or
+              $result.execution_policy_changed -or $result.system_modified) {
+            throw 'W16 session-only check fabricated live UAT'
+          }
+          Write-Host 'W16_HOSTED_SESSION_API_READONLY_NO_GUI_ACCEPTANCE_PASS'
+          $global:LASTEXITCODE = 0
       - name: W14 offline Task XML audit; 15-minute file only with no machine inspection
         shell: pwsh
         run: |

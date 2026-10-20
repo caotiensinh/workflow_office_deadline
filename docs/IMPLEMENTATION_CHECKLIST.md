@@ -245,3 +245,16 @@ W13 is a readiness inspector, **not** authority to bypass managed PowerShell Exe
 - [ ] IT-approved signed-in desktop, actual scheduler, real authorized read-only Outlook, approved recipient and three human pilots.
 
 **W15 self-hosted core E2E is not a Task Scheduler, Outlook, SMTP, GUI, or institutional production acceptance.**
+
+## Phase W16 — Windows session readiness for signed-in GUI and scheduler UAT (2026-10-20)
+
+- [x] Confirm requirements, current main HEAD, W15 selfhost Python/Rust E2E, previous GUI Session 0/PowerShell restrictions.
+- [x] Add read-only native Windows process+active-console Session ID probe with fail-closed GUI UAT classification; no names, GUI, policy changes or task inspection.
+- [x] Run same hosted-tested portable Python/Rust E2E and numeric session probe via CMD on selfhost; bundle SHA manifest and short-retention sanitized reports.
+- [x] Add 12 fail-closed tests, Windows native inspection E2E and raise Python safety regression floor to 239.
+- [x] Reconcile original 8 workflows and 6 rollout gates without claiming GUI or production acceptance.
+- [ ] Verify actual self-hosted job ID, runner identity, real Session IDs and report status.
+- [ ] Require 4/4 exact PR head CI PASS, squash merge, verify 4/4 exact main postmerge CI; persist proof.
+- [ ] Authorized *interactive* GUI ACK/Snooze/JP text/audio/login test and IT-approved scheduled execution, Outlook/recipient pilot; institution sign-off.
+
+**Session ID observed != signed-in user GUI UAT; Session 0 explicitly blocks GUI.**
