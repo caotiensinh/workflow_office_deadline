@@ -235,6 +235,12 @@ jobs:
           if (Test-Path -LiteralPath $zip) { throw 'W17 output already exists' }
           Compress-Archive -Path (Join-Path $folder '*') -DestinationPath $zip
           if (-not (Test-Path -LiteralPath $zip -PathType Leaf)) { throw 'W17 handoff ZIP missing' }
+          # W18 examines the actual compressed artifact, not only pre-ZIP copies.
+          # This remains synthetic/no GUI; negative cases mutate temp ZIP copies only.
+          python -m unittest discover -s tests -p test_kit_integrity_w18.py -v
+          if ($LASTEXITCODE -ne 0) { throw 'W18 ZIP integrity regressions failed' }
+          python tests/w18_kit_zip_smoke.py --zip $zip
+          if ($LASTEXITCODE -ne 0) { throw 'W18 final ZIP integrity / tamper E2E failed' }
           Write-Host 'W17_PACKAGED_HASH_CHECK_AND_TAMPER_REJECTION_PASS_NOT_PHYSICAL_UAT'
           Write-Host "W17_BUNDLE_SHA256=$((Get-FileHash -LiteralPath $zip -Algorithm SHA256).Hash)"
           $global:LASTEXITCODE = 0
