@@ -76,8 +76,10 @@ jobs:
           $env:PYTHONPATH = Join-Path $PWD 'python'
           python -m unittest discover -s tests -p test_session_w16.py -v
           if ($LASTEXITCODE -ne 0) { throw 'W16 Windows safety tests failed' }
-          $output = Join-Path $env:RUNNER_TEMP 'w16-session-readonly.json'
-          if (Test-Path -LiteralPath $output) { throw 'W16 evidence already exists' }
+          $subdir = Join-Path $env:RUNNER_TEMP 'w16-session-evidence'
+          if (Test-Path -LiteralPath $subdir) { throw 'W16 evidence directory already exists' }
+          New-Item -ItemType Directory -Path $subdir | Out-Null
+          $output = Join-Path $subdir 'w16-session-readonly.json'
           python tests/w16_session_probe.py --inspect --output $output
           if ($LASTEXITCODE -ne 0) { throw 'W16 native Windows session inspection failed' }
           $result = Get-Content -LiteralPath $output -Raw | ConvertFrom-Json
