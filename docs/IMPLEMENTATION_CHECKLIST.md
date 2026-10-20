@@ -266,7 +266,7 @@ W13 is a readiness inspector, **not** authority to bypass managed PowerShell Exe
 - [x] Add privacy-safe offline UAT report reviewer that refuses forged production/login claims, invalid/duplicate keys and impossible ACK/Snooze/audit counts.
 - [x] Add 16 W17 evidence/safety regressions (Python minimum 255), hosted Windows ZIP hash/tamper verification without launching GUI.
 - [x] Reconcile eight workflows/six rollout gates; explicitly distinguish a self-attested report from independent/IT acceptance.
-- [ ] Exact PR CI 4/4 PASS, merge, verify 4/4 on main and record W17 kit artifact/checksum.
+- [x] PR #33 MERGED at `8c2e504e61eb02707b9e7d1353539e180633711e` (PR head `fc541797c139f5b823f3763580635a76e4163908`), with exact PR 4/4 SUCCESS: Linux 255/255 Python + Rust #39432415536, Windows Synthetic E2E #39432415566, W4 #39432415515, W5 EXE/ZIP #39432415668. Exact postmerge `main` CI 4/4 SUCCESS: Linux #39432792196, Windows E2E #39432792279, W4 #39432792355, W5 GUI/EXE kit #39432792696. W17 kit artifact #12269820035, ZIP SHA-256 `A67836396A1C66EAC93C1E583AEF65E5708068F126A2D85B9BF0900323A24EC7`, tested hash match + tampered EXE rejection; **not signed**.
 - [ ] IT-authorized real signed-in Session 1 user GUI interaction, Japanese/audio/ACK/Snooze, Windows login behavior, real scheduler, authorized Outlook/recipient and 3 pilots.
 
 **W17 package and hash verification != signed executable, human observation or production approval.**
