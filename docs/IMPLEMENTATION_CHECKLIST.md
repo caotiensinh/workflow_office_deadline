@@ -194,3 +194,16 @@ See `docs/PHASE_W7.md`. UAT tooling is **not** equivalent to actual field or pro
 - [ ] Approved anonymous institutional data, source signatures/SSO/RBAC, user acceptance, real HR policy and manager sign-off.
 
 **W11 summaries are fact inventories and drafting aids — NEVER HR assessments, performance ratings, rankings, or personnel decisions.**
+
+
+## Phase W12 — WF-08 read-only monitoring and recovery dashboard (2026-10-20)
+
+- [x] Read existing SQLite states with mode=ro; report missing/corrupt database without creating or modifying it.
+- [x] Detect UNKNOWN, SENDING, old QUEUED, invalid dates and schema/integrity problems without automatic resend or repair.
+- [x] Privacy-safe aggregate-only JSON and static Japanese HTML dashboard, explicit no-overwrite export.
+- [x] Add 20 W12 regression tests, protected 185-test CI floor and native Windows synthetic incident E2E.
+- [x] Recheck original WF-01..08 scope and six institution rollout gates in docs/REQUIREMENTS_GAP_AUDIT_W12.md.
+- [ ] Merge W12 after 4/4 exact PR CI and verify 4/4 postmerge main CI, persist evidence.
+- [ ] Institution-approved continuous monitoring, actual SMTP/DB incident reconciliation and approved 3-workflow pilot.
+
+No W12 monitor operation sends messages, changes cases, restarts services or performs production recovery.

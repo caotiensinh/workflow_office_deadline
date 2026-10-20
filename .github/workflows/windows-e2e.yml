@@ -69,6 +69,65 @@ jobs:
           }
           if (Test-Path -LiteralPath $unusedDb) { throw 'W9 schedule illegally created a database' }
           Write-Host 'W9_WF06_WINDOWS_OFFLINE_PROPOSAL_PASS_NO_DB_NO_INVITES'
+      - name: W12 Windows read-only monitor dashboard and UNKNOWN quarantine
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $env:PYTHONPATH = Join-Path $PWD 'python'
+          python -m unittest discover -s tests -p test_monitoring_w12.py -v
+          if ($LASTEXITCODE -ne 0) { throw 'W12 monitoring regression tests failed' }
+          $env:W12_TEST_DB = Join-Path $env:RUNNER_TEMP 'w12-monitor-synthetic.sqlite'
+          $reportHtml = Join-Path $env:RUNNER_TEMP 'w12-monitor-report.html'
+          if (Test-Path -LiteralPath $env:W12_TEST_DB) { throw 'W12 synthetic database already exists' }
+          if (Test-Path -LiteralPath $reportHtml) { throw 'W12 synthetic report already exists' }
+          @'
+          import os
+          from edu_workflow.store import open_store,add_case
+          db=open_store(os.environ["W12_TEST_DB"])
+          add_case(db,{
+            "case_id":"W12-CI-FAKE","kind":"EMAIL","data_class":"RESTRICTED",
+            "safe_title":"PRIVATE_CI_ONLY","owner":"fictional@example.invalid",
+            "status":"IN_PROGRESS","approval_status":"NOT_REQUIRED",
+            "due_at":"2026-10-22T17:00:00+09:00","due_verified":True,"evidence_ref":None
+          })
+          with db:
+            db.execute("INSERT INTO alerts(alert_id,case_id,revision,code,severity,day,message,state,created_at) VALUES(?,?,?,?,?,?,?,?,?)",
+                       ("a"*64,"W12-CI-FAKE",1,"DUE","HIGH","2026-10-20","PRIVATE_CI_ONLY","UNKNOWN","2026-10-20T05:00:00+00:00"))
+          db.close()
+          print("W12_SYNTHETIC_DB_CREATED_FOR_CI_ONLY")
+          '@ | python -
+          if ($LASTEXITCODE -ne 0) { throw 'W12 synthetic setup failed' }
+          $json = @(python -m edu_workflow.cli --db $env:W12_TEST_DB monitor --at '2026-10-20T15:00:00+09:00')
+          $rc = $LASTEXITCODE
+          $report = ([string]::Join([Environment]::NewLine, $json)) | ConvertFrom-Json
+          if ($rc -ne 3 -or $report.status -ne 'CRITICAL' -or
+              $report.counts.UNKNOWN -ne 1 -or $report.messages_resent -or
+              $report.database_created -or $report.external_actions_performed -or
+              $report.production_accepted -or $report.incidents[0].code -ne 'UNKNOWN_DELIVERY') {
+            throw 'W12 monitoring should isolate UNKNOWN without resend or side effects'
+          }
+          $saved = @(python -m edu_workflow.cli --db $env:W12_TEST_DB monitor --at '2026-10-20T15:00:00+09:00' --format html --output $reportHtml)
+          $htmlRc = $LASTEXITCODE
+          $summary = ([string]::Join([Environment]::NewLine, $saved)) | ConvertFrom-Json
+          if ($htmlRc -ne 3 -or $summary.status -ne 'CRITICAL' -or
+              -not (Test-Path -LiteralPath $reportHtml -PathType Leaf)) {
+            throw 'W12 HTML generation failed'
+          }
+          $content = Get-Content -LiteralPath $reportHtml -Raw -Encoding UTF8
+          if ($content -match 'PRIVATE_CI_ONLY|fictional@example.invalid|<script|https?://' -or
+              $content -notmatch 'UNKNOWN') {
+            throw 'W12 HTML output contains PII or external links'
+          }
+          @'
+          import os, sqlite3
+          conn=sqlite3.connect(os.environ["W12_TEST_DB"])
+          assert conn.execute("SELECT state FROM alerts").fetchone()[0]=="UNKNOWN"
+          assert conn.execute("SELECT COUNT(*) FROM decisions").fetchone()[0]==0
+          print("W12_MONITOR_STATES_UNCHANGED")
+          '@ | python -
+          if ($LASTEXITCODE -ne 0) { throw 'W12 monitor changed database' }
+          Write-Host 'W12_WINDOWS_READONLY_MONITOR_PASS_UNKNOWN_NO_RETRY_NO_PII'
+          $global:LASTEXITCODE = 0
       - name: W11 Windows anonymous HR evidence draft and manual-decision guard
         shell: pwsh
         run: |
