@@ -12,7 +12,7 @@ param(
     [switch]$ReplaceExisting
 )
 $ErrorActionPreference = 'Stop'
-if (([int]$Install + [int]$Remove + [int]$Verify + [int]$PlanOnly) -gt 1) {
+if (([int]$Install.IsPresent + [int]$Remove.IsPresent + [int]$Verify.IsPresent + [int]$PlanOnly.IsPresent) -gt 1) {
     throw 'Choose only one of PlanOnly, Verify, Install or Remove'
 }
 if (-not $Install -and -not $Remove -and -not $Verify) { $PlanOnly = $true }
