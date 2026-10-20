@@ -166,7 +166,7 @@ See `docs/PHASE_W7.md`. UAT tooling is **not** equivalent to actual field or pro
 
 - [x] Add bounded anonymous-only WF-06 `schedule-propose` CLI: available/busy intersections, timezone-aware JST, earliest candidate slots; no calendar writes or local database creation.
 - [x] Verify timezone/conflict, half-open interval, round-up, duplicate, malformed/PII and symlink/oversize negative test cases.
-- [ ] Final PR W9 4/4 CI PASS on the precise head including this checklist/report, merge and postmerge CI evidence.
+- [x] PR #17 merged as `01701ca12c7a6752bf9c36760989d278c6dd06e0`; exact PR CI 4/4 SUCCESS (#39375466012 Linux/Rust 126/126 Python, #39375465997 Windows including native WF-06 E2E, #39375466020 W4, #39375466005 Tk/EXE); postmerge `main` 4/4 SUCCESS (#39375595466, #39375595438, #39375595478, #39375595406).
 - [x] Trace original eight workflow requirements with engineering capability vs outstanding integrations and institutional sign-off in `docs/REQUIREMENTS_GAP_AUDIT_W9.md`.
 - [ ] Complete real WF-06 calendar and invitation workflow after explicit institution approval.
 - [ ] Institution end-user UAT, approved 15-minute Task Scheduler, real Outlook/SMTP/SSO and production pilot.
