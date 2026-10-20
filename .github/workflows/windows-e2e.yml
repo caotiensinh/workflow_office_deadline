@@ -100,6 +100,9 @@ jobs:
           }
           if (Test-Path -LiteralPath $db) { throw 'W10 read-only source check created a workflow database' }
           Write-Host 'W10_WINDOWS_SOURCE_PROVENANCE_PASS_NO_LEGAL_APPROVAL_NO_DB'
+          # The superseded V0 check intentionally returned exit code 3.
+          # Reset only AFTER verifying the expected reason and no local writes.
+          $global:LASTEXITCODE = 0
       - name: W2 actual Windows EML intake and Rust deadline E2E
         shell: pwsh
         run: |
