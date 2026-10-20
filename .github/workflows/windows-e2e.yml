@@ -79,8 +79,17 @@ jobs:
           $db = Join-Path $env:RUNNER_TEMP 'W10_MUST_NOT_EXIST.sqlite'
           if (Test-Path -LiteralPath $db) { throw 'W10 isolated DB fixture already exists' }
           $registry = Join-Path $PWD 'examples\wf04_regulation_registry.json'
-          $report = (python -m edu_workflow.cli --db $db check-regulations --registry-file $registry --reference SYN-REG-001@V1 --as-of 2026-10-20) | ConvertFrom-Json
-          if ($LASTEXITCODE -ne 0 -or $report.status -ne 'SOURCE_SNAPSHOT_PASS' -or
+          $doc = Join-Path $PWD 'examples\wf04_synthetic_reference.txt'
+          $digest = (Get-FileHash -LiteralPath $doc -Algorithm SHA256).Hash.ToLowerInvariant()
+          Write-Host "W10_FIXTURE_DOCUMENT_SHA256=$digest"
+          if ($digest -ne 'd9e01a94a80e8489b02a32634446bfc55120521c09c8eb42f55d2ddd4eef8e3e') {
+            throw 'Fixture bytes were changed on Windows checkout (line endings or file corruption)'
+          }
+          $raw = @(python -m edu_workflow.cli --db $db check-regulations --registry-file $registry --reference SYN-REG-001@V1 --as-of 2026-10-20)
+          $returnCode = $LASTEXITCODE
+          $report = ($raw -join "`n") | ConvertFrom-Json
+          Write-Host "W10_SOURCE_STATUS=$($report.status) reason=$($report.reason) rc=$returnCode"
+          if ($returnCode -ne 0 -or $report.status -ne 'SOURCE_SNAPSHOT_PASS' -or
               $report.official_authenticity_verified -or $report.legal_applicability_verified -or
               -not $report.human_decision_required -or $report.external_actions_performed) {
             throw 'W10 verification may not claim a legal conclusion or side effect'
