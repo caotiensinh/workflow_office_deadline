@@ -137,3 +137,15 @@ Next: Run W5 visual E2E on a separately authorized *interactive* Windows session
 - [ ] IT-approved Outlook/Graph, SMTP/push, SSO/MFA/RBAC, data-retention/encryption, release signing and production workflow pilot.
 
 W6 CI demonstrates synthetic Windows GUI behavior, not a real school workstation sign-off. See `docs/W6_TEST_REPORT.md`.
+
+## Phase W7 — Startup integrity & reproducible signed-in user UAT kit (2026-10-20)
+
+- [x] Read-only `-Verify` reports Startup shortcut identity, executable and DB arguments, and **never** claims login autorun acceptance.
+- [x] Startup removal refuses an owned-looking shortcut with unexpected executable or DB arguments; explicit repair and rollback covered in Windows sandbox CI.
+- [x] Fictional two-alert Windows field-UAT fixture, ACK/Snooze receipt audit, no approvals and non-overwriting JSON evidence **tooling** implemented; this does not imply a person completed UAT.
+- [x] W7 PR CI at `617d4828768b3363b2cf04e8b4bfdd99e6a330af` all SUCCESS: Linux Python/Rust #39366926773 (**107/107 Python**), Windows W4 #39366926695, Windows legacy #39366926670, Windows real Tk/EXE/sandbox Startup integrity #39366926660.
+- [ ] Postmerge `main` CI verified after W7 merge; add evidence when completed.
+- [ ] Actual signed-in user physically verifies Japanese font/sound/focus and separately approved logout/login Startup.
+- [ ] IT authorization for Outlook/Graph, SMTP, SSO and production acceptance.
+
+See `docs/PHASE_W7.md`. UAT tooling is **not** equivalent to actual field or production acceptance.
