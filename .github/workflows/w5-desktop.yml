@@ -211,11 +211,7 @@ jobs:
           Copy-Item -LiteralPath $exe -Destination (Join-Path $folder 'EDUFieldUAT.exe')
           Copy-Item -LiteralPath (Join-Path $PWD 'windows\W17_README_JP.txt') -Destination $folder
           $hash=(Get-FileHash -LiteralPath $exe -Algorithm SHA256).Hash.ToUpperInvariant()
-          if ($hash -notmatch '^[0-9A-F]{64}
-          path: dist/EDUFieldUAT.exe
-          if-no-files-found: error
-          retention-days: 7
-) { throw 'W17 invalid executable SHA256' }
+          if ($hash -notmatch '^[0-9A-F]{64}$') { throw 'W17 invalid executable SHA256' }
           $template=Get-Content -LiteralPath (Join-Path $PWD 'windows\W17_START_UAT.cmd.in') -Raw -Encoding UTF8
           if ($template -notmatch '__EXPECTED_SHA256__') { throw 'W17 launcher template lacks immutable hash placeholder' }
           $launcher=Join-Path $folder '00_START_UAT.cmd'
