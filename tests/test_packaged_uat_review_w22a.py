@@ -97,6 +97,18 @@ class W22APackagedReviewerTests(unittest.TestCase):
         self.assertEqual(result["status"], "INCOMPLETE_SELF_ATTESTATION")
         self.assertFalse(result["production_accepted"])
 
+    def test_invalid_review_cli_exits_without_creating_summary(self):
+        bad = sample()
+        bad["production_accepted"] = True
+        self.source.write_text(json.dumps(bad), encoding="utf-8")
+        with patch.object(launcher, "one_click") as gui:
+            with self.assertRaises(SystemExit) as result:
+                launcher.main(["--review-report-file", str(self.source),
+                               "--review-output-file", str(self.output)])
+            self.assertEqual(result.exception.code, 2)
+            gui.assert_not_called()
+        self.assertFalse(self.output.exists())
+
     def test_unpaired_cli_flags_rejected(self):
         for args in (["--review-report-file", str(self.source)],
                      ["--review-output-file", str(self.output)]):
