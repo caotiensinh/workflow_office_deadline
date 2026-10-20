@@ -178,7 +178,7 @@ See `docs/PHASE_W7.md`. UAT tooling is **not** equivalent to actual field or pro
 - [x] Integrate REGULATION approval checks and pinned proof into revision-aware, atomic human decision/audit transaction; preserve manual rejection.
 - [x] Add masked `VERIFY_REGULATION_SOURCE` review queue and safe read-only CLI with nonpassing exit code.
 - [x] Add W10 negative/positive tests, plus Linux suite guard and native Windows WF-04 E2E gate.
-- [ ] Exact PR four CI checks and postmerge main four CI checks completed successfully.
+- [x] W10 PR #19 MERGED at `be46a35c654135d6b60324f87c4c6a7af8890a32`. PR CI 4/4 SUCCESS: #39380003277 (144/144 Python + Rust), #39380003283 (Windows W10 native E2E), #39380003282 (W4), #39380003303 (Windows Tk/EXE). Postmerge `main` 4/4 SUCCESS: #39380147525, #39380147494, #39380147659, #39380147487.
 - [ ] Institutional sourcing/official validity, managed source identity/signatures, SSO/MFA/RBAC and real legal/HR reviewer sign-off.
 
 **Hash and a human_reviewed flag do NOT prove an official regulation is legally valid.** See `docs/PHASE_W10.md`.

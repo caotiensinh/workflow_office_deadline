@@ -34,3 +34,9 @@ The repository API still reports visibility `public`. MRCAO's read-only W8 Sessi
 
 ## Next substantive work
 W11: WF-05 source-cited, anonymous-only HR observations and missing-evidence summaries. Then WF-08 operational dashboard, plus separate IT-approved live connectors, trust policy, signed release, security review and three-personnel-safe pilots.
+
+## Verified W10 merge and latest test evidence
+- W10 PR #19 MERGED at `be46a35c654135d6b60324f87c4c6a7af8890a32`.
+- Linux **144 Python tests**, native Rust and Windows source-verification/approval E2E passed.
+- Postmerge `main` GitHub Actions four runs SUCCESS: #39380147525, #39380147494, #39380147659, #39380147487.
+- Classification remains **7/8 substantive offline/synthetic workflows; 1/8 minimal**. It does not represent a measured product completion percentage. **0/8 institutional production approvals, 2/6 rollout gates passed in CI**.

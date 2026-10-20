@@ -37,3 +37,10 @@ To approve a REGULATION case, an authorized user must first have an explicitly p
 - Tests: `PYTHONPATH=python python -m unittest discover -s tests -p test_regulation_w10.py -v`.
 - Full Python/Rust and native Windows workflows must PASS on the exact PR and postmerge commits.
 - Review code/test/merge evidence in GitHub Actions; never claim MRCAO physical desktop UAT from GitHub-hosted CI.
+
+## Verified CI checkpoint — 2026-10-20
+- PR #19 merged at `be46a35c654135d6b60324f87c4c6a7af8890a32`.
+- Exact PR 4/4 SUCCESS: Linux Python **144/144** + Rust #39380003277; Windows W10 source integrity/native E2E #39380003283; W4 #39380003282; W5 GUI/EXE #39380003303.
+- Exact postmerge main 4/4 SUCCESS: #39380147525, #39380147494, #39380147659, #39380147487.
+- The failed intermediate CI attempts revealed and fixed a review queue variable collision and an inherited Windows exit code 3 from a deliberately blocked stale reference. The hashed example file is protected from Git CRLF transformation via `.gitattributes`.
+- These runs demonstrate **offline synthetic engineering success only**. No official source authenticity, legal validity, live Outlook, or institution signed-off UAT is claimed.
