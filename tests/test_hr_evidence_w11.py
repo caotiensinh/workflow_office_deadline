@@ -283,12 +283,15 @@ class HRCLIIntegration(unittest.TestCase):
             root = Path(folder)
             file = fixture(root)
             db = root / "MUST_NOT_EXIST.sqlite"
-            env = dict(os.environ, PYTHONPATH=str(ROOT / "python"))
+            # Force a legacy Windows-like console encoding on ALL platforms.
+            env = dict(os.environ, PYTHONPATH=str(ROOT / "python"), PYTHONIOENCODING="cp1252")
             args = [sys.executable, "-m", "edu_workflow.cli", "--db", str(db),
                     "hr-draft", "--packet-file", str(file), "--as-of", "2026-10-20"]
             p = subprocess.run(args, cwd=ROOT, env=env, text=True, capture_output=True)
             self.assertEqual(p.returncode, 0, p.stderr)
-            self.assertEqual(json.loads(p.stdout)["status"], "READY_FOR_HUMAN_REVIEW")
+            report = json.loads(p.stdout)
+            self.assertEqual(report["status"], "READY_FOR_HUMAN_REVIEW")
+            self.assertIn("未確認", report["draft_sections"][0]["draft_ja"])
             self.assertFalse(db.exists())
             (root / "fictional.txt").unlink()
             p = subprocess.run(args, cwd=ROOT, env=env, text=True, capture_output=True)
