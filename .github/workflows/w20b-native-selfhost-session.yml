@@ -1,0 +1,87 @@
+name: W20B Rust Self-hosted Session Readiness - No GUI
+
+on:
+  push:
+    branches:
+      - feat/w20b-native-selfhost-session-probe
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: w20b-readonly-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  hosted-build:
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Compile and test native Rust session guard
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          cargo test --manifest-path rust-core/Cargo.toml --bin w20_session_probe --verbose
+          if ($LASTEXITCODE -ne 0) { throw 'W20B native tests failed' }
+          cargo build --manifest-path rust-core/Cargo.toml --release --bin w20_session_probe
+          if ($LASTEXITCODE -ne 0) { throw 'W20B native Windows build failed' }
+          $exe = Join-Path $PWD 'rust-core\target\release\w20_session_probe.exe'
+          if (!(Test-Path -LiteralPath $exe -PathType Leaf)) { throw 'Probe missing' }
+          $plan = (& $exe --plan-only) | ConvertFrom-Json
+          if ($LASTEXITCODE -ne 0 -or $plan.live_windows_api_observed -or $plan.production_accepted) {
+            throw 'W20B plan-only unsafe'
+          }
+          $r = (& $exe --inspect) | ConvertFrom-Json
+          if ($LASTEXITCODE -ne 0 -or -not $r.live_windows_api_observed -or
+              $r.gui_accepted -or $r.it_approved -or $r.production_accepted -or
+              $r.modifies_system -or $r.human_interaction_observed) {
+            throw 'W20B hosted session evidence unsafe'
+          }
+          Write-Host 'W20B_HOSTED_NATIVE_READONLY_PASS_NOT_GUI_UAT'
+          $stage = Join-Path $env:RUNNER_TEMP 'w20b-upload'
+          New-Item -Path $stage -ItemType Directory -ErrorAction Stop | Out-Null
+          Copy-Item -LiteralPath $exe -Destination (Join-Path $stage 'w20_session_probe.exe')
+          (Get-FileHash -LiteralPath $exe -Algorithm SHA256).Hash.ToUpperInvariant() |
+              Set-Content -LiteralPath (Join-Path $stage 'w20_probe.sha256') -Encoding ascii
+      - uses: actions/upload-artifact@v4
+        with:
+          name: w20b-tested-native-${{ github.run_id }}
+          path: ${{ runner.temp }}/w20b-upload
+          if-no-files-found: error
+          retention-days: 2
+
+  selfhost-readonly-cmd:
+    needs: hosted-build
+    runs-on: [self-hosted, Windows]
+    timeout-minutes: 12
+    steps:
+      - name: Download exact-run hosted-tested native probe
+        uses: actions/download-artifact@v4
+        with:
+          name: w20b-tested-native-${{ github.run_id }}
+          path: ${{ runner.temp }}\w20b-native-${{ github.run_id }}-${{ github.run_attempt }}
+      - name: Verify hash and inspect only numerical Windows session
+        shell: cmd
+        env:
+          W20_DIR: ${{ runner.temp }}\w20b-native-${{ github.run_id }}-${{ github.run_attempt }}
+        run: |
+          @echo off
+          setlocal DisableDelayedExpansion
+          if not exist "%W20_DIR%\w20_session_probe.exe" exit /b 2
+          if not exist "%W20_DIR%\w20_probe.sha256" exit /b 3
+          set "EXPECTED="
+          set "ACTUAL="
+          for /f "usebackq delims=" %%H in ("%W20_DIR%\w20_probe.sha256") do set "EXPECTED=%%H"
+          for /f "delims=" %%H in ('certutil -hashfile "%W20_DIR%\w20_session_probe.exe" SHA256 2^>NUL ^| findstr /R /I "^[0-9A-F][0-9A-F]*$"') do set "ACTUAL=%%H"
+          if not defined ACTUAL exit /b 4
+          if not defined EXPECTED exit /b 5
+          if /I not "%EXPECTED%"=="%ACTUAL%" exit /b 6
+          "%W20_DIR%\w20_session_probe.exe" --inspect
+          if errorlevel 1 exit /b 7
+          echo W20B_SELFHOST_NUMERIC_SESSION_PASS_NOT_HUMAN_GUI_UAT
+          exit /b 0
