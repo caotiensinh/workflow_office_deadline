@@ -34,12 +34,15 @@ try {
   $syscmd = Join-Path $env:SystemRoot 'System32\cmd.exe'
   # Verify the same temporary action independently before Scheduler registers it;
   # never confuse this local check with the later Task Scheduler execution.
-  & $syscmd /D /C ('"' + $cmdFile + '"')
-  $preflight = ($LASTEXITCODE -eq 0 -and (Test-Path -LiteralPath $marker -PathType Leaf))
-  Write-Host "W23A_HOSTED_LOCAL_CMD_PREFLIGHT_OK=$preflight"
+  if ($cmdFile -notmatch '^[A-Za-z]:\\[A-Za-z0-9_.\\-]+$') { throw 'Unsafe temporary CMD path' }
+  & $syscmd /D /C call $cmdFile
+  $localExit = $LASTEXITCODE
+  $preflight = ($localExit -eq 0 -and (Test-Path -LiteralPath $marker -PathType Leaf))
+  $numLines = @(Get-Content -LiteralPath $cmdFile).Count
+  Write-Host "W23A_HOSTED_LOCAL_CMD_PREFLIGHT_OK=$preflight exit_code=$localExit script_lines=$numLines"
   if (-not $preflight) { throw 'W23A synthetic local command wiring is invalid' }
   Remove-Item -LiteralPath $marker -Force -ErrorAction Stop
-  $action = New-ScheduledTaskAction -Execute $syscmd -Argument ('/D /C "' + $cmdFile + '"')
+  $action = New-ScheduledTaskAction -Execute $syscmd -Argument ('/D /C call ' + $cmdFile)
   $trigger = New-ScheduledTaskTrigger -Once -At (Get-Date).AddMinutes(10) -RepetitionInterval (New-TimeSpan -Minutes 15) -RepetitionDuration (New-TimeSpan -Hours 24)
   $identity = [System.Security.Principal.WindowsIdentity]::GetCurrent().Name
   $principal = New-ScheduledTaskPrincipal -UserId $identity -LogonType Interactive -RunLevel Limited
