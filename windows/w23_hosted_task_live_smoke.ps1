@@ -42,7 +42,9 @@ try {
   $level = [string]$xml.Task.Principals.Principal.RunLevel
   $actualExe = [string]$xml.Task.Actions.Exec.Command
   $intervalOk = ($interval -eq 'PT15M')
-  $levelOk = ($level -eq 'LeastPrivilege')
+  # Compare the actual registered principal enum, not XML display aliases.
+  $registered = Get-ScheduledTask -TaskName $taskName -ErrorAction Stop
+  $levelOk = ([string]$registered.Principal.RunLevel -eq 'Limited')
   $execOk = ([Environment]::ExpandEnvironmentVariables($actualExe) -eq $syscmd)
   # Safe booleans only: no paths, user identities or XML contents in public logs.
   Write-Host "W23A_TASK_XML_CHECK interval=$intervalOk limited=$levelOk executable=$execOk"
