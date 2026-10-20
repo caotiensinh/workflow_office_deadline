@@ -34,6 +34,16 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'W5 UI-controller regressions failed' }
           python -m unittest discover -s tests -p test_desktop_w4.py -v
           if ($LASTEXITCODE -ne 0) { throw 'W4 notification regressions failed' }
+      - name: W7 synthetic field UAT plan-only proof (no GUI or machine mutation)
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $env:PYTHONPATH = Join-Path $PWD 'python'
+          $p = (python -m edu_workflow.field_uat --plan-only) | ConvertFrom-Json
+          if ($LASTEXITCODE -ne 0 -or $p.mode -ne 'plan-only' -or
+              -not $p.synthetic_only -or $p.changes_startup -or $p.production_accepted) {
+            throw 'Unsafe W7 manual-UAT default mode'
+          }
       - name: W5B real Windows Tk widget E2E with synthetic SQLite
         shell: pwsh
         run: |
