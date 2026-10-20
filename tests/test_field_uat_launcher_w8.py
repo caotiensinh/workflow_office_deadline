@@ -35,10 +35,12 @@ class OneClickUATTests(unittest.TestCase):
             self.assertFalse(target.exists())
 
     def test_no_args_in_session_zero_fail_closed(self):
-        with patch.object(uat.sys, "platform", "win32"), patch.object(
-            uat.desktop_app, "_interactive_desktop_available", return_value=False
+        # W19 now demands a *live active console* match (not merely sid != 0).
+        with patch.object(
+            uat.session_guard, "require_active_console",
+            side_effect=RuntimeError("W19_NOT_ACTIVE_CONSOLE_NO_GUI")
         ), patch.object(uat, "_ask_consent") as ask:
-            with self.assertRaisesRegex(RuntimeError, "BLOCKED_SESSION_0"):
+            with self.assertRaisesRegex(RuntimeError, "W19_NOT_ACTIVE_CONSOLE"):
                 uat.one_click()
             ask.assert_not_called()
 
