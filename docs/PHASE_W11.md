@@ -39,3 +39,10 @@ An authorized local approver may separately import a synthetic HR case whose `ca
 - `PYTHONPATH=python python -m unittest discover -s tests -p test_hr_evidence_w11.py -v`: strict field/PII rejection, duplicate keys/IDs, source mismatch and symlinks, missing evidence, future data, stable templating, human approval fail-closed, stale revisions and rollback, CLI no SQLite writes.
 - The Linux regression suite minimum becomes **165** with native Rust integration.
 - Windows GitHub-hosted CI runs native Python tests and calls the real `hr-draft` CLI against the fictional sample; no institutional desktop/machine acceptance is implied.
+
+## W11 verified checkpoint — 2026-10-20
+- PR #21 merged at `cccdd9f13d8cd8ee2902060b97d99fce2b90798f`.
+- The exact final PR head `73d4ffa07ef56fbe007866a2be674f246ed1143a` passed four workflows: Linux Python **165/165** + native Rust #39384141262, Windows HR command-line E2E #39384141293, W4 #39384142204, W5 GUI/EXE #39384141221.
+- Postmerge four workflows on the exact merge SHA passed: #39384328877, #39384328977, #39384328924, #39384328968.
+- During CI an encoding defect was detected on Windows: printing raw Japanese JSON under cp1252 raised UnicodeEncodeError. `hr-draft` now emits ASCII-safe JSON Unicode escapes; regression explicitly uses `PYTHONIOENCODING=cp1252` and checks the decoded Japanese template.
+- This is **synthetic CI engineering acceptance**, NOT signed-in user UAT, not real personnel processing, not appraisal accuracy, not institution production approval.
