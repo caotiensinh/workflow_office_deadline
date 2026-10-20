@@ -152,11 +152,11 @@ See `docs/PHASE_W7.md`. UAT tooling is **not** equivalent to actual field or pro
 
 
 ## Phase W8 — One-click synthetic Windows UAT packaging (2026-10-20)
-- [ ] W8 one-click consent-first EXE built from the reviewed source on Windows CI.
-- [ ] Packaged noninteractive preflight proves synthetic-only, no Outlook, SMTP or Startup mutation.
-- [ ] W8 launcher regression suite plus prior W1–W7 tests and Rust compile/integration pass.
-- [ ] MRCAO read-only session diagnostic executed and session identified (Session 0 cannot pass desktop UAT).
-- [ ] PR merged after green CI; verify exact postmerge main tests and commit.
+- [x] Consent-first unsigned EDUFieldUAT.exe built on Windows CI; artifact #12242388665, SHA256 7C468CD4E9FBFE4ED3D64AADF692D741361CB8DFDF943FF41D362DE60E086329.
+- [x] Packaged EXE preflight PASS: synthetic-only, no Outlook/SMTP/Startup mutation or false production/login claims (#39373594044).
+- [x] W8 launcher 7/7 tests, full Linux 114/114 Python regressions + Rust integration, Windows legacy/W4/Tk/EXE CI all PASS.
+- [ ] MRCAO read-only diagnostic #39373569883 still queued at latest check; current runner online status and Session ID are UNKNOWN, not field UAT.
+- [x] PR #15 merged as f47c5d85acba0e78fa131973ef1214b8acb847ef; all 4 postmerge CI PASS (#39373759396, #39373759417, #39373759454, #39373759473).
 - [ ] Actual signed-in Windows workstation user sees Japanese labels, hears notification, clicks ACK/Snooze, produces field JSON with human observation.
 - [ ] IT-authorized login/logout Startup acceptance and approved Outlook/SMTP/SSO/privacy controls.
 
