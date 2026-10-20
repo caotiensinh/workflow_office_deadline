@@ -34,7 +34,8 @@ try {
   $syscmd = Join-Path $env:SystemRoot 'System32\cmd.exe'
   $action = New-ScheduledTaskAction -Execute $syscmd -Argument ('/D /C "' + $cmdFile + '"')
   $trigger = New-ScheduledTaskTrigger -Once -At (Get-Date).AddMinutes(10) -RepetitionInterval (New-TimeSpan -Minutes 15) -RepetitionDuration (New-TimeSpan -Hours 24)
-  $principal = New-ScheduledTaskPrincipal -UserId $env:USERNAME -LogonType Interactive -RunLevel Limited
+  $identity = [System.Security.Principal.WindowsIdentity]::GetCurrent().Name
+  $principal = New-ScheduledTaskPrincipal -UserId $identity -LogonType Interactive -RunLevel Limited
   $null = Register-ScheduledTask -TaskName $taskName -Action $action -Trigger $trigger -Principal $principal -Description 'W23 synthetic hosted CI task' -ErrorAction Stop
   $created = $true
   [xml]$xml = Export-ScheduledTask -TaskName $taskName -ErrorAction Stop
@@ -62,7 +63,14 @@ try {
     }
     Start-Sleep -Milliseconds 250
   }
-  if (-not $observed) { throw 'W23A hosted on-demand task produced no synthetic marker' }
+  if (-not $observed) {
+    $detail = Get-ScheduledTaskInfo -TaskName $taskName -ErrorAction SilentlyContinue
+    $state = [string](Get-ScheduledTask -TaskName $taskName -ErrorAction SilentlyContinue).State
+    $exitCode = if ($null -eq $detail) { 'UNAVAILABLE' } else { [string]$detail.LastTaskResult }
+    # No account name, private paths or command line is printed.
+    Write-Host "W23A_SYNTHETIC_ACTION_DIAG state=$state last_result=$exitCode"
+    throw 'W23A hosted on-demand task produced no synthetic marker'
+  }
   Write-Host 'W23A_REAL_HOSTED_TASK_REGISTERED_AND_ONDEMAND_EXECUTED_NOT_15MIN_CADENCE'
 } finally {
   try {
