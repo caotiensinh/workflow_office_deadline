@@ -69,11 +69,13 @@ class W7FieldUATTests(unittest.TestCase):
         from edu_workflow.field_uat import run_manual
         with tempfile.TemporaryDirectory() as folder:
             report = Path(folder) / "proof.json"
-            with patch("edu_workflow.field_uat.sys.platform", "win32"), patch(
-                "edu_workflow.field_uat.desktop_app._interactive_desktop_available",
-                return_value=False,
+            # W19 guards the Win32 *API boundary*. Do not fake sys.platform
+            # to win32 on Linux: Linux ctypes has no windll.
+            with patch(
+                "edu_workflow.field_uat.session_guard.require_active_console",
+                side_effect=RuntimeError("W19_NOT_ACTIVE_CONSOLE_NO_GUI"),
             ):
-                with self.assertRaisesRegex(RuntimeError, "BLOCKED_SESSION_0"):
+                with self.assertRaisesRegex(RuntimeError, "W19_NOT_ACTIVE_CONSOLE"):
                     run_manual(report)
             self.assertFalse(report.exists())
 

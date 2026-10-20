@@ -282,3 +282,16 @@ W13 is a readiness inspector, **not** authority to bypass managed PowerShell Exe
 - [ ] IT-authorized signed-in Session 1 human GUI acceptance, real scheduler, read-only Outlook, approved alert recipient, SSO/privacy, release signing and three operator pilots.
 
 **W18 ZIP content validation is NOT code signing, trusted publishing, interactive physical GUI UAT or production approval.** See `docs/PHASE_W18.md`.
+
+
+## Phase W19 — Active Windows console guard for real signed-in GUI UAT (2026-10-20)
+
+- [x] Recheck latest W18 `main` HEAD `eab47b71597f338bc6786b3768b1d871dea9e9c1`, original 8 Python/Rust workflows, Session 0/Session 1 evidence and unresolved 2/6 rollout gates.
+- [x] Replace weak `session != 0` one-click rule with read-only process-versus-active-console Win32 guard; no GUI action on a different/disconnected/session-zero desktop.
+- [x] Recheck active console before consent, after consent and before writing final self-attested GUI report; no automatic business approval.
+- [x] Add `--session-check-file` numeric-only packaged EXE diagnostic; no Outlook/SMTP/Task Scheduler, desktop capture, policy bypass or private account identifiers.
+- [x] Add 18 W19 synthetic safety regressions, raise Python CI floor to 290; keep Rust and W17/W18 Windows ZIP tests.
+- [ ] Verify exact PR head 4/4 CI, Windows packaged numeric diagnostic and ZIP integrity; merge and verify 4/4 exact postmerge main.
+- [ ] IT-approved real signed-in Session 1 *human* GUI Japanese/audio/ACK/Snooze and login Startup; scheduler/Outlook/recipient/SSO/privacy/three pilots remain external.
+
+**Matching an active console session is only a prerequisite, not independent physical GUI or production acceptance.** See `docs/PHASE_W19.md`.

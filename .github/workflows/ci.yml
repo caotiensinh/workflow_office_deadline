@@ -41,13 +41,14 @@ jobs:
               'tests/test_session_w16.py',
               'tests/test_uat_review_w17.py',
               'tests/test_kit_integrity_w18.py',
+              'tests/test_active_console_w19.py',
           ]
           missing = [name for name in required if not pathlib.Path(name).is_file()]
           if missing:
               raise SystemExit(f'Missing safety regression suites: {missing}')
           count = unittest.defaultTestLoader.discover('tests').countTestCases()
-          if count < 272:
-              raise SystemExit(f'Safety test regression: expected at least 272 cases, found {count}')
+          if count < 290:
+              raise SystemExit(f'Safety test regression: expected at least 290 cases, found {count}')
           print(f'Regression test manifest PASS ({count} tests)')
           PY
       - name: W5 real Tk widgets in isolated virtual X display

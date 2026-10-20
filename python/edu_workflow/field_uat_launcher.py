@@ -13,12 +13,14 @@ import uuid
 from pathlib import Path
 
 from . import desktop_app
+from . import interactive_session_w19 as session_guard
 from .field_uat import run_manual
 
 
 def _require_interactive_windows():
-    if sys.platform != "win32" or not desktop_app._interactive_desktop_available():
-        raise RuntimeError("BLOCKED_SESSION_0_OR_NON_WINDOWS: signed-in Windows user required")
+    # A non-zero process session is not sufficient: disconnected/RDP/service
+    # sessions must not be treated as the active signed-in console.
+    return session_guard.require_active_console()
 
 
 def _ask_consent():
@@ -62,6 +64,9 @@ def one_click():
     _require_interactive_windows()
     if not _ask_consent():
         return {"status": "CANCELLED", "production_accepted": False}
+    # Session may have been disconnected or changed during the consent dialog.
+    # Refuse to create a DB/report after an interactive-console mismatch.
+    _require_interactive_windows()
     path = _report_path()
     try:
         result = run_manual(path)
@@ -96,9 +101,7 @@ def preflight(output_file):
         "mode": "one-click-uat-preflight",
         "packaged_entrypoint": "OK",
         "tk_importable": tk_ready,
-        "session_interactive": bool(
-            sys.platform == "win32" and desktop_app._interactive_desktop_available()
-        ),
+        "session_interactive": bool(session_guard.inspect()["active_console_match"]),
         "synthetic_only": True,
         "changes_startup": False,
         "opens_outlook": False,
@@ -112,15 +115,33 @@ def preflight(output_file):
     return result
 
 
+def session_check(output_file):
+    """W19 non-GUI diagnostic: read only numeric session IDs, new local file."""
+    path = Path(output_file)
+    if path.is_symlink() or not path.parent.is_dir():
+        raise ValueError("W19 diagnostic output must use an existing directory")
+    result = session_guard.inspect()
+    # Exclusive creation: no replacement of an existing acceptance report.
+    with path.open("x", encoding="utf-8") as stream:
+        json.dump(result, stream, ensure_ascii=True, sort_keys=True)
+    return result
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(
         description="One-click Windows field UAT using entirely fictional local notifications"
     )
-    parser.add_argument("--preflight-file",
-                        help="Noninteractive JSON preflight; does not launch GUI")
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument("--preflight-file",
+                       help="Noninteractive JSON preflight; does not launch GUI")
+    group.add_argument("--session-check-file",
+                       help="W19 read-only Windows session diagnostic, without GUI")
     args = parser.parse_args(argv)
     if args.preflight_file:
         preflight(args.preflight_file)
+        return
+    if args.session_check_file:
+        session_check(args.session_check_file)
         return
     one_click()
 

@@ -15,6 +15,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from . import desktop_app
+from . import interactive_session_w19 as session_guard
 from .store import add_case, open_store, now_iso
 
 
@@ -94,8 +95,9 @@ def _table_exists(conn, name):
 
 
 def run_manual(report_file):
-    if sys.platform != "win32" or not desktop_app._interactive_desktop_available():
-        raise RuntimeError("BLOCKED_SESSION_0_OR_NON_WINDOWS: use a signed-in Windows user session")
+    # Must be the currently active console, not just a nonzero session ID.
+    # The W8 launcher separately checks before/after asking consent.
+    session_guard.require_active_console()
     from tkinter import Tk, messagebox
 
     target = Path(report_file).resolve()
@@ -142,6 +144,9 @@ def run_manual(report_file):
                    if all((visual, audible, focus, observed["human_buttons_recorded"]))
                    else "INCOMPLETE_FIELD_UAT"),
     }
+    # The operator might log off/disconnect while using Tk. Do not write
+    # a purported human UAT report after the console session changed.
+    session_guard.require_active_console()
     with target.open("x", encoding="utf-8") as handle:
         json.dump(report, handle, ensure_ascii=False, indent=2)
     print("W7 manual synthetic UAT report written (not production acceptance)")
