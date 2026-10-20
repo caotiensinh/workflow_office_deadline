@@ -130,7 +130,7 @@ class ActiveConsoleW19Tests(unittest.TestCase):
                     "production_accepted": False, "it_approved": False,
                     "actual_physical_observation_independently_verified": False,
                     "actual_login_autorun_verified": False
-                }), patch.object(launcher, "_show_result"):
+                }), patch.object(launcher, "write_operator_handoff", return_value=Path("handoff.json")), patch.object(launcher, "_show_result"):
             result = launcher.one_click()
             self.assertEqual(check.call_count, 2)
             run.assert_called_once()
