@@ -144,7 +144,7 @@ W6 CI demonstrates synthetic Windows GUI behavior, not a real school workstation
 - [x] Startup removal refuses an owned-looking shortcut with unexpected executable or DB arguments; explicit repair and rollback covered in Windows sandbox CI.
 - [x] Fictional two-alert Windows field-UAT fixture, ACK/Snooze receipt audit, no approvals and non-overwriting JSON evidence **tooling** implemented; this does not imply a person completed UAT.
 - [x] W7 PR CI at `617d4828768b3363b2cf04e8b4bfdd99e6a330af` all SUCCESS: Linux Python/Rust #39366926773 (**107/107 Python**), Windows W4 #39366926695, Windows legacy #39366926670, Windows real Tk/EXE/sandbox Startup integrity #39366926660.
-- [ ] Postmerge `main` CI verified after W7 merge; add evidence when completed.
+- [x] Postmerge `main` CI at `2872db09bd9460fada49619c8436062f4c141e3a` all SUCCESS: Linux Python/Rust #39367276876, Windows synthetic #39367276821, Windows W4 #39367276676, Windows Tk/EXE/sandbox Startup #39367276621.
 - [ ] Actual signed-in user physically verifies Japanese font/sound/focus and separately approved logout/login Startup.
 - [ ] IT authorization for Outlook/Graph, SMTP, SSO and production acceptance.
 
