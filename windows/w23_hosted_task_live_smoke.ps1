@@ -30,7 +30,8 @@ New-Item -ItemType Directory -Path $stage -ErrorAction Stop | Out-Null
 try {
   $cmdFile = Join-Path $stage 'synthetic_tick.cmd'
   $marker = Join-Path $stage 'only_synthetic_tick.txt'
-  @('@echo off', 'echo W23_SYNTHETIC_TICK>>"' + $marker + '"', 'exit /b 0') | Set-Content -LiteralPath $cmdFile -Encoding Ascii
+  $markerLine = 'echo W23_SYNTHETIC_TICK>>"' + $marker + '"'
+  @('@echo off', $markerLine, 'exit /b 0') | Set-Content -LiteralPath $cmdFile -Encoding Ascii
   $syscmd = Join-Path $env:SystemRoot 'System32\cmd.exe'
   # Verify the same temporary action independently before Scheduler registers it;
   # never confuse this local check with the later Task Scheduler execution.
