@@ -26,3 +26,9 @@ No real inbox, SMTP recipient, institutional record, Windows registry, current-u
 - Windows PyInstaller one-file UAT build, noninteractive smoke report, SHA256, seven-day artifact retention.
 - W5B Windows actual Tk widget E2E and W7 Startup sandbox must remain green.
 - Self-hosted runner diagnostic is strictly read-only; a run stuck in queue is *not* evidence the runner is online.
+
+## W8 validated checkpoint
+- PR #15 MERGED as f47c5d85acba0e78fa131973ef1214b8acb847ef. Four PR and four main postmerge CI workflows SUCCESS; 114/114 Python regression tests PASS.
+- The one-click UAT artifact is unsigned and has limited retention. Packaging preflight did not launch GUI or simulate a human attestation.
+- MRCAO probe #39373569883 queued; current Session ID and online status unknown.
+- Details: docs/W8_TEST_REPORT.md. Engineering acceptance only, not institutional desktop sign-off.
