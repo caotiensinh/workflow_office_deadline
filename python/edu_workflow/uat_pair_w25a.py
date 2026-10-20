@@ -74,7 +74,9 @@ def reconcile(report_path, summary_path):
             raise ValueError("Unsupported claim of production or live acceptance")
     return {
         "phase": "W25A",
-        "status": "MATCHED_TWO_LOCAL_FILES_NOT_INDEPENDENT_GUI_UAT",
+        "status": ("MATCHED_TWO_LOCAL_FILES_NOT_INDEPENDENT_GUI_UAT"
+                   if review["status"] == "CONSISTENT_SELF_ATTESTATION_NOT_INDEPENDENTLY_VERIFIED"
+                   else "MATCHED_INCOMPLETE_SELF_REPORT_NOT_INDEPENDENT_GUI_UAT"),
         "ack_receipts": review["ack_receipts"],
         "snooze_receipts": review["snooze_receipts"],
         "self_attested_only": True,
