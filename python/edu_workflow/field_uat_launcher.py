@@ -15,6 +15,7 @@ from pathlib import Path
 from . import desktop_app
 from . import interactive_session_w19 as session_guard
 from .field_uat import run_manual
+from .uat_review import review as review_uat_report
 
 
 def _require_interactive_windows():
@@ -70,6 +71,16 @@ def one_click():
     path = _report_path()
     try:
         result = run_manual(path)
+        # Verify the *written* evidence, not just the in-memory success flag.
+        # This is a consistency review, never independent human/IT acceptance.
+        checked = review_uat_report(path)
+        if (checked["production_accepted"] or checked["it_approved"] or
+                checked["actual_physical_observation_independently_verified"] or
+                checked["actual_login_autorun_verified"]):
+            raise ValueError("W20A_UNAUTHORIZED_ACCEPTANCE_FLAG")
+        if ((result["status"] == "DESKTOP_ACTIONS_AND_HUMAN_REPORT_COMPLETE") !=
+                (checked["status"] == "CONSISTENT_SELF_ATTESTATION_NOT_INDEPENDENTLY_VERIFIED")):
+            raise ValueError("W20A_REPORT_IN_MEMORY_DISAGREEMENT")
     except Exception:
         # A --windowed executable has no visible console. Fail visibly without
         # disclosing potentially sensitive path or exception arguments.
@@ -77,12 +88,12 @@ def one_click():
                      error=True)
         raise
 
-    passed = result["status"] == "DESKTOP_ACTIONS_AND_HUMAN_REPORT_COMPLETE"
+    passed = checked["status"] == "CONSISTENT_SELF_ATTESTATION_NOT_INDEPENDENTLY_VERIFIED"
     _show_result(
-        ("架空データのGUI確認が完了しました。" if passed else
-         "確認項目が未完了です。テスト結果を確認してください。") +
+        ("自己申告レポートの整合性を確認しました。" if passed else
+         "自己申告レポートは未完了です。確認項目を見直してください。") +
         "\n\nReport: " + str(path) +
-        "\n\nNot a production or login-Startup acceptance."
+        "\n\nSelf-attestation only; NOT independent GUI, IT or production approval."
     )
     return result
 

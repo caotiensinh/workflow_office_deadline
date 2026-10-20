@@ -125,7 +125,12 @@ class ActiveConsoleW19Tests(unittest.TestCase):
                 launcher, "_report_path", return_value=Path("synthetic.json")), patch.object(
                 launcher, "run_manual", return_value={
                     "status": "INCOMPLETE_FIELD_UAT", "production_accepted": False
-                }) as run, patch.object(launcher, "_show_result"):
+                }) as run, patch.object(launcher, "review_uat_report", return_value={
+                    "status": "INCOMPLETE_SELF_ATTESTATION",
+                    "production_accepted": False, "it_approved": False,
+                    "actual_physical_observation_independently_verified": False,
+                    "actual_login_autorun_verified": False
+                }), patch.object(launcher, "_show_result"):
             result = launcher.one_click()
             self.assertEqual(check.call_count, 2)
             run.assert_called_once()

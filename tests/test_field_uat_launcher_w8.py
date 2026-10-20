@@ -64,7 +64,12 @@ class OneClickUATTests(unittest.TestCase):
         ), patch.object(
             uat, "run_manual",
             return_value={"status": "INCOMPLETE_FIELD_UAT", "production_accepted": False}
-        ) as run, patch.object(uat, "_show_result") as show:
+        ) as run, patch.object(uat, "review_uat_report", return_value={
+            "status": "INCOMPLETE_SELF_ATTESTATION",
+            "production_accepted": False, "it_approved": False,
+            "actual_physical_observation_independently_verified": False,
+            "actual_login_autorun_verified": False
+        }), patch.object(uat, "_show_result") as show:
             result = uat.one_click()
             run.assert_called_once_with(Path("fictional-only.json"))
             self.assertFalse(result["production_accepted"])
