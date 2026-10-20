@@ -1,0 +1,37 @@
+name: W24B Real Hosted Windows Startup Shortcut Roundtrip
+
+on:
+  push:
+    branches:
+      - feat/w24b-startup-readiness-audit
+
+permissions:
+  contents: read
+
+jobs:
+  disposable-hosted-startup-only:
+    runs-on: windows-latest
+    timeout-minutes: 8
+    env:
+      W24_ALLOW_DISPOSABLE_STARTUP_TEST: 'yes'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Plan-only never touches Startup
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $plan = (& .\windows\w24_hosted_startup_roundtrip.ps1 -PlanOnly) | ConvertFrom-Json
+          if ($plan.mode -ne 'plan-only' -or $plan.startup_link_created -or
+              $plan.actual_login_restart_observed -or $plan.user_profile_modified -or
+              $plan.it_approved -or $plan.outlook_accessed -or $plan.production_accepted) {
+            throw 'W24B plan-only falsely modified Startup or claimed acceptance'
+          }
+      - name: Create, verify and DELETE unique Windows Startup .lnk
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          & .\windows\w24_hosted_startup_roundtrip.ps1 -LiveHosted
+          if ($LASTEXITCODE -and $LASTEXITCODE -ne 0) { throw 'W24B real hosted Startup check failed' }
+          Write-Host 'W24B_DISPOSABLE_HOSTED_STARTUP_ONLY_NOT_SIGNED_IN_AUTORUN_VERIFIED'
