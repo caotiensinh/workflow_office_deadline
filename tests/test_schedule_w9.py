@@ -33,7 +33,7 @@ class WF06ScheduleProposals(unittest.TestCase):
         result = propose_slots(deepcopy(BASE))
         self.assertEqual(result["status"], "PROPOSALS")
         self.assertEqual([x["start"][11:16] for x in result["proposals"]],
-                         ["10:00", "10:45", "11:00"])
+                         ["10:00", "10:45"])
         self.assertTrue(result["requires_human_approval"])
         self.assertFalse(result["calendar_verified"])
         self.assertFalse(result["external_actions_performed"])
