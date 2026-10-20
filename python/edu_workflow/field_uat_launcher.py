@@ -138,6 +138,34 @@ def session_check(output_file):
     return result
 
 
+def review_existing_uat(report_file, output_file):
+    """W22A offline packaged reviewer; no GUI, Win32 API or mutable source."""
+    path = Path(output_file)
+    if path.is_symlink() or not path.parent.is_dir():
+        raise ValueError("W22A output must be a new regular local file")
+    checked = review_uat_report(report_file)
+    # Never allow a self-report to become IT approval or production evidence.
+    assert checked["production_accepted"] is False
+    assert checked["it_approved"] is False
+    assert checked["actual_physical_observation_independently_verified"] is False
+    result = {
+        "phase": "W22A",
+        "status": checked["status"],
+        "ack_receipts": checked["ack_receipts"],
+        "snooze_receipts": checked["snooze_receipts"],
+        "self_attested_only": True,
+        "real_gui_independently_verified": False,
+        "windows_login_autorun_verified": False,
+        "it_approved": False,
+        "production_accepted": False,
+        "opens_gui": False,
+        "modifies_source": False,
+    }
+    with path.open("x", encoding="utf-8") as stream:
+        json.dump(result, stream, ensure_ascii=True, sort_keys=True)
+    return result
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(
         description="One-click Windows field UAT using entirely fictional local notifications"
@@ -147,7 +175,16 @@ def main(argv=None):
                        help="Noninteractive JSON preflight; does not launch GUI")
     group.add_argument("--session-check-file",
                        help="W19 read-only Windows session diagnostic, without GUI")
+    group.add_argument("--review-report-file",
+                       help="W22A offline review of a saved fictional GUI self-report, no GUI")
+    parser.add_argument("--review-output-file",
+                        help="New JSON summary file required for --review-report-file")
     args = parser.parse_args(argv)
+    if bool(args.review_report_file) != bool(args.review_output_file):
+        parser.error("W22A requires both review-report and review-output")
+    if args.review_report_file:
+        review_existing_uat(args.review_report_file, args.review_output_file)
+        return
     if args.preflight_file:
         preflight(args.preflight_file)
         return
