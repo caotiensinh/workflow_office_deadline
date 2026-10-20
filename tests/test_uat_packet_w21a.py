@@ -94,6 +94,11 @@ class W21AUATPacketTests(unittest.TestCase):
                                "--uat-report", str(self.report),
                                "--out", str(out)]), 2)
 
+    def test_corrupt_zip_rejected_without_crashing(self):
+        self.kit.write_bytes(b"not a ZIP archive")
+        self.assertEqual(main(["--kit-zip", str(self.kit),
+                               "--uat-report", str(self.report)]), 2)
+
     def test_no_report_cannot_be_replaced_by_zip_hash(self):
         self.report.unlink()
         sha = hashlib.sha256(self.kit.read_bytes()).hexdigest()
