@@ -90,7 +90,7 @@ jobs:
       - name: Download the hosted-tested isolated application bundle
         uses: actions/download-artifact@v4
         with:
-          name: w15-tested-bundle-${{ github.run_id }}
+          name: w16-tested-bundle-${{ github.run_id }}
           path: ${{ runner.temp }}\w15-bundle-${{ github.run_id }}-${{ github.run_attempt }}
       - name: Run Python + native Rust + SQLite + six file alerts via CMD, twice
         shell: cmd
