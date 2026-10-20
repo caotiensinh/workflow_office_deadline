@@ -91,7 +91,7 @@ class W25APairTests(unittest.TestCase):
         self.summary.unlink()
         launcher.write_operator_handoff(self.source, review(self.source),output_file=self.summary)
         r=reconcile(self.source,self.summary)
-        self.assertEqual(r["status"],"MATCHED_TWO_LOCAL_FILES_NOT_INDEPENDENT_GUI_UAT")
+        self.assertEqual(r["status"],"MATCHED_INCOMPLETE_SELF_REPORT_NOT_INDEPENDENT_GUI_UAT")
         self.assertFalse(r["production_accepted"])
 
     def test_cli_output_exclusive(self):
