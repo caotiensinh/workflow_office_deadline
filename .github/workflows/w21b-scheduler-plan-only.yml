@@ -1,0 +1,35 @@
+name: W21B Windows Hosted Scheduler Plan Only
+
+on:
+  push:
+    branches:
+      - feat/w21b-scheduler-plan-acceptance
+
+permissions:
+  contents: read
+
+jobs:
+  hosted-no-machine-mutation:
+    runs-on: windows-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validate installer PLAN output on Windows hosted, not any institutional machine
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $env:PYTHONPATH=Join-Path $PWD 'python'
+          $outfile=Join-Path $env:RUNNER_TEMP 'w21b-plan-only.json'
+          $raw=& .\windows\install_task.ps1 -PlanOnly -IntervalMinutes 15
+          if ($LASTEXITCODE -and $LASTEXITCODE -ne 0) { throw 'Unexpected native failure during plan-only' }
+          $raw | Set-Content -LiteralPath $outfile -Encoding utf8
+          python -m edu_workflow.task_plan_w21b --plan $outfile
+          if ($LASTEXITCODE -ne 0) { throw 'W21B real Windows installer plan rejected' }
+          python -m unittest discover -s tests -p test_task_plan_w21b.py -v
+          if ($LASTEXITCODE -ne 0) { throw 'W21B plan regression failed' }
+          Write-Host 'W21B_HOSTED_WINDOWS_PLAN_ONLY_VERIFIED_NOT_SCHEDULER_EXECUTED'
