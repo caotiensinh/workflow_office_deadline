@@ -33,6 +33,11 @@ def parser():
     tick.add_argument('--at',help='ISO datetime with timezone; for simulation only')
     sub.add_parser('cases')
     sub.add_parser('alerts')
+    monitor=sub.add_parser('monitor',help='WF08 privacy-safe read-only SQLite health and incident dashboard')
+    monitor.add_argument('--at',help='timezone-aware ISO timestamp, CI simulation only')
+    monitor.add_argument('--queue-max-minutes',type=int,default=30,help='queue wait threshold, 1..10080')
+    monitor.add_argument('--format',choices=['json','html'],default='json')
+    monitor.add_argument('--output',help='NEW local HTML file path, required for html')
     sub.add_parser('audit')
     review=sub.add_parser('review-queue',help='Masked exception queue incl. regulation source checks')
     review.add_argument('--registry-file',help='local WF04 declared-source registry')
@@ -75,6 +80,20 @@ def human_confirm(expected):
 
 def main(argv=None):
     args=parser().parse_args(argv)
+    if args.cmd=='monitor':
+        from .monitoring import snapshot, save_html_new
+        if args.format == 'json' and args.output:
+            raise ValueError('--output is only allowed with --format html')
+        if args.format == 'html' and not args.output:
+            raise ValueError('--format html requires --output')
+        report=snapshot(args.db,at=args.at,queue_max_minutes=args.queue_max_minutes)
+        if args.format == 'html':
+            save_html_new(report,args.output)
+            print(json.dumps({'status':report['status'],'saved':True,'read_only':True,
+                              'incident_codes':[x['code'] for x in report['incidents']]},ensure_ascii=True))
+        else:
+            print(json.dumps(report,ensure_ascii=True,indent=2))
+        return 0 if report['status']=='HEALTHY' else 3
     if args.cmd=='check-docx':
         criteria=json.loads(Path(args.criteria).read_text(encoding='utf-8'))
         print(json.dumps(validate_docx(args.file,criteria),ensure_ascii=False,indent=2))
