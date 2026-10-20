@@ -218,6 +218,10 @@ jobs:
             throw 'W19 Session 0 was falsely reported as active console'
           }
           Write-Host 'W19_PACKAGED_WIN32_SESSION_READONLY_PASS_NOT_HUMAN_GUI_UAT'
+          # W22A: execute the actual one-file EXE with a synthetic report,
+          # without opening the signed-in GUI or touching Windows Startup.
+          python tests/w22a_packaged_review_smoke.py --exe $exe --root (Join-Path $env:RUNNER_TEMP 'w22a-real-exe-review')
+          if ($LASTEXITCODE -ne 0) { throw 'W22A packaged no-GUI reviewer failed' }
           Write-Host "W8_UAT_SHA256=$((Get-FileHash -LiteralPath $exe -Algorithm SHA256).Hash)"
       - name: W17 GUI operator handoff kit, SHA256 verification only
         shell: pwsh
