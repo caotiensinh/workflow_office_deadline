@@ -1,0 +1,33 @@
+@echo off
+setlocal DisableDelayedExpansion
+rem W17: operator-triggered only; never start from a runner service or task.
+rem SHA-256 is a consistency check, NOT a digital signature or IT approval.
+set "EXPECTED=__EXPECTED_SHA256__"
+set "ACTUAL="
+if not exist "%~dp0EDUFieldUAT.exe" goto BAD
+for /f "delims=" %%H in ('certutil -hashfile "%~dp0EDUFieldUAT.exe" SHA256 2^>NUL ^| findstr /R /I "^[0-9A-F][0-9A-F]*$"') do set "ACTUAL=%%H"
+if not defined ACTUAL goto BAD
+if /I not "%ACTUAL%"=="%EXPECTED%" goto BAD
+if /I "%~1"=="--verify-only" (
+  echo W17_KIT_HASH_VERIFIED_NO_GUI
+  exit /b 0
+)
+echo.
+echo W17: Fictional Windows notification GUI test only.
+echo Please continue only in an IT-approved signed-in Windows test session.
+echo The application asks for consent. No Outlook/SMTP or machine setup.
+echo.
+start "" /wait "%~dp0EDUFieldUAT.exe"
+if errorlevel 1 (
+  echo W17_UAT_APP_FAILED_OR_SESSION_BLOCKED
+  pause
+  exit /b 1
+)
+echo W17_APP_CLOSED_REVIEW_REPORT_IN_USER_TEMP
+echo Report is self-attestation only, never a production signoff.
+pause
+exit /b 0
+:BAD
+echo W17_HASH_MISSING_OR_MISMATCH_DO_NOT_RUN
+if /I not "%~1"=="--verify-only" pause
+exit /b 2

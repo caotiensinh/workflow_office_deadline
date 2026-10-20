@@ -258,3 +258,15 @@ W13 is a readiness inspector, **not** authority to bypass managed PowerShell Exe
 - [ ] Authorized *interactive* GUI ACK/Snooze/JP text/audio/login test and IT-approved scheduled execution, Outlook/recipient pilot; institution sign-off.
 
 **Session ID observed != signed-in user GUI UAT; Session 0 explicitly blocks GUI.**
+
+## Phase W17 — One-click signed-in GUI handoff and report verification (2026-10-20)
+
+- [x] Read current W16 HEAD/checklist, W8 GUI UAT EXE code and packaging workflow; retain Python+Rust/human-gate project goal.
+- [x] Reuse consent-first synthetic-only `EDUFieldUAT.exe` rather than duplicating UI; design an operator-friendly ZIP with Japanese README and CMD launcher that verifies SHA-256 before launching.
+- [x] Add privacy-safe offline UAT report reviewer that refuses forged production/login claims, invalid/duplicate keys and impossible ACK/Snooze/audit counts.
+- [x] Add 16 W17 evidence/safety regressions (Python minimum 255), hosted Windows ZIP hash/tamper verification without launching GUI.
+- [x] Reconcile eight workflows/six rollout gates; explicitly distinguish a self-attested report from independent/IT acceptance.
+- [ ] Exact PR CI 4/4 PASS, merge, verify 4/4 on main and record W17 kit artifact/checksum.
+- [ ] IT-authorized real signed-in Session 1 user GUI interaction, Japanese/audio/ACK/Snooze, Windows login behavior, real scheduler, authorized Outlook/recipient and 3 pilots.
+
+**W17 package and hash verification != signed executable, human observation or production approval.**
