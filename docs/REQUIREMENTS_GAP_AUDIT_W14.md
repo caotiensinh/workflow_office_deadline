@@ -34,3 +34,19 @@ The W13 and W14 code does not change the fundamental production classification:
 - Test runner machine identity must be obtained from GitHub job metadata, never assumed from `runs-on` label.
 
 Repository GitHub API still reports PUBLIC. All examples and test data must remain fictional. Use no actual corporate SMTP, HR or student records. Do not modify company PowerShell policy, service configuration, Task Scheduler or security software as part of W14.
+
+
+## Verified W14 real runner transport and synthetic CI checkpoint — 2026-10-20
+
+**Separate self-hosted transport evidence:**
+- GitHub run #39392711809, job #118527846747: Windows runner **DESKTOP-14SCTF4**, actual `cmd.exe` invocation, `W14_CMD_RUNNER_TRANSPORT_PASS`, SUCCESS.
+- Repeat run #39392955500: exact same runner and CMD marker, SUCCESS. No checkout/PowerShell, no machine/OS data collection and no task installation.
+- **NOT proven:** interactive Session ID, signed-in GUI, PowerShell ability, actual 15-minute Task Scheduler executions, live Rust, real Outlook, SMTP or IT authorization.
+
+**Engineering PR #27 and main evidence:**
+- PR #27 merged `bd0b6fc249035f6df37dfd42b60b08776e2ebdb5`; final PR head `80d7c3861b8ce70bd13e67572f9edc55ac899763`.
+- Exact PR 4/4: Linux **218/218 Python tests** + Rust #39392964104; Windows W14 XML/17 tests #39392963977; W4 #39392964000; W5 #39392963994.
+- Exact postmerge main 4/4: Linux/Rust #39393256363, Windows native #39393256349, W4 #39393256321, W5 #39393256319. All SUCCESS.
+- An intermediate safety test expected only structured mismatch for XML metacharacters; fixed it to count XML parser rejection as fail-closed. No failed run counted as accepted.
+
+**Rollout classification unchanged:** 2/6 technical CI gates; 4/6 genuine institution rollout gates pending; 0/8 institution production approvals.

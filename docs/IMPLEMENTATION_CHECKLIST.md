@@ -228,8 +228,8 @@ W13 is a readiness inspector, **not** authority to bypass managed PowerShell Exe
 - [x] Add offline fail-closed Task Scheduler XML audit for one enabled 15-minute low-rights, file-only action; no secrets or task execution.
 - [x] Add 17 W14 regression tests and hosted Windows XML audit E2E, protect 218-test CI minimum and preserve Rust regression.
 - [x] Record updated six rollout gates and risk/authority limits in `docs/REQUIREMENTS_GAP_AUDIT_W14.md`.
-- [ ] Verify standalone self-hosted CMD transport run and record exact job/runner/status (no assumption if queued or wrong host).
-- [ ] W14 PR 4/4 hosted CI PASS, merge, postmerge 4/4 main CI PASS and persist run IDs.
+- [x] Self-hosted CMD-only run #39392711809 on runner `DESKTOP-14SCTF4` PASS (job #118527846747); repeat run #39392955500 PASS on the same runner. Both used `cmd.exe`, no checkout/PowerShell policy change, host inspection, real app or Outlook.
+- [x] W14 PR #27 MERGED as `bd0b6fc249035f6df37dfd42b60b08776e2ebdb5` after exact PR head `80d7c3861b8ce70bd13e67572f9edc55ac899763` 4/4 hosted CI SUCCESS: Linux Python 218/218 + Rust #39392964104, Windows W14 17/17 synthetic XML E2E #39392963977, W4 #39392964000, W5 GUI/EXE #39392963994. Exact postmerge main 4/4 CI SUCCESS: #39393256363, #39393256349, #39393256321, #39393256319.
 - [ ] Institution IT authorization, observed 15-minute scheduled execution, live read-only Outlook, approved notification and three human pilots.
 
 **A valid exported XML or a self-hosted runner CMD echo is not institutional acceptance.**
