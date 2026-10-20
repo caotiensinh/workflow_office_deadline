@@ -253,8 +253,8 @@ W13 is a readiness inspector, **not** authority to bypass managed PowerShell Exe
 - [x] Run same hosted-tested portable Python/Rust E2E and numeric session probe via CMD on selfhost; bundle SHA manifest and short-retention sanitized reports.
 - [x] Add 12 fail-closed tests, Windows native inspection E2E and raise Python safety regression floor to 239.
 - [x] Reconcile original 8 workflows and 6 rollout gates without claiming GUI or production acceptance.
-- [ ] Verify actual self-hosted job ID, runner identity, real Session IDs and report status.
-- [ ] Require 4/4 exact PR head CI PASS, squash merge, verify 4/4 exact main postmerge CI; persist proof.
+- [x] **Actual W16 on MRCAO PASS**: run #39426407245, hosted bundle job #118639977685 PASS, CMD selfhost job #118640312265 PASS. Windows API observed process **Session 0**, active console **Session 1**, `SESSION_0_GUI_UAT_BLOCKED`; real W15 core E2E also PASS with 5 cases, 6 SENT alerts, 0 UNKNOWN, 0 decisions. Sanitized artifact #12266146908. **No interactive GUI was launched or accepted.**
+- [x] PR #31 MERGED at `690f05b728c13c1373c82ce9d718d468b671e4b3`. Final PR head `21b75c5b373dd51f1bc137fd4097535d6eaf3a3e`: 4/4 CI SUCCESS (Linux **239/239 Python** + Rust #39426415370, Windows W16 E2E #39426415332, W4 #39426415331, W5 package #39426415403). Exact merged main 4/4 SUCCESS: #39426789284, #39426789332, #39426789314, #39426789280.
 - [ ] Authorized *interactive* GUI ACK/Snooze/JP text/audio/login test and IT-approved scheduled execution, Outlook/recipient pilot; institution sign-off.
 
 **Session ID observed != signed-in user GUI UAT; Session 0 explicitly blocks GUI.**
