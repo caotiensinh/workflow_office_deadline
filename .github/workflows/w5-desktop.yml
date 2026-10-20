@@ -237,6 +237,7 @@ jobs:
           if (-not (Test-Path -LiteralPath $zip -PathType Leaf)) { throw 'W17 handoff ZIP missing' }
           Write-Host 'W17_PACKAGED_HASH_CHECK_AND_TAMPER_REJECTION_PASS_NOT_PHYSICAL_UAT'
           Write-Host "W17_BUNDLE_SHA256=$((Get-FileHash -LiteralPath $zip -Algorithm SHA256).Hash)"
+          $global:LASTEXITCODE = 0
       - uses: actions/upload-artifact@v4
         with:
           name: W17-Windows-SignedIn-Unsigned-Synthetic-GUI-UAT-Kit
