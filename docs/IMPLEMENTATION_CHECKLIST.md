@@ -240,8 +240,8 @@ W13 is a readiness inspector, **not** authority to bypass managed PowerShell Exe
 - [x] Implement real selfhost-only branch workflow: hosted native Rust + portable Python bundle, fully hash-pinned to exact commit, transferred by GitHub Actions artifact.
 - [x] Implement isolated Windows CMD E2E from fictional fixture: import → Rust tick → SQLite → file dispatch → repeat idempotency and audit; no Outlook, SMTP, Task Scheduler or GUI access.
 - [x] Add 9 manifest/runtime boundary regressions to bring Python floor to 227; document safety constraints and original rollout gates.
-- [ ] Verify W15 actual selfhost run with real log and GitHub runner identity, file-count/assertion evidence; repair any failures.
-- [ ] Exact PR HEAD 4/4 CI green, squash merge W15, verify exact postmerge main 4/4.
+- [x] W15 actual selfhost run #39417321087 PASS on GitHub runner `MRCAO` (job #118609720587), using `cmd.exe` and host-tested portable Python/Rust from exact branch SHA `9679eedd13cb9521a3156db1706d763e0a0bf1ed`. Verified 5 cases, 6 SENT alerts, 6 file JSON notices, 5 import audits, 0 decisions, 0 UNKNOWN and second-cycle idempotency; safe evidence artifact #12261674508. This is **MRCAO**, not W14's `DESKTOP-14SCTF4`.
+- [x] W15 PR #29 MERGED at `6fe9dd9bde3e1aaf42a9e5065992f49f898af70f`; exact PR HEAD `9679eedd13cb9521a3156db1706d763e0a0bf1ed` 4/4 CI SUCCESS: Linux 227/227 Python+Rust #39417326145, Windows Synthetic E2E #39417326177, W4 #39417326121, W5/EXE #39417326176. Exact main postmerge CI 4/4 SUCCESS: #39417931869, #39417931783, #39417931623, #39417931810. W15 portable hosted-build job #118609386374 also PASS.
 - [ ] IT-approved signed-in desktop, actual scheduler, real authorized read-only Outlook, approved recipient and three human pilots.
 
 **W15 self-hosted core E2E is not a Task Scheduler, Outlook, SMTP, GUI, or institutional production acceptance.**
