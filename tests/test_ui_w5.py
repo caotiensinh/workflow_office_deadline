@@ -30,8 +30,10 @@ class Widget:
 
 
 class FakeStringVar:
+    latest = None
     def __init__(self,*args,**kwargs):
         self.value=kwargs.get("value","")
+        FakeStringVar.latest = self
     def set(self,value):
         self.value=value
 
@@ -119,9 +121,13 @@ class W5UIControllerTests(unittest.TestCase):
             with self.assertRaisesRegex(RuntimeError,"Session 0"):
                 desktop_app.launch("nonexistent.sqlite3")
 
-    def _run_ui(self,action,rows):
+    def _run_ui(self,action,rows,*,bell_failure=False):
         FakeButton.all={}
         window=FakeWindow()
+        if bell_failure:
+            def no_audio():
+                raise OSError("Synthetic audio device unavailable")
+            window.bell=no_audio
         fakeconn=FakeConn()
         events=[]
         module=types.ModuleType("tkinter")
@@ -183,6 +189,18 @@ class W5UIControllerTests(unittest.TestCase):
             self.assertEqual(window.bells,2)
             mark.assert_not_called()
         self._run_ui(actions,rows)
+
+    def test_missing_sound_device_keeps_inbox_visible(self):
+        rows=[notification()]
+        def actions(window,tree,visible,events,mark):
+            self.assertEqual(set(tree.items), {"a"*64})
+            self.assertIn("未確認 1 件", FakeStringVar.latest.value)
+            FakeButton.all["更新"].command()
+            self.assertEqual(set(tree.items), {"a"*64})
+            self.assertIn("未確認 1 件", FakeStringVar.latest.value)
+            self.assertEqual(events, [])
+            mark.assert_not_called()
+        self._run_ui(actions,rows,bell_failure=True)
 
     def test_ack_never_calls_approve(self):
         rows=[notification()]

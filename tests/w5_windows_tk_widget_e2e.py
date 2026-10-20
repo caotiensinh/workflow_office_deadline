@@ -87,7 +87,10 @@ def exercise_window(db_path, *, report_path):
         "gui_window_mapped": False,
         "japanese_title": False,
         "initial_notices": 0,
+        "initial_bell_calls": 0,
         "snooze_removed": False,
+        "snooze_expiry_realerted": False,
+        "realert_only_once": False,
         "ack_removed": False,
         "audit_events": 0,
         "approvals": 0,
@@ -99,6 +102,14 @@ def exercise_window(db_path, *, report_path):
 
     def create_window(*args, **kwargs):
         root = real_tk(*args, **kwargs)
+        original_bell = root.bell
+        bell_calls = {"count": 0}
+
+        def measured_bell(*args, **kwargs):
+            bell_calls["count"] += 1
+            return original_bell(*args, **kwargs)
+
+        root.bell = measured_bell
         original_protocol = root.protocol
         hooks = {}
 
@@ -124,6 +135,10 @@ def exercise_window(db_path, *, report_path):
                 items=set(view.get_children())
                 result["initial_notices"]=len(items)
                 assert items == expected_ids, "Wrong number of actual SQLite-backed notifications"
+                result["initial_bell_calls"] = bell_calls["count"]
+                assert bell_calls["count"] == 1, "Initial alert should ring only once"
+                assert all("PRIVATE_SYNTHETIC" not in str(view.item(aid, "values"))
+                           for aid in items), "Private synthetic text leaked into Treeview"
                 labels=" ".join(x.cget("text") for x in elements if isinstance(x, ttk.Label))
                 assert "PRIVATE_SYNTHETIC" not in labels, "Private data escaped into Tk label"
                 assert root.winfo_width() >= 580 and root.winfo_height() >= 350
@@ -137,6 +152,30 @@ def exercise_window(db_path, *, report_path):
                 controls["確認済み"].invoke()
                 assert not view.get_children(), "Acknowledged notice remains visible"
                 result["ack_removed"]=True
+
+                # Simulate elapsed time ONLY in this isolated synthetic DB.
+                # Use the real Refresh button, Tk widget and SQL receipt model.
+                # sqlite3.Connection as a context manager commits but does
+                # NOT close the handle. Windows prohibits deleting the temp DB
+                # while that connection is still open.
+                writer = sqlite3.connect(db_path)
+                try:
+                    with writer:
+                        writer.execute(
+                            "UPDATE desktop_receipts SET snoozed_until=? WHERE alert_id=?",
+                            ("2000-01-01T00:00:00+00:00", "a" * 64),
+                        )
+                finally:
+                    writer.close()
+                controls["更新"].invoke()
+                result["snooze_expiry_realerted"] = (
+                    set(view.get_children()) == {"a" * 64}
+                    and bell_calls["count"] == 2
+                )
+                assert result["snooze_expiry_realerted"], "Expired Snooze did not re-alert"
+                controls["更新"].invoke()
+                result["realert_only_once"] = bell_calls["count"] == 2
+                assert result["realert_only_once"], "Unchanged alert rang more than once"
             except BaseException as exc:
                 captured["error"] = f"{type(exc).__name__}: {exc}"
             finally:
@@ -186,6 +225,8 @@ def exercise_window(db_path, *, report_path):
         assert result["audit_events"] == 2 and result["approvals"] == 0
         assert result["japanese_title"] and result["gui_window_mapped"]
         assert result["snooze_removed"] and result["ack_removed"]
+        assert result["initial_bell_calls"] == 1
+        assert result["snooze_expiry_realerted"] and result["realert_only_once"]
         result["status"]="PASS_WINDOWS_TK_WIDGET_E2E"
 
     report_path.write_text(json.dumps(result,ensure_ascii=False,indent=2),encoding="utf-8")

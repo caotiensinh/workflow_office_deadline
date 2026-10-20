@@ -110,9 +110,19 @@ def launch(db_path, poll_seconds=15):
             if new:
                 # Never use an always-on-top window that could obscure the
                 # operator's work. Bell and lift the local notification center.
-                window.bell()
-                window.deiconify()
-                window.lift()
+                # The bell/focus request is best-effort: some Windows
+                # desktops do not expose an audio device or permit raising
+                # a window. These failures must not discard a valid alert
+                # or misleadingly report a database read failure.
+                try:
+                    window.bell()
+                except (tk.TclError, OSError):
+                    pass
+                try:
+                    window.deiconify()
+                    window.lift()
+                except tk.TclError:
+                    pass
             surfaced.update(current)
             caption.set(f'未確認 {len(alerts)} 件 / 配信 UNKNOWN は手動照合が必要')
         except Exception:
