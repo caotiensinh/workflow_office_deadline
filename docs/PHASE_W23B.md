@@ -1,0 +1,9 @@
+# W23B — One-click Japanese operator acceptance handoff (fictional-only)
+
+**Product goal:** Make the signed-in Windows operator UAT usable without Python/CLI setup, while keeping institutional sign-offs outside the app.
+
+The existing consent-first UAT `one_click()` now automatically generates two **separate new local files** after synthetic ACK/Snooze and Japanese/audio/focus questions: the existing immutable W7/W8 fictional self-report `EDU_W8_Synthetic_UAT_*.json`, plus the W23B privacy-safe `EDU_W23_Operator_Review_*.json`. The handoff is derived only from the strict W17 verified saved report; a second review prevents mismatch; source SHA-256 lets IT verify file correspondence. The GUI displays both paths to the operator. No output overwrite, email sending, network access or automatic upload. The latest Japanese operator handoff instructions are part of the W17 synthetic unsigned ZIP.
+
+**Security boundary:** self-report summary is not a digital signature, independent physical observation, user identity attestation, Windows login autorun, IT authorization or production approval. On Session 0 app still rejects GUI launch. The app never approves personnel decisions. Separate 9 synthetic positive/negative tests cover no-overwrite, source unchanged, original report mismatch, forged approvals and operator flow. Existing W18 ZIP integrity and packaged EXE tests must remain PASS. Only institution-approved, signed-in Session 1 human operator can perform a genuine self-reported GUI UAT; IT must independently review.
+
+Rollout remains 2/6 and production signoffs 0/8 until authorized evidence is observed.
