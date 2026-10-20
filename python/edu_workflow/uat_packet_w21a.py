@@ -9,6 +9,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+import zipfile
 from pathlib import Path
 
 from .kit_integrity_w18 import verify as verify_zip
@@ -61,7 +62,7 @@ def main(argv=None):
                 json.dump(result, stream, ensure_ascii=True, sort_keys=True, indent=2)
         print(json.dumps(result, ensure_ascii=True, sort_keys=True))
         return 0 if result["status"].startswith("LOCAL_CONTENT_") else 3
-    except (OSError, ValueError, RuntimeError, TypeError, EOFError, KeyError):
+    except (OSError, ValueError, RuntimeError, TypeError, EOFError, KeyError, zipfile.BadZipFile):
         print("W21A_EVIDENCE_REJECTED", file=sys.stderr)
         return 2
 
