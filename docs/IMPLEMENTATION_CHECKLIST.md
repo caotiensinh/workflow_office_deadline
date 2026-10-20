@@ -190,7 +190,7 @@ See `docs/PHASE_W7.md`. UAT tooling is **not** equivalent to actual field or pro
 - [x] HR approval fails closed unless source packet digest and anonymous case ID match, there are no evidence gaps and the existing authorized human typed approval succeeds; pin proof to atomic SQLite audit. Manual rejection remains supported.
 - [x] Read-only `hr-draft` CLI never creates workflow SQLite or touches external mail/calendar/HR systems.
 - [x] Add W11 Python regression suite, Windows native CLI E2E, protected Linux test count, synthetic demo and documentation.
-- [ ] PR merged after 4/4 exact-head CI PASS and postmerge main 4/4 CI verified.
+- [x] PR #21 merged at `cccdd9f13d8cd8ee2902060b97d99fce2b90798f`. Exact PR 4/4 CI SUCCESS: Linux 165/165 Python + Rust #39384141262; Windows HR native E2E #39384141293; W4 GUI #39384142204; W5 Tk/EXE #39384141221. Exact postmerge main 4/4 SUCCESS: Linux/Rust #39384328877, Windows HR/E2E #39384328977, W4 #39384328924, W5 Tk/EXE #39384328968. Windows cp1252 JSON round-trip regression PASS.
 - [ ] Approved anonymous institutional data, source signatures/SSO/RBAC, user acceptance, real HR policy and manager sign-off.
 
 **W11 summaries are fact inventories and drafting aids — NEVER HR assessments, performance ratings, rankings, or personnel decisions.**
