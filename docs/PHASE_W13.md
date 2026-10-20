@@ -49,3 +49,10 @@ The original repository is reported PUBLIC by GitHub. No real email, employee/st
 - Plan-only never invokes machine inspection unless specifically requested and authorized.
 - Windows hosted synthetic CI exercises the real 15-minute \`install_task.ps1 -PlanOnly\`; source code review only, no registered task.
 - Merge only with 4/4 exact PR CI and 4/4 postmerge main CI PASS; production gate remains separate.
+
+## Verified W13 CI checkpoint (2026-10-20)
+- W13 PR #25 MERGED at `9c8552cd44dabac9590333c7b86bfdee8b986802`.
+- Exact PR Linux: 201/201 Python regression tests including 16 W13 tests and native Rust PASS (#39389145184).
+- Exact PR Windows W13: 16/16, `install_task.ps1 -PlanOnly -IntervalMinutes 15` returned file channel, no Outlook/SMTP and no ExecutionPolicy bypass (#39389145248). W4 #39389145003, W5 GUI/EXE #39389144999 also SUCCESS.
+- Four exact postmerge main CI: Linux/Rust #39389357539, Windows E2E #39389357526, W4 #39389357533, W5 #39389357534 — all SUCCESS.
+- CI exercises GitHub-hosted Windows, NOT corporate runner; no Task Scheduler changes, live Outlook/SMTP, machine policy override, signed-in desktop UAT or institutional production approval.

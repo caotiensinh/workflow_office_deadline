@@ -216,7 +216,7 @@ No W12 monitor operation sends messages, changes cases, restarts services or per
 - [x] Add optional IT-authorized *read-only* Windows Session ID/PowerShell policy/task existence observation; never bypass restrictions and never assert human GUI UAT.
 - [x] Validate fail-closed readiness and immutable evidence in 16 synthetic W13 tests; add Windows hosted 15-minute Task Scheduler plan-only E2E and protect full regression count.
 - [x] Record six original institution rollout gates and remaining privacy/security/UAT blockers in docs/REQUIREMENTS_GAP_AUDIT_W13.md.
-- [ ] W13 exact PR 4/4 CI PASS + merge + 4/4 postmerge main CI, record run IDs.
+- [x] W13 PR #25 MERGED as `9c8552cd44dabac9590333c7b86bfdee8b986802`; PR HEAD `e679b28053b7d8840ba8da7904764004e86a0cd7`: four CI SUCCESS (#39389145184 Linux 201/201 Python+Rust, #39389145248 Windows W13 16/16 + Task Scheduler 15-minute PlanOnly, #39389145003 W4, #39389144999 W5/Tk/EXE). Postmerge exact `main` 4/4 CI SUCCESS: #39389357539, #39389357526, #39389357533, #39389357534.
 - [ ] Obtain real IT permission and human operator observation on a signed-in Windows endpoint, approved schedule, Outlook, test delivery, SSO/privacy and 3 signed pilots.
 
 W13 is a readiness inspector, **not** authority to bypass managed PowerShell ExecutionPolicy or launch production.
