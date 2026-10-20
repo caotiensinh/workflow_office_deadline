@@ -69,6 +69,32 @@ jobs:
           }
           if (Test-Path -LiteralPath $unusedDb) { throw 'W9 schedule illegally created a database' }
           Write-Host 'W9_WF06_WINDOWS_OFFLINE_PROPOSAL_PASS_NO_DB_NO_INVITES'
+      - name: W11 Windows anonymous HR evidence draft and manual-decision guard
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $env:PYTHONPATH = Join-Path $PWD 'python'
+          python -m unittest discover -s tests -p test_hr_evidence_w11.py -v
+          if ($LASTEXITCODE -ne 0) { throw 'W11 HR safety regressions failed' }
+          $db = Join-Path $env:RUNNER_TEMP 'W11_NEVER_CREATE.sqlite'
+          if (Test-Path -LiteralPath $db) { throw 'W11 isolated output DB already exists' }
+          $source = Join-Path $PWD 'examples\wf05_synthetic_source.txt'
+          $hash = (Get-FileHash -LiteralPath $source -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($hash -ne '469039e8e9b952c786333f298148b9a573371e6f761f60e6f3c208607774c73a') {
+            throw 'W11 synthetic evidence bytes changed (check Git line endings)'
+          }
+          $raw = @(python -m edu_workflow.cli --db $db hr-draft --packet-file examples/wf05_hr_packet.json --as-of 2026-10-20)
+          $rc = $LASTEXITCODE
+          $report = ($raw -join "`n") | ConvertFrom-Json
+          if ($rc -ne 0 -or $report.status -ne 'READY_FOR_HUMAN_REVIEW' -or
+              $report.draft_sections.Count -ne 2 -or -not $report.human_review_required -or
+              $report.hr_assessment_performed -or $report.ranking_performed -or
+              $report.employment_decision_performed -or $report.external_actions_performed -or
+              $report.writes_database -or $report.source_authenticity_verified) {
+            throw 'W11 HR draft must stay source-cited, review-only and side-effect-free'
+          }
+          if (Test-Path -LiteralPath $db) { throw 'W11 HR preview illegally created SQLite DB' }
+          Write-Host 'W11_WINDOWS_ANONYMOUS_HR_DRAFT_PASS_REVIEW_ONLY_NO_DB'
       - name: W10 Windows regulation provenance E2E, no automated legal decision
         shell: pwsh
         run: |

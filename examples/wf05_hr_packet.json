@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "case_ref": "ANON-0123456789ABCDEF",
+  "required_codes": [
+    "TRAINING_COMPLETED",
+    "DOCUMENT_SUBMITTED"
+  ],
+  "claims": [
+    {
+      "claim_id": "CL-00000001",
+      "fact_code": "TRAINING_COMPLETED",
+      "observed_on": "2026-10-11",
+      "evidence_id": "EV-00000001"
+    },
+    {
+      "claim_id": "CL-00000002",
+      "fact_code": "DOCUMENT_SUBMITTED",
+      "observed_on": "2026-10-12",
+      "evidence_id": "EV-00000002"
+    }
+  ],
+  "sources": [
+    {
+      "evidence_id": "EV-00000001",
+      "document": "wf05_synthetic_source.txt",
+      "sha256": "469039e8e9b952c786333f298148b9a573371e6f761f60e6f3c208607774c73a",
+      "reviewed": true
+    },
+    {
+      "evidence_id": "EV-00000002",
+      "document": "wf05_synthetic_source.txt",
+      "sha256": "469039e8e9b952c786333f298148b9a573371e6f761f60e6f3c208607774c73a",
+      "reviewed": true
+    }
+  ]
+}

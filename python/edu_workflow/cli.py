@@ -36,6 +36,7 @@ def parser():
     sub.add_parser('audit')
     review=sub.add_parser('review-queue',help='Masked exception queue incl. regulation source checks')
     review.add_argument('--registry-file',help='local WF04 declared-source registry')
+    review.add_argument('--hr-packet-file',help='local anonymous evidence packet for HR case')
     schedule=sub.add_parser('schedule-propose',help='WF-06: offline anonymous conflict-free meeting proposals; no calendar writes')
     schedule.add_argument('--file',required=True,help='Anonymous structured availability JSON file')
     delivery=sub.add_parser('deliver',help='Explicit notification sending; console never marks delivered')
@@ -51,10 +52,14 @@ def parser():
     approval.add_argument('--revision',type=int,required=True)
     approval.add_argument('--decision',choices=['approve','reject'],required=True)
     approval.add_argument('--registry-file',help='required for REGULATION approvals')
+    approval.add_argument('--hr-packet-file',help='required for HR approval integrity gate')
     regulation=sub.add_parser('check-regulations',help='WF04 offline check; no DB or legal conclusion')
     regulation.add_argument('--registry-file',required=True)
     regulation.add_argument('--reference',required=True,help='reference_id@version')
     regulation.add_argument('--as-of',help='YYYY-MM-DD simulation date')
+    hr=sub.add_parser('hr-draft',help='WF05 anonymous cited HR evidence draft; no rating or approval')
+    hr.add_argument('--packet-file',required=True)
+    hr.add_argument('--as-of',help='YYYY-MM-DD only for deterministic simulation')
     doc=sub.add_parser('check-docx',help='Check required phrases in local DOCX')
     doc.add_argument('--file',required=True)
     doc.add_argument('--criteria',required=True)
@@ -74,6 +79,12 @@ def main(argv=None):
         criteria=json.loads(Path(args.criteria).read_text(encoding='utf-8'))
         print(json.dumps(validate_docx(args.file,criteria),ensure_ascii=False,indent=2))
         return 0
+    if args.cmd=='hr-draft':
+        # Explicitly avoid opening/creating a workflow database.
+        from .hr_evidence import draft_from_packet
+        report=draft_from_packet(args.packet_file,as_of=args.as_of)
+        print(json.dumps(report,ensure_ascii=False,indent=2))
+        return 0 if report['status']=='READY_FOR_HUMAN_REVIEW' else 3
     if args.cmd=='check-regulations':
         from .regulation import verify_reference
         result=verify_reference(args.registry_file,args.reference,as_of=args.as_of)
@@ -123,7 +134,8 @@ def main(argv=None):
         elif args.cmd=='audit':
             print(json.dumps(audit_list(con),ensure_ascii=False,indent=2))
         elif args.cmd=='review-queue':
-            print(json.dumps(review_queue(con,registry_path=args.registry_file),ensure_ascii=False,indent=2))
+            print(json.dumps(review_queue(con,registry_path=args.registry_file,
+                                          hr_packet_path=args.hr_packet_file),ensure_ascii=False,indent=2))
         elif args.cmd=='deliver':
             print(json.dumps(dispatch(con,args.channel,args.out_dir),ensure_ascii=False))
         elif args.cmd=='confirm-deadline':
@@ -147,7 +159,7 @@ def main(argv=None):
             action=args.decision.upper()
             human_confirm(f'{action} {args.case_id}')
             case,rev=decide(con,args.case_id,'APPROVED' if args.decision=='approve' else 'REJECTED',actor,args.revision,
-                            registry_path=args.registry_file)
+                            registry_path=args.registry_file,hr_packet_path=args.hr_packet_file)
             print(json.dumps({'case_id':case['case_id'],'status':case['status'],'revision':rev}))
         else: raise AssertionError('unhandled command')
     return 0

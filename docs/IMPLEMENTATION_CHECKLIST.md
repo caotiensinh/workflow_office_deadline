@@ -182,3 +182,15 @@ See `docs/PHASE_W7.md`. UAT tooling is **not** equivalent to actual field or pro
 - [ ] Institutional sourcing/official validity, managed source identity/signatures, SSO/MFA/RBAC and real legal/HR reviewer sign-off.
 
 **Hash and a human_reviewed flag do NOT prove an official regulation is legally valid.** See `docs/PHASE_W10.md`.
+
+## Phase W11 — WF-05 anonymous, source-cited HR reviewer draft (2026-10-20)
+
+- [x] Strict anonymous-only, enum-based structured fact packet; rejects free-text, names, ratings and invalid/duplicate fields.
+- [x] Automatically group backed observations into Japanese reviewer draft sections; identify missing, changed, unreviewed and future-dated evidence, with opaque citation IDs.
+- [x] HR approval fails closed unless source packet digest and anonymous case ID match, there are no evidence gaps and the existing authorized human typed approval succeeds; pin proof to atomic SQLite audit. Manual rejection remains supported.
+- [x] Read-only `hr-draft` CLI never creates workflow SQLite or touches external mail/calendar/HR systems.
+- [x] Add W11 Python regression suite, Windows native CLI E2E, protected Linux test count, synthetic demo and documentation.
+- [ ] PR merged after 4/4 exact-head CI PASS and postmerge main 4/4 CI verified.
+- [ ] Approved anonymous institutional data, source signatures/SSO/RBAC, user acceptance, real HR policy and manager sign-off.
+
+**W11 summaries are fact inventories and drafting aids — NEVER HR assessments, performance ratings, rankings, or personnel decisions.**
