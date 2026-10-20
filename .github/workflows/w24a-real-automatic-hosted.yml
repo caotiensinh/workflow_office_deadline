@@ -1,0 +1,37 @@
+name: W24A Real Hosted Automatic Scheduler Cadence
+
+on:
+  push:
+    branches:
+      - feat/w24a-real-hosted-recurrence
+
+permissions:
+  contents: read
+
+jobs:
+  real-automatic-hosted-only:
+    runs-on: windows-latest
+    timeout-minutes: 6
+    env:
+      W24_ALLOW_DISPOSABLE_TASK_CREATE: 'yes'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Plan-only never touches Task Scheduler
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $plan = (& .\windows\w24_hosted_automatic_cadence.ps1 -PlanOnly) | ConvertFrom-Json
+          if ($plan.mode -ne 'plan-only' -or $plan.task_interval_minutes -ne 1 -or
+              $plan.real_task_created -or $plan.actual_scheduled_15m_cadence_observed -or
+              $plan.production_accepted -or $plan.outlook_accessed -or $plan.smtp_sent) {
+            throw 'W24A plan-only safety regression'
+          }
+      - name: Watch two NATURAL clock-triggered 1-minute firings and verify cleanup
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          & .\windows\w24_hosted_automatic_cadence.ps1 -AutomaticHosted
+          if ($LASTEXITCODE -and $LASTEXITCODE -ne 0) { throw 'W24A real recurrence failed' }
+          Write-Host 'W24A_GITHUB_HOSTED_SYNTHETIC_ONLY_NOT_PRODUCTION_15MIN_EVIDENCE'
