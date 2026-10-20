@@ -124,3 +124,16 @@ Next: Run W5 visual E2E on a separately authorized *interactive* Windows session
 - [x] Windows GitHub Actions real Tk E2E PASS in hosted Session 2, 2 synthetic alerts, mapped window, Snooze+ACK, 2 audit events and 0 approvals (#39340376029).
 - [x] PR #10 MERGED; all four postmerge Linux and Windows CI workflows PASS (#39340624948, #39340624907, #39340624895, #39340624887).
 - [ ] Real signed-in Windows workstation user acceptance, Startup after login and audible notice — not covered by hosted CI.
+
+## Phase W6 — Real Windows Snooze re-alert reliability (2026-10-20)
+
+- [x] PR #11 merged at `a4c55825bff0a6e76c15c3eb059d504679774efe`.
+- [x] Tk bell/focus exceptions cannot suppress valid notification rows or masquerade as SQLite read failures; synthetic no-audio regression PASS.
+- [x] Hosted real Windows Tk Session 2: initial bell once, actual Snooze/ACK widget actions, synthetic snooze expiry then re-alert once, zero repeat bells on unchanged refresh and zero approvals.
+- [x] Reproduced and fixed `WinError 32` temporary SQLite file lock from an unclosed test writer; subsequent Windows cleanup PASS.
+- [x] PR CI: Linux Python/Rust #39364014697 (103/103 Python PASS), Windows legacy #39364014660, Windows W4 #39364014574, Windows Tk/EXE/Startup sandbox #39364014825 all SUCCESS.
+- [x] Postmerge `main` CI: Linux #39364174940, Windows legacy #39364174967, Windows W4 #39364175029, Windows Tk package #39364174898 all SUCCESS.
+- [ ] Actual institutional *signed-in Windows user* UAT of Japanese fonts, focus behavior, physical sound, keyboard/mouse and logoff/login Startup persistence.
+- [ ] IT-approved Outlook/Graph, SMTP/push, SSO/MFA/RBAC, data-retention/encryption, release signing and production workflow pilot.
+
+W6 CI demonstrates synthetic Windows GUI behavior, not a real school workstation sign-off. See `docs/W6_TEST_REPORT.md`.
