@@ -1,0 +1,37 @@
+name: W23A Real Hosted Task Scheduler Synthetic E2E
+
+on:
+  push:
+    branches:
+      - feat/w23a-hosted-scheduler-live-smoke
+
+permissions:
+  contents: read
+
+jobs:
+  disposable-windows-hosted-only:
+    runs-on: windows-latest
+    timeout-minutes: 14
+    env:
+      W23_ALLOW_DISPOSABLE_TASK_CREATE: "yes"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Plan-only has no machine changes
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $plan = (& .\windows\w23_hosted_task_live_smoke.ps1 -PlanOnly) | ConvertFrom-Json
+          if ($plan.mode -ne 'plan-only' -or $plan.task_interval_minutes -ne 15 -or
+              $plan.real_task_created -or $plan.actual_scheduled_15m_cadence_observed -or
+              $plan.production_accepted -or $plan.outlook_accessed -or $plan.smtp_sent) {
+            throw 'W23A PlanOnly produced unsafe status'
+          }
+      - name: Real ephemeral task registered, on-demand invoked, and removed
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          & .\windows\w23_hosted_task_live_smoke.ps1 -LiveHosted
+          if ($LASTEXITCODE -and $LASTEXITCODE -ne 0) { throw 'W23A hosted task smoke failed' }
+          Write-Host 'W23A_ONLY_GITHUB_HOSTED_WINDOWS_NO_SELFHOST_OR_REAL_INSTITUTION_TASK'

@@ -1,0 +1,9 @@
+# W23A — Real disposable GitHub-hosted Windows Task Scheduler smoke
+
+**Product goal:** Python + Rust automate educational-office WF01–WF08 while keeping approvals and endpoint changes under IT/human control.
+
+**What actually changes:** `windows/w23_hosted_task_live_smoke.ps1` can register a uniquely named temporary **synthetic** scheduled task on an **ephemeral GitHub-hosted Windows runner only**, inspect the *real* registered Task Scheduler XML for `PT15M`/least privilege, invoke the action **once on demand**, observe a temp marker, and unconditionally unregister/delete only that test task and its test files. The branch-scoped workflow `.github/workflows/w23a-hosted-task-synthetic.yml` gates execution. Both opt-in `GITHUB_ACTIONS=true` and `RUNNER_ENVIRONMENT=github-hosted`, Windows and separate `W23_ALLOW_DISPOSABLE_TASK_CREATE=yes` are required before Scheduler access. `-PlanOnly` is always nonmutating. No Outlook, SMTP, real DB, org network or self-hosted machine changes.
+
+**Critical evidence limit:** Real task registration + *manual on-demand start* proves that a synthetic task can run on a disposable hosted runner. It **does not** prove recurring 15-minute runs (the trigger is scheduled 10 minutes into the future), organizational endpoint permissions, or IT approval. Production rollout gate #3 remains pending. Keep test CI branch-scoped; do not make main run synthetic task automatically.
+
+Accept only exact-head CI success and real log markers `W23A_REAL_HOSTED_TASK_REGISTERED_AND_ONDEMAND_EXECUTED_NOT_15MIN_CADENCE` and `W23A_HOSTED_TASK_CLEANUP_PASS_NO_INSTITUTIONAL_ACCEPTANCE`. Do not claim success before these markers appear.
