@@ -197,6 +197,53 @@ jobs:
           }
           Write-Host 'W8_PACKAGED_PREFLIGHT_PASS_NOT_PHYSICAL_UAT'
           Write-Host "W8_UAT_SHA256=$((Get-FileHash -LiteralPath $exe -Algorithm SHA256).Hash)"
+      - name: W17 GUI operator handoff kit, SHA256 verification only
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $env:PYTHONPATH = Join-Path $PWD 'python'
+          python -m unittest discover -s tests -p test_uat_review_w17.py -v
+          if ($LASTEXITCODE -ne 0) { throw 'W17 report review safety tests failed' }
+          $exe=Join-Path $PWD 'dist\EDUFieldUAT.exe'
+          $folder=Join-Path $env:RUNNER_TEMP 'w17-handoff-kit'
+          if (Test-Path -LiteralPath $folder) { throw 'W17 kit directory unexpectedly exists' }
+          New-Item -ItemType Directory -Path $folder | Out-Null
+          Copy-Item -LiteralPath $exe -Destination (Join-Path $folder 'EDUFieldUAT.exe')
+          Copy-Item -LiteralPath (Join-Path $PWD 'windows\W17_README_JP.txt') -Destination $folder
+          $hash=(Get-FileHash -LiteralPath $exe -Algorithm SHA256).Hash.ToUpperInvariant()
+          if ($hash -notmatch '^[0-9A-F]{64}$') { throw 'W17 invalid executable SHA256' }
+          $template=Get-Content -LiteralPath (Join-Path $PWD 'windows\W17_START_UAT.cmd.in') -Raw -Encoding UTF8
+          if ($template -notmatch '__EXPECTED_SHA256__') { throw 'W17 launcher template lacks immutable hash placeholder' }
+          $launcher=Join-Path $folder '00_START_UAT.cmd'
+          $template.Replace('__EXPECTED_SHA256__',$hash) | Set-Content -LiteralPath $launcher -Encoding Ascii
+          $output = @(& $launcher --verify-only)
+          $code = $LASTEXITCODE
+          if ($code -ne 0 -or ($output -join '') -notmatch 'W17_KIT_HASH_VERIFIED_NO_GUI') {
+            throw 'W17 safe hash-check-only entrypoint failed'
+          }
+          $tampered=Join-Path $env:RUNNER_TEMP 'w17-tampered-test'
+          New-Item -ItemType Directory -Path $tampered | Out-Null
+          Copy-Item -LiteralPath (Join-Path $folder 'EDUFieldUAT.exe') -Destination $tampered
+          Copy-Item -LiteralPath $launcher -Destination $tampered
+          Add-Content -LiteralPath (Join-Path $tampered 'EDUFieldUAT.exe') -Value 'INTENTIONAL_TEST_TAMPER'
+          $bad = @(& (Join-Path $tampered '00_START_UAT.cmd') --verify-only)
+          $badCode = $LASTEXITCODE
+          if ($badCode -ne 2 -or ($bad -join '') -notmatch 'W17_HASH_MISSING_OR_MISMATCH_DO_NOT_RUN') {
+            throw 'W17 tampered unsigned executable was not rejected'
+          }
+          $zip=Join-Path $PWD 'dist\W17_SignedIn_GUI_UAT_Kit.zip'
+          if (Test-Path -LiteralPath $zip) { throw 'W17 output already exists' }
+          Compress-Archive -Path (Join-Path $folder '*') -DestinationPath $zip
+          if (-not (Test-Path -LiteralPath $zip -PathType Leaf)) { throw 'W17 handoff ZIP missing' }
+          Write-Host 'W17_PACKAGED_HASH_CHECK_AND_TAMPER_REJECTION_PASS_NOT_PHYSICAL_UAT'
+          Write-Host "W17_BUNDLE_SHA256=$((Get-FileHash -LiteralPath $zip -Algorithm SHA256).Hash)"
+          $global:LASTEXITCODE = 0
+      - uses: actions/upload-artifact@v4
+        with:
+          name: W17-Windows-SignedIn-Unsigned-Synthetic-GUI-UAT-Kit
+          path: dist/W17_SignedIn_GUI_UAT_Kit.zip
+          if-no-files-found: error
+          retention-days: 7
       - uses: actions/upload-artifact@v4
         with:
           name: W8-Windows-Unsigned-OneClick-Synthetic-UAT
