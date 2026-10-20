@@ -155,11 +155,18 @@ def exercise_window(db_path, *, report_path):
 
                 # Simulate elapsed time ONLY in this isolated synthetic DB.
                 # Use the real Refresh button, Tk widget and SQL receipt model.
-                with sqlite3.connect(db_path) as writer:
-                    writer.execute(
-                        "UPDATE desktop_receipts SET snoozed_until=? WHERE alert_id=?",
-                        ("2000-01-01T00:00:00+00:00", "a" * 64),
-                    )
+                # sqlite3.Connection as a context manager commits but does
+                # NOT close the handle. Windows prohibits deleting the temp DB
+                # while that connection is still open.
+                writer = sqlite3.connect(db_path)
+                try:
+                    with writer:
+                        writer.execute(
+                            "UPDATE desktop_receipts SET snoozed_until=? WHERE alert_id=?",
+                            ("2000-01-01T00:00:00+00:00", "a" * 64),
+                        )
+                finally:
+                    writer.close()
                 controls["更新"].invoke()
                 result["snooze_expiry_realerted"] = (
                     set(view.get_children()) == {"a" * 64}
