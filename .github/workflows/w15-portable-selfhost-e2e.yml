@@ -76,16 +76,17 @@ jobs:
     runs-on: [self-hosted, Windows]
     timeout-minutes: 12
     env:
-      W15_ROOT: ${{ runner.temp }}\w15-bundle-${{ github.run_id }}-${{ github.run_attempt }}
       PYTHONDONTWRITEBYTECODE: '1'
     steps:
       - name: Download the hosted-tested isolated application bundle
         uses: actions/download-artifact@v4
         with:
           name: w15-tested-bundle-${{ github.run_id }}
-          path: ${{ env.W15_ROOT }}
+          path: ${{ runner.temp }}\w15-bundle-${{ github.run_id }}-${{ github.run_attempt }}
       - name: Run Python + native Rust + SQLite + six file alerts via CMD, twice
         shell: cmd
+        env:
+          W15_ROOT: ${{ runner.temp }}\w15-bundle-${{ github.run_id }}-${{ github.run_attempt }}
         run: |
           @echo off
           if not exist "%W15_ROOT%\w15_manifest.json" exit /b 3
@@ -100,6 +101,6 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: w15-selfhost-safe-evidence-${{ github.run_id }}
-          path: ${{ env.W15_ROOT }}\selfhost-evidence\result.json
+          path: ${{ runner.temp }}\w15-bundle-${{ github.run_id }}-${{ github.run_attempt }}\selfhost-evidence\result.json
           if-no-files-found: warn
           retention-days: 3
