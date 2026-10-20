@@ -69,6 +69,28 @@ jobs:
           }
           if (Test-Path -LiteralPath $unusedDb) { throw 'W9 schedule illegally created a database' }
           Write-Host 'W9_WF06_WINDOWS_OFFLINE_PROPOSAL_PASS_NO_DB_NO_INVITES'
+      - name: W14 offline Task XML audit; 15-minute file only with no machine inspection
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $env:PYTHONPATH = Join-Path $PWD 'python'
+          python -m unittest discover -s tests -p test_task_xml_w14.py -v
+          if ($LASTEXITCODE -ne 0) { throw 'W14 task XML safety regression failed' }
+          $fixture = Join-Path $PWD 'examples\w14_task_synthetic.xml'
+          $raw = @(python -m edu_workflow.task_xml_audit --xml $fixture)
+          $rc = $LASTEXITCODE
+          $report = ([string]::Join([Environment]::NewLine, $raw)) | ConvertFrom-Json
+          if ($rc -ne 0 -or $report.status -ne 'CONFIG_MATCH_UNVERIFIED' -or
+              $report.task_existence_verified -or $report.task_executed_verified -or
+              $report.fifteen_minute_runs_observed -or $report.production_accepted -or
+              $report.external_actions_performed -or $report.machine_policy_changed) {
+            throw 'W14 offline XML audit fabricated real endpoint acceptance'
+          }
+          if (@($report.checks | Where-Object { -not $_.pass }).Count -ne 0) {
+            throw 'W14 declared safe synthetic source did not match expected config'
+          }
+          Write-Host 'W14_WINDOWS_TASK_XML_15MIN_OFFLINE_PASS_NO_SCHEDULER_CHANGES'
+          $global:LASTEXITCODE = 0
       - name: W13 IT staging preflight and 15-minute task PLAN only
         shell: pwsh
         run: |

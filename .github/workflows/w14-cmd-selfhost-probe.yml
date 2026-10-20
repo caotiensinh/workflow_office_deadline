@@ -1,0 +1,27 @@
+name: W14 Self-hosted CMD Transport Probe (non-invasive)
+on:
+  push:
+    branches:
+      - feat/w14-safe-cmd-runner-probe
+
+permissions:
+  contents: read
+
+concurrency:
+  group: w14-cmd-transport
+  cancel-in-progress: true
+
+jobs:
+  cmd-transport-only:
+    if: github.repository == 'caotiensinh/workflow_office_deadline'
+    runs-on: [self-hosted, Windows]
+    timeout-minutes: 3
+    steps:
+      - name: Test CMD job transport only, no PowerShell, checkout, or machine inspection
+        shell: cmd
+        run: |
+          @echo off
+          echo W14_CMD_RUNNER_TRANSPORT_STARTED
+          echo W14_SCOPE_NO_CHECKOUT_NO_SCRIPT_POLICY_CHANGE_NO_HOST_DATA
+          echo W14_CMD_RUNNER_TRANSPORT_PASS
+          exit /b 0
