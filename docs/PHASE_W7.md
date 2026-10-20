@@ -34,3 +34,8 @@ If the report file already exists, the command refuses overwriting it. Choose a 
 ## Still outside W7
 - Actual logout/login with opt-in Startup shortcut on an approved endpoint and physical observation; no automated claim.
 - Production Outlook/Graph/SMTP/SSO, institutional privacy requirements, signed EXE and formal pilot sign-off.
+
+## Verified synthetic CI checkpoint
+- PR #13 W7 functional CI on `617d4828768b3363b2cf04e8b4bfdd99e6a330af`: Linux Python/Rust #39366926773, Windows W4 #39366926695, Windows legacy #39366926670, Windows GUI/EXE/Startup sandbox #39366926660 — all SUCCESS.
+- 107/107 Python regression tests PASS. Windows log emits `W7_STARTUP_INTEGRITY_E2E_PASS` and verifies tamper refusal, explicit repair and removal.
+- These results certify safe synthetic tooling, **not** physical sound, real workstation startup, IT authorization or production operation.

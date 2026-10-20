@@ -140,10 +140,11 @@ W6 CI demonstrates synthetic Windows GUI behavior, not a real school workstation
 
 ## Phase W7 — Startup integrity & reproducible signed-in user UAT kit (2026-10-20)
 
-- [ ] Read-only `-Verify` reports Startup shortcut identity, executable and DB arguments, and **never** claims login autorun acceptance.
-- [ ] Startup removal refuses an owned-looking shortcut with unexpected executable or DB arguments; explicit repair and rollback covered in Windows sandbox CI.
-- [ ] Fictional two-alert Windows field-UAT fixture, human ACK/Snooze receipt audit, no approvals and non-overwriting local JSON evidence implemented and tested.
-- [ ] W7 PR and postmerge Linux Python/Rust + Windows legacy/W4/desktop CI all PASS (fill exact evidence after test).
+- [x] Read-only `-Verify` reports Startup shortcut identity, executable and DB arguments, and **never** claims login autorun acceptance.
+- [x] Startup removal refuses an owned-looking shortcut with unexpected executable or DB arguments; explicit repair and rollback covered in Windows sandbox CI.
+- [x] Fictional two-alert Windows field-UAT fixture, ACK/Snooze receipt audit, no approvals and non-overwriting JSON evidence **tooling** implemented; this does not imply a person completed UAT.
+- [x] W7 PR CI at `617d4828768b3363b2cf04e8b4bfdd99e6a330af` all SUCCESS: Linux Python/Rust #39366926773 (**107/107 Python**), Windows W4 #39366926695, Windows legacy #39366926670, Windows real Tk/EXE/sandbox Startup integrity #39366926660.
+- [ ] Postmerge `main` CI verified after W7 merge; add evidence when completed.
 - [ ] Actual signed-in user physically verifies Japanese font/sound/focus and separately approved logout/login Startup.
 - [ ] IT authorization for Outlook/Graph, SMTP, SSO and production acceptance.
 

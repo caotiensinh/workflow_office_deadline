@@ -146,3 +146,10 @@ Preview startup without changing Windows:
 .\windows\manage_desktop_startup.ps1 -PlanOnly -Executable "C:\ApprovedApp\EDUNotifications.exe" -DbPath "C:\ApprovedData\workflow.sqlite3"
 ```
 After institutional approval, run `-Install` instead of `-PlanOnly` as the signed-in user; use `-Remove` to roll back. No registry or Task Scheduler changes. See [W5 acceptance guide](docs/PHASE_W5.md).
+
+
+## W7 — Safe Startup verification and human-observed synthetic Windows GUI UAT
+
+Check an existing per-user Startup shortcut **without changing Windows** using `windows/manage_desktop_startup.ps1 -Verify -Executable <approved-exe> -DbPath <approved-sqlite>`. Its JSON `valid_link` reports only link integrity; it deliberately sets `actual_login_autorun_verified=false`. Unexpected shortcut targets cannot be removed with this helper.
+
+On an authorized **signed-in** Windows test session (never from runner service Session 0), run `python -m edu_workflow.field_uat --plan-only`, then explicitly opt into `--run-synthetic --report <new-json-path>`. It creates two fictional reminders, records ACK/Snooze receipts and asks the operator about Japanese text, sound and focus. It never accesses Outlook or production databases and reports `production_accepted=false`. See [W7 field acceptance guide](docs/PHASE_W7.md).
