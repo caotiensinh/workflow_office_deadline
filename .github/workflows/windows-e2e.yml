@@ -51,6 +51,24 @@ jobs:
           print('Windows native E2E PASS: 5 cases; 6 durable notices; second run idempotent')
           '@ | python -
           if ($LASTEXITCODE -ne 0) { throw 'Windows E2E assertion failed' }
+      - name: W9 WF06 native Windows read-only schedule proposal acceptance
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $env:PYTHONPATH = Join-Path $PWD 'python'
+          python -m unittest discover -s tests -p test_schedule_w9.py -v
+          if ($LASTEXITCODE -ne 0) { throw 'W9 Windows schedule regression failed' }
+          $unusedDb = Join-Path $env:RUNNER_TEMP 'w9-proposal-must-not-create.sqlite3'
+          if (Test-Path -LiteralPath $unusedDb) { throw 'W9 isolated DB fixture already exists' }
+          $report = (python -m edu_workflow.cli --db $unusedDb schedule-propose --file examples/wf06_availability.json) | ConvertFrom-Json
+          if ($LASTEXITCODE -ne 0 -or $report.status -ne 'PROPOSALS' -or
+              $report.proposals.Count -ne 2 -or -not $report.requires_human_approval -or
+              $report.calendar_verified -or $report.external_actions_performed -or
+              $report.writes_database) {
+            throw 'W9 Windows read-only schedule result invalid'
+          }
+          if (Test-Path -LiteralPath $unusedDb) { throw 'W9 schedule illegally created a database' }
+          Write-Host 'W9_WF06_WINDOWS_OFFLINE_PROPOSAL_PASS_NO_DB_NO_INVITES'
       - name: W2 actual Windows EML intake and Rust deadline E2E
         shell: pwsh
         run: |
