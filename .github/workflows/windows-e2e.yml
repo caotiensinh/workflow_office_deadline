@@ -69,6 +69,43 @@ jobs:
           }
           if (Test-Path -LiteralPath $unusedDb) { throw 'W9 schedule illegally created a database' }
           Write-Host 'W9_WF06_WINDOWS_OFFLINE_PROPOSAL_PASS_NO_DB_NO_INVITES'
+      - name: W13 IT staging preflight and 15-minute task PLAN only
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $env:PYTHONPATH = Join-Path $PWD 'python'
+          python -m unittest discover -s tests -p test_staging_w13.py -v
+          if ($LASTEXITCODE -ne 0) { throw 'W13 staging safety tests failed' }
+          $out = Join-Path $env:RUNNER_TEMP 'w13-plan-only-report.json'
+          if (Test-Path -LiteralPath $out) { throw 'W13 evidence already exists' }
+          $raw = @(python -m edu_workflow.staging_preflight --project $PWD --output $out)
+          $code = $LASTEXITCODE
+          $report = [string]::Join([Environment]::NewLine, $raw) | ConvertFrom-Json
+          if ($code -ne 0 -or $report.mode -ne 'plan' -or $report.status -ne 'PLAN_REVIEW_ONLY' -or
+              $report.production_accepted -or $report.real_outlook_accessed -or
+              $report.smtp_used -or $report.task_created_or_changed -or
+              $report.execution_policy_changed -or $report.machine_changes_performed -or
+              $report.human_pilot_accepted) {
+            throw 'W13 plan-only did not remain safely unapproved'
+          }
+          $approval = @($report.checks | Where-Object { $_.id -eq 'IT_ENDPOINT_APPROVAL' })
+          if ($approval.Count -ne 1 -or $approval[0].status -ne 'PENDING_AUTHORIZED_EVIDENCE') {
+            throw 'W13 falsely declared endpoint authorization'
+          }
+          $taskPlan = (& .\windows\install_task.ps1 -PlanOnly -IntervalMinutes 15) | ConvertFrom-Json
+          if ($taskPlan.task_name -ne 'EducationAIWorkflow' -or
+              $taskPlan.interval_minutes -ne 15 -or
+              $taskPlan.source -ne 'none' -or
+              $taskPlan.notification_channel -ne 'file' -or
+              $taskPlan.replaces_existing -or
+              $taskPlan.command -match '(?i)-ExecutionPolicy\s+Bypass|-ImportOutlookClassic|\s-Channel\s+smtp') {
+            throw 'W13 Task Scheduler PLAN_ONLY is unsafe or changed'
+          }
+          if (-not (Test-Path -LiteralPath $out -PathType Leaf)) {
+            throw 'W13 evidence file missing'
+          }
+          Write-Host 'W13_WIN_PLANONLY_15MIN_FILECHANNEL_NO_POLICY_BYPASS_PASS'
+          $global:LASTEXITCODE = 0
       - name: W12 Windows read-only monitor dashboard and UNKNOWN quarantine
         shell: pwsh
         run: |

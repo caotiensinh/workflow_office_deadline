@@ -207,3 +207,16 @@ See `docs/PHASE_W7.md`. UAT tooling is **not** equivalent to actual field or pro
 - [ ] Institution-approved continuous monitoring, actual SMTP/DB incident reconciliation and approved 3-workflow pilot.
 
 No W12 monitor operation sends messages, changes cases, restarts services or performs production recovery.
+
+
+## Phase W13 — IT staging readiness, plan-only and explicit production gates (2026-10-20)
+
+- [x] Read requirements and W12 state before modifying; confirm main HEAD and four green CI.
+- [x] Add plan-only static project checks without Task Scheduler, Outlook, SMTP or database access.
+- [x] Add optional IT-authorized *read-only* Windows Session ID/PowerShell policy/task existence observation; never bypass restrictions and never assert human GUI UAT.
+- [x] Validate fail-closed readiness and immutable evidence in 16 synthetic W13 tests; add Windows hosted 15-minute Task Scheduler plan-only E2E and protect full regression count.
+- [x] Record six original institution rollout gates and remaining privacy/security/UAT blockers in docs/REQUIREMENTS_GAP_AUDIT_W13.md.
+- [ ] W13 exact PR 4/4 CI PASS + merge + 4/4 postmerge main CI, record run IDs.
+- [ ] Obtain real IT permission and human operator observation on a signed-in Windows endpoint, approved schedule, Outlook, test delivery, SSO/privacy and 3 signed pilots.
+
+W13 is a readiness inspector, **not** authority to bypass managed PowerShell ExecutionPolicy or launch production.
