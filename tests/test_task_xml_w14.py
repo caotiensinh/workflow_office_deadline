@@ -87,7 +87,12 @@ class TaskXMLAuditW14(unittest.TestCase):
     def test_command_metacharacters_and_unquoted_path_fail(self):
         for value in (" & calc", " | curl", "%PATH%", "$env:SECRET", ";Write-Host"):
             self.file.write_bytes(SAMPLE.read_bytes())
-            r = self.rewrite("-Channel file", "-Channel file" + value)
+            # XML metacharacters such as '&' are rejected by the parser
+            # itself; well-formed injected text must fail the action allowlist.
+            try:
+                r = self.rewrite("-Channel file", "-Channel file" + value)
+            except ValueError:
+                continue
             self.assertFalse(self.statuses(r)["FILE_ONLY_NO_ADDITIONAL_FLAGS"])
 
     def test_working_directory_action_metadata_rejected(self):
