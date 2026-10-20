@@ -1,0 +1,38 @@
+name: W8 MRCAO Session Diagnostic (read-only)
+
+on:
+  push:
+    branches: [feat/w8-oneclick-field-uat]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: w8-office-selfhost-session-probe
+  cancel-in-progress: true
+
+jobs:
+  mrcao-session-preflight:
+    runs-on: [self-hosted, Windows]
+    timeout-minutes: 5
+    steps:
+      - name: Inspect runner session, without accessing user data or starting GUI
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $sid=(Get-Process -Id $PID).SessionId
+          $evidence=[ordered]@{
+            runner=$env:RUNNER_NAME
+            session_id=$sid
+            service_session=[bool]($sid -eq 0)
+            gui_accepted=$false
+            modifies_machine=$false
+            reads_outlook=$false
+            accesses_production_db=$false
+          }
+          $evidence | ConvertTo-Json -Compress | Write-Host
+          if ($sid -eq 0) {
+            Write-Host 'W8_RUNNER_LIVE_SESSION0_GUI_NOT_POSSIBLE'
+          } else {
+            Write-Host 'W8_NONZERO_SESSION_DETECTED_NOT_A_HUMAN_GUI_UAT'
+          }
