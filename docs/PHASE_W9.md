@@ -26,3 +26,9 @@ Output includes `requires_human_approval=true`, `calendar_verified=false`, `exte
 
 ## Test acceptance
 Run `PYTHONPATH=python python -m unittest discover -s tests -p test_schedule_w9.py -v` to test conflict removal, multiple timezones, boundaries, slot rounding, duplicate windows, no common slot, validation failure, CLI no-DB side effects, and symlink/oversize input rejection.
+
+## Actual W9 acceptance evidence
+- PR #17 merged commit: `01701ca12c7a6752bf9c36760989d278c6dd06e0`.
+- Windows runner dedicated W9 WF-06 read-only command PASS in #39375465997; Linux 126/126 Python + real Rust PASS #39375466012.
+- Full four postmerge main workflows PASS: #39375595466, #39375595438, #39375595478, #39375595406.
+- Requirement coverage and remaining production gates: `docs/REQUIREMENTS_GAP_AUDIT_W9.md`.

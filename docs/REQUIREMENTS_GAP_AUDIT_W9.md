@@ -49,3 +49,9 @@
 4. Institution-gated integration acceptance: task scheduling, Outlook/Graph, approved notifications, SSO/MFA, signed deployment, three documented pilots.
 
 Do not convert PASS synthetic test counts into arbitrary percent of business requirements. The precise coverage indicator is **6 substantive + 2 skeletal of 8 workflows; production 0/8; rollout 2/6**.
+
+## Verified release checkpoint
+- W9 code merged via PR #17 at `01701ca12c7a6752bf9c36760989d278c6dd06e0`.
+- Linux CI 126/126 Python plus native Rust PASS; Windows executed the new WF-06 schedule-propose command and confirmed exactly two candidates, no SQLite creation and no external actions.
+- Postmerge main four workflows SUCCESS: Linux/Rust #39375595466, Windows legacy/WF-06 #39375595438, W4 #39375595478, Windows Tk/EXE #39375595406.
+- These proofs remain **synthetic/offline CI** and do not change the six rollout-gate disposition (2/6 PASS at synthetic/CI level; 4 pending institutional acceptance).
