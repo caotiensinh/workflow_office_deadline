@@ -51,6 +51,10 @@ jobs:
               'tests/test_operator_handoff_w23b.py',
               'windows/w23_hosted_task_live_smoke.ps1',
               '.github/workflows/w23a-hosted-task-synthetic.yml',
+              'windows/w24_hosted_automatic_cadence.ps1',
+              '.github/workflows/w24a-real-automatic-hosted.yml',
+              'windows/w24_hosted_startup_roundtrip.ps1',
+              '.github/workflows/w24b-hosted-startup-roundtrip.yml',
           ]
           missing = [name for name in required if not pathlib.Path(name).is_file()]
           if missing:
