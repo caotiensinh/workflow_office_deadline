@@ -270,3 +270,15 @@ W13 is a readiness inspector, **not** authority to bypass managed PowerShell Exe
 - [ ] IT-authorized real signed-in Session 1 user GUI interaction, Japanese/audio/ACK/Snooze, Windows login behavior, real scheduler, authorized Outlook/recipient and 3 pilots.
 
 **W17 package and hash verification != signed executable, human observation or production approval.**
+
+
+## Phase W18 — Final-artifact ZIP integrity (2026-10-20)
+
+- [x] Reconfirm 8 workflow requirements and W17 main HEAD `9bbf3dff23f7a2ecbd0f405676ba00bb928ac347`, original 2/6 technical rollout and 0/8 production sign-offs.
+- [x] Create read-only archive verifier with three-entry allowlist, EXE SHA-256, full trusted CMD-template comparison and anti-tamper ZIP constraints. No GUI, startup, Outlook, SMTP or ExecutionPolicy changes.
+- [x] Develop 17 local fictional-only positive/negative regressions: valid, mismatch, both-file tamper, extra/duplicate/path traversal/symlink, compression bomb and checksum failures.
+- [x] Wire final packaged ZIP validation and three disposable ZIP negative cases into hosted Windows W5 workflow; protect Linux regression floor at 272 tests.
+- [ ] Prove 4/4 exact-head PR CI, 272/272 Python, Rust, Windows final-ZIP E2E, then merge with expected head and verify 4/4 exact postmerge main.
+- [ ] IT-authorized signed-in Session 1 human GUI acceptance, real scheduler, read-only Outlook, approved alert recipient, SSO/privacy, release signing and three operator pilots.
+
+**W18 ZIP content validation is NOT code signing, trusted publishing, interactive physical GUI UAT or production approval.** See `docs/PHASE_W18.md`.
