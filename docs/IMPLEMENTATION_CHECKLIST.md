@@ -233,3 +233,15 @@ W13 is a readiness inspector, **not** authority to bypass managed PowerShell Exe
 - [ ] Institution IT authorization, observed 15-minute scheduled execution, live read-only Outlook, approved notification and three human pilots.
 
 **A valid exported XML or a self-hosted runner CMD echo is not institutional acceptance.**
+
+## Phase W15 — Real self-hosted Windows core E2E, portable CMD (2026-10-20)
+
+- [x] Confirm original 8-workflow requirements, W14 final HEAD, selfhost CMD connectivity and previous PowerShell ExecutionPolicy limitations.
+- [x] Implement real selfhost-only branch workflow: hosted native Rust + portable Python bundle, fully hash-pinned to exact commit, transferred by GitHub Actions artifact.
+- [x] Implement isolated Windows CMD E2E from fictional fixture: import → Rust tick → SQLite → file dispatch → repeat idempotency and audit; no Outlook, SMTP, Task Scheduler or GUI access.
+- [x] Add 9 manifest/runtime boundary regressions to bring Python floor to 227; document safety constraints and original rollout gates.
+- [ ] Verify W15 actual selfhost run with real log and GitHub runner identity, file-count/assertion evidence; repair any failures.
+- [ ] Exact PR HEAD 4/4 CI green, squash merge W15, verify exact postmerge main 4/4.
+- [ ] IT-approved signed-in desktop, actual scheduler, real authorized read-only Outlook, approved recipient and three human pilots.
+
+**W15 self-hosted core E2E is not a Task Scheduler, Outlook, SMTP, GUI, or institutional production acceptance.**
