@@ -13,7 +13,7 @@ jobs:
     runs-on: windows-latest
     timeout-minutes: 6
     env:
-      W23_ALLOW_DISPOSABLE_TASK_CREATE: 'yes'
+      W24_ALLOW_DISPOSABLE_TASK_CREATE: 'yes'
     steps:
       - uses: actions/checkout@v4
         with:
