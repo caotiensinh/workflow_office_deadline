@@ -41,7 +41,12 @@ try {
   $interval = [string]$xml.Task.Triggers.TimeTrigger.Repetition.Interval
   $level = [string]$xml.Task.Principals.Principal.RunLevel
   $actualExe = [string]$xml.Task.Actions.Exec.Command
-  if ($interval -ne 'PT15M' -or $level -ne 'LeastPrivilege' -or $actualExe -ne $syscmd) {
+  $intervalOk = ($interval -eq 'PT15M')
+  $levelOk = ($level -eq 'LeastPrivilege')
+  $execOk = ([Environment]::ExpandEnvironmentVariables($actualExe) -eq $syscmd)
+  # Safe booleans only: no paths, user identities or XML contents in public logs.
+  Write-Host "W23A_TASK_XML_CHECK interval=$intervalOk limited=$levelOk executable=$execOk"
+  if (-not ($intervalOk -and $levelOk -and $execOk)) {
     throw 'W23A hosted task settings did not match 15-minute least privilege'
   }
   # On-demand run proves only action wiring, NOT 15-minute automatic recurrence.
