@@ -1,5 +1,6 @@
 """Safety/regression tests for W7 synthetic-only field acceptance fixtures."""
 import json
+import os
 import subprocess
 import sys
 import tempfile
@@ -48,10 +49,14 @@ class W7FieldUATTests(unittest.TestCase):
 
     def test_cli_plan_only_does_not_create_database_or_report(self):
         with tempfile.TemporaryDirectory() as folder:
+            # The test runs in an empty cwd; set an absolute PYTHONPATH
+            # instead of inheriting CI's relative "python" value.
+            environment = os.environ.copy()
+            environment["PYTHONPATH"] = str(Path(__file__).resolve().parents[1] / "python")
             result = subprocess.run(
                 [sys.executable, "-m", "edu_workflow.field_uat", "--plan-only"],
                 capture_output=True, text=True, check=True,
-                cwd=folder,
+                cwd=folder, env=environment,
             )
             plan = json.loads(result.stdout)
             self.assertEqual(plan["mode"], "plan-only")
