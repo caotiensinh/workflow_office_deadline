@@ -69,7 +69,7 @@ class OneClickUATTests(unittest.TestCase):
             "production_accepted": False, "it_approved": False,
             "actual_physical_observation_independently_verified": False,
             "actual_login_autorun_verified": False
-        }), patch.object(uat, "_show_result") as show:
+        }), patch.object(uat, "write_operator_handoff", return_value=Path("handoff.json")), patch.object(uat, "_show_result") as show:
             result = uat.one_click()
             run.assert_called_once_with(Path("fictional-only.json"))
             self.assertFalse(result["production_accepted"])
