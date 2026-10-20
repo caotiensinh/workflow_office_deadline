@@ -54,6 +54,12 @@ jobs:
             $created=$true
             $raw=& .\windows\w25_live_task_readonly_audit.ps1 -AuditLive -ITAuthorized
             $result=$raw | ConvertFrom-Json
+            Write-Host ("W25B_TASK_CHECK state=" + $result.status +
+              " action=" + $result.checks.one_file_only_powershell_action +
+              " repeat=" + $result.checks.fifteen_minute_trigger_configured +
+              " enabled=" + $result.checks.trigger_enabled +
+              " limited=" + $result.checks.runs_as_limited_user +
+              " active=" + $result.checks.task_not_disabled)
             if ($result.status -ne 'LIVE_CONFIG_MATCH_NOT_RUN_ACCEPTANCE' -or
                 -not $result.read_only -or -not $result.checks.fifteen_minute_trigger_configured -or
                 -not $result.checks.runs_as_limited_user -or
