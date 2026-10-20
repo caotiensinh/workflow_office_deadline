@@ -34,7 +34,7 @@ try {
   $syscmd = Join-Path $env:SystemRoot 'System32\cmd.exe'
   $action = New-ScheduledTaskAction -Execute $syscmd -Argument ('/D /C "' + $cmdFile + '"')
   $trigger = New-ScheduledTaskTrigger -Once -At (Get-Date).AddMinutes(10) -RepetitionInterval (New-TimeSpan -Minutes 15) -RepetitionDuration (New-TimeSpan -Hours 24)
-  $principal = New-ScheduledTaskPrincipal -UserId $env:USERNAME -LogonType Interactive -RunLevel LeastPrivilege
+  $principal = New-ScheduledTaskPrincipal -UserId $env:USERNAME -LogonType Interactive -RunLevel Limited
   $null = Register-ScheduledTask -TaskName $taskName -Action $action -Trigger $trigger -Principal $principal -Description 'W23 synthetic hosted CI task' -ErrorAction Stop
   $created = $true
   [xml]$xml = Export-ScheduledTask -TaskName $taskName -ErrorAction Stop
