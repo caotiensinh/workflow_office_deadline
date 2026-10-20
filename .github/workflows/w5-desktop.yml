@@ -44,7 +44,11 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'W5B real Windows Tk widgets E2E failed' }
           if (!(Test-Path -LiteralPath $report)) { throw 'W5B GUI evidence missing' }
           $result = Get-Content -LiteralPath $report -Raw | ConvertFrom-Json
-          if ($result.status -ne 'PASS_WINDOWS_TK_WIDGET_E2E' -or -not $result.gui_window_mapped -or $result.approvals -ne 0) {
+          if ($result.status -ne 'PASS_WINDOWS_TK_WIDGET_E2E' -or
+              -not $result.gui_window_mapped -or $result.approvals -ne 0 -or
+              $result.initial_bell_calls -ne 1 -or
+              -not $result.snooze_expiry_realerted -or
+              -not $result.realert_only_once) {
             throw 'W5B Windows GUI E2E did not actually pass'
           }
           Write-Host "W5B_WINDOWS_TK_E2E_PASS session=$($result.windows_session_id)"
