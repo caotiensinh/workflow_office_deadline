@@ -33,7 +33,7 @@ $actionOk = $actions.Count -eq 1 -and
   [string]$actions[0].Execute -match '^(?i:powershell\.exe)$' -and
   [string]$actions[0].Arguments -cmatch '^-NoProfile -File "[A-Za-z]:\\(?:[A-Za-z0-9 _.-]+\\)*run_once\.ps1" -Channel file$'
 $intervalOk = [string]$xml.Task.Triggers.TimeTrigger.Repetition.Interval -eq 'PT15M'
-$triggerEnabled = [string]$xml.Task.Triggers.TimeTrigger.Enabled -eq 'true'
+$triggerEnabled = (@($task.Triggers).Count -eq 1 -and [bool]$task.Triggers[0].Enabled)
 $limitedOk = [string]$task.Principal.RunLevel -eq 'Limited'
 $activeOk = [string]$task.State -ne 'Disabled'
 $checks = [ordered]@{
