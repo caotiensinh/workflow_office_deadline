@@ -149,8 +149,8 @@ def review_queue(conn, registry_path=None, as_of=None):
         if case['kind'] == 'REGULATION':
             from .regulation import verify_reference
             try:
-                result = verify_reference(registry_path, case.get('evidence_ref'), as_of=as_of)
-                if result['status'] != 'SOURCE_SNAPSHOT_PASS':
+                check = verify_reference(registry_path, case.get('evidence_ref'), as_of=as_of)
+                if check['status'] != 'SOURCE_SNAPSHOT_PASS':
                     reasons.append('VERIFY_REGULATION_SOURCE')
             except (ValueError, OSError):
                 reasons.append('VERIFY_REGULATION_SOURCE')
