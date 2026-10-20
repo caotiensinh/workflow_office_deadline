@@ -181,7 +181,7 @@ def html_dashboard(report):
     incident_rows = "".join(
         "<tr><td>" + escape(item["severity"]) + "</td><td>" +
         escape(item["title_ja"]) + "</td><td>" + escape(item["action_ja"]) +
-        "</td></tr>" for item in report["incidents"])
+        "</td></tr>" for item in report["incidents"]
     ) or "<tr><td colspan='3'>異常なし</td></tr>"
     tiles = "".join(
         "<article class='tile'><div>" + escape(state) + "</div><strong>" +
