@@ -103,14 +103,41 @@ jobs:
           $sh = New-Object -ComObject WScript.Shell
           $link = $sh.CreateShortcut($file)
           if ($link.TargetPath -ne $exe -or $link.Arguments -notlike '*--db*') { throw 'Bad W5 shortcut target' }
+          # W7 read-only link verifier must distinguish valid vs missing/mismatched,
+          # and must NOT claim that actual Windows login has launched the program.
+          $verify = (& .\windows\manage_desktop_startup.ps1 -Verify -Executable $exe -DbPath $db -TestStartupDir $dir) | ConvertFrom-Json
+          if (-not $verify.valid_link -or -not $verify.project_owned -or $verify.actual_login_autorun_verified -or $verify.changes_machine) {
+            throw 'W7 startup read-only verification failed'
+          }
           $refused = $false
           try {
             & .\windows\manage_desktop_startup.ps1 -Install -Executable $exe -DbPath $db -TestStartupDir $dir
           } catch { $refused = $true }
           if (-not $refused) { throw 'Existing shortcut overwrite was not blocked' }
+          # Tamper ONLY the link in RUNNER_TEMP, retaining its project description.
+          # An owned-looking link pointing to a different target must not be deleted.
+          $link.TargetPath = Join-Path $env:RUNNER_TEMP 'w7-unexpected.exe'
+          $link.Save()
+          $bad = (& .\windows\manage_desktop_startup.ps1 -Verify -Executable $exe -DbPath $db -TestStartupDir $dir) | ConvertFrom-Json
+          if ($bad.valid_link -or $bad.target_matches -or -not $bad.project_owned) {
+            throw 'W7 tampered link incorrectly verified'
+          }
+          $blocked = $false
+          try {
+            & .\windows\manage_desktop_startup.ps1 -Remove -Executable $exe -DbPath $db -TestStartupDir $dir
+          } catch { $blocked = $true }
+          if (-not $blocked -or -not (Test-Path -LiteralPath $file)) {
+            throw 'W7 failed to refuse deletion of unexpected target'
+          }
+          # Explicit repair is allowed only with ReplaceExisting.
+          & .\windows\manage_desktop_startup.ps1 -Install -ReplaceExisting -Executable $exe -DbPath $db -TestStartupDir $dir
+          $repaired = (& .\windows\manage_desktop_startup.ps1 -Verify -Executable $exe -DbPath $db -TestStartupDir $dir) | ConvertFrom-Json
+          if (-not $repaired.valid_link) { throw 'W7 explicit repair failed' }
           & .\windows\manage_desktop_startup.ps1 -Remove -Executable $exe -DbPath $db -TestStartupDir $dir
           if (Test-Path -LiteralPath $file) { throw 'Startup rollback failed' }
-          Write-Host 'W5_STARTUP_E2E_PASS: plan-only, isolated install, overwrite refusal, removal'
+          $gone = (& .\windows\manage_desktop_startup.ps1 -Verify -Executable $exe -DbPath $db -TestStartupDir $dir) | ConvertFrom-Json
+          if ($gone.valid_link -or $gone.link_exists -or $gone.actual_login_autorun_verified) { throw 'W7 missing-link verification failed' }
+          Write-Host 'W7_STARTUP_INTEGRITY_E2E_PASS: plan, install, verify, tamper block, explicit repair, removal, missing verification'
       - uses: actions/upload-artifact@v4
         with:
           name: W5-Windows-Unsigned-Desktop-EXE
