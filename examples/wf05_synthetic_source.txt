@@ -1,0 +1,2 @@
+SYNTHETIC HR SOURCE - NO ACTUAL PERSONNEL DATA
+This file is an artificial unit-test source for office workflow.

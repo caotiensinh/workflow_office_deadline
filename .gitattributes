@@ -1,2 +1,3 @@
 # W10 evidence fixture is byte-sensitive: no platform CRLF checkout conversion.
 examples/wf04_synthetic_reference.txt -text
+examples/wf05_synthetic_source.txt -text

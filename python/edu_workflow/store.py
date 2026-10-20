@@ -135,7 +135,7 @@ def confirm_deadline(conn, case_id, due, actor, expected_revision, method):
         raise
 
 
-def review_queue(conn, registry_path=None, as_of=None):
+def review_queue(conn, registry_path=None, as_of=None, hr_packet_path=None):
     """Return masked exception-only tasks. Routine work is never in this queue."""
     result = []
     for case, revision in get_cases(conn):
@@ -146,6 +146,13 @@ def review_queue(conn, registry_path=None, as_of=None):
             reasons.append('VERIFY_DEADLINE')
         if case['kind'] in {'DOCUMENT', 'HR', 'REGULATION'} and not case.get('evidence_ref'):
             reasons.append('MISSING_EVIDENCE')
+        if case['kind'] == 'HR':
+            from .hr_evidence import verify_for_hr_approval
+            try:
+                verify_for_hr_approval(hr_packet_path, case['case_id'],
+                                       case.get('evidence_ref'), as_of=as_of)
+            except (ValueError, OSError):
+                reasons.append('VERIFY_HR_EVIDENCE_PACKET')
         if case['kind'] == 'REGULATION':
             from .regulation import verify_reference
             try:
@@ -203,7 +210,7 @@ def alert_list(conn, state=None):
 def audit_list(conn): return [dict(r) for r in conn.execute('SELECT * FROM audit ORDER BY id')]
 
 
-def decide(conn, case_id, decision, actor, expected_rev, registry_path=None, as_of=None):
+def decide(conn, case_id, decision, actor, expected_rev, registry_path=None, as_of=None, hr_packet_path=None):
     """Persist approval, audit and revision atomically, never as separate commits."""
     conn.execute('BEGIN IMMEDIATE')
     try:
@@ -222,6 +229,10 @@ def decide(conn, case_id, decision, actor, expected_rev, registry_path=None, as_
         if decision == 'APPROVED' and case['kind'] == 'REGULATION':
             from .regulation import verify_for_approval
             proof = verify_for_approval(registry_path, case.get('evidence_ref'), as_of=as_of)
+        if decision == 'APPROVED' and case['kind'] == 'HR':
+            from .hr_evidence import verify_for_hr_approval
+            proof = verify_for_hr_approval(
+                hr_packet_path, case_id, case.get('evidence_ref'), as_of=as_of)
         case['status'] = decision
         case['approval_status'] = decision
         validate_case(case)
