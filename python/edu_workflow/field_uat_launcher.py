@@ -145,9 +145,9 @@ def review_existing_uat(report_file, output_file):
         raise ValueError("W22A output must be a new regular local file")
     checked = review_uat_report(report_file)
     # Never allow a self-report to become IT approval or production evidence.
-    assert checked["production_accepted"] is False
-    assert checked["it_approved"] is False
-    assert checked["actual_physical_observation_independently_verified"] is False
+    if (checked["production_accepted"] or checked["it_approved"] or
+            checked["actual_physical_observation_independently_verified"]):
+        raise ValueError("W22A_SELF_REPORT_CANNOT_GRANT_AUTHORITY")
     result = {
         "phase": "W22A",
         "status": checked["status"],
@@ -183,7 +183,12 @@ def main(argv=None):
     if bool(args.review_report_file) != bool(args.review_output_file):
         parser.error("W22A requires both review-report and review-output")
     if args.review_report_file:
-        review_existing_uat(args.review_report_file, args.review_output_file)
+        try:
+            review_existing_uat(args.review_report_file, args.review_output_file)
+        except (OSError, ValueError, TypeError, UnicodeError):
+            # A windowed EXE must fail without a traceback, private file path,
+            # success JSON or messagebox that could hang hosted headless tests.
+            raise SystemExit(2) from None
         return
     if args.preflight_file:
         preflight(args.preflight_file)
