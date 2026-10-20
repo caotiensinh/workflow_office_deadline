@@ -38,3 +38,9 @@ Date: 2026-10-20 (JST). Source of truth: docs/PROJECT_REQUIREMENTS.md and W1–W
 1. W12: WF-08 monitoring dashboard, local outbox/UNKNOWN incident surfacing and privacy-safe admin audit (no automatic ambiguous resend).
 2. Institution-approved operational staging: Windows Task Scheduler, Outlook/Graph read-only pilot, approved notifications, SSO/MFA, official source validation, signed release.
 3. Three tracked, low-risk end-user pilots; human acceptance and corrections. Do not interpret CI success as production success.
+
+## Verified W11 engineering result
+- PR #21 MERGED at `cccdd9f13d8cd8ee2902060b97d99fce2b90798f`.
+- **165/165 Python tests** plus native Rust PASS; Windows HR draft/approval, W4 notifications and Tk/EXE E2E PASS on both PR and postmerge.
+- Final `main` CI proofs: Linux/Rust #39384328877, Windows synthetic HR E2E #39384328977, Windows W4 #39384328924, GUI/EXE #39384328968 — **4/4 SUCCESS**.
+- The 8/8 engineering coverage classification is about offline/synthetic executable breadth; the original institution rollout remains **2/6 CI gates, 0/8 signed-off production workflows**. Do not confuse counts with 100% product completion.
