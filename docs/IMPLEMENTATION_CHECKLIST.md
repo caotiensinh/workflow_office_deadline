@@ -149,3 +149,15 @@ W6 CI demonstrates synthetic Windows GUI behavior, not a real school workstation
 - [ ] IT authorization for Outlook/Graph, SMTP, SSO and production acceptance.
 
 See `docs/PHASE_W7.md`. UAT tooling is **not** equivalent to actual field or production acceptance.
+
+
+## Phase W8 — One-click synthetic Windows UAT packaging (2026-10-20)
+- [ ] W8 one-click consent-first EXE built from the reviewed source on Windows CI.
+- [ ] Packaged noninteractive preflight proves synthetic-only, no Outlook, SMTP or Startup mutation.
+- [ ] W8 launcher regression suite plus prior W1–W7 tests and Rust compile/integration pass.
+- [ ] MRCAO read-only session diagnostic executed and session identified (Session 0 cannot pass desktop UAT).
+- [ ] PR merged after green CI; verify exact postmerge main tests and commit.
+- [ ] Actual signed-in Windows workstation user sees Japanese labels, hears notification, clicks ACK/Snooze, produces field JSON with human observation.
+- [ ] IT-authorized login/logout Startup acceptance and approved Outlook/SMTP/SSO/privacy controls.
+
+**No Windows automated GUI result is a substitute for an observed, signed-in institutional desktop or approved production pilot.**

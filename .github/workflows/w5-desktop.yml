@@ -154,3 +154,52 @@ jobs:
           path: dist/EDUNotifications.exe
           if-no-files-found: error
           retention-days: 7
+
+
+  w8-uat-package:
+    runs-on: windows-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: W8 consent and synthetic-only regression tests
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $env:PYTHONPATH=Join-Path $PWD 'python'
+          python -m unittest discover -s tests -p test_field_uat_launcher_w8.py -v
+          if ($LASTEXITCODE -ne 0) { throw 'W8 launcher regressions failed' }
+      - name: Package one-click standalone W8 UAT
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          python -m pip install "pyinstaller>=6.12,<7"
+          if ($LASTEXITCODE -ne 0) { throw 'PyInstaller not available' }
+          & .\windows\build_field_uat.ps1 -Python 'python'
+          $exe=Join-Path $PWD 'dist\EDUFieldUAT.exe'
+          if (!(Test-Path -LiteralPath $exe -PathType Leaf)) { throw 'W8 EXE not produced' }
+          $report=Join-Path $env:RUNNER_TEMP 'w8-packaged-preflight.json'
+          & $exe --preflight-file $report
+          if ($LASTEXITCODE -ne 0) { throw 'W8 packaged preflight invocation failed' }
+          for ($i=0; $i -lt 60 -and !(Test-Path -LiteralPath $report -PathType Leaf); $i++) {
+            Start-Sleep -Milliseconds 250
+          }
+          if (!(Test-Path -LiteralPath $report -PathType Leaf)) { throw 'W8 preflight report missing' }
+          $p=Get-Content -LiteralPath $report -Raw | ConvertFrom-Json
+          if ($p.packaged_entrypoint -ne 'OK' -or -not $p.tk_importable -or
+              -not $p.synthetic_only -or $p.changes_startup -or $p.opens_outlook -or
+              $p.sends_smtp -or $p.actual_login_autorun_verified -or $p.production_accepted) {
+            throw 'W8 packaged UAT violated safe preflight constraints'
+          }
+          Write-Host 'W8_PACKAGED_PREFLIGHT_PASS_NOT_PHYSICAL_UAT'
+          Write-Host "W8_UAT_SHA256=$((Get-FileHash -LiteralPath $exe -Algorithm SHA256).Hash)"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: W8-Windows-Unsigned-OneClick-Synthetic-UAT
+          path: dist/EDUFieldUAT.exe
+          if-no-files-found: error
+          retention-days: 7
