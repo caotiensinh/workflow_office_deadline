@@ -1,0 +1,75 @@
+name: W25B Hosted Readonly Task Scheduler Audit
+
+on:
+  push:
+    branches:
+      - feat/w25b-authorized-scheduler-readonly-audit
+
+permissions:
+  contents: read
+
+jobs:
+  hosted-synthetic-it-audit:
+    runs-on: windows-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Plan and authorization-denial must not touch host
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $plan=(& .\windows\w25_live_task_readonly_audit.ps1 -PlanOnly) | ConvertFrom-Json
+          if ($plan.task_inspected -or $plan.machine_modified -or
+              $plan.fifteen_minute_runs_observed -or $plan.production_accepted) {
+            throw 'Unsafe plan-only status'
+          }
+          $wasRejected = $false
+          try { & .\windows\w25_live_task_readonly_audit.ps1 -AuditLive | Out-Null }
+          catch { $wasRejected = $_.Exception.Message -like '*EXPLICIT_IT_PERMISSION*' }
+          if (-not $wasRejected) { throw 'W25B missing permission did not fail closed' }
+      - name: Read actual disposable hosted 15min task and clean exactly it
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          if ($env:GITHUB_ACTIONS -ne 'true' -or $env:RUNNER_ENVIRONMENT -ne 'github-hosted' -or
+              $env:RUNNER_OS -ne 'Windows') { throw 'W25B NOT EPHEMERAL HOSTED WINDOWS' }
+          $name='EducationAIWorkflow'
+          if (Get-ScheduledTask -TaskName $name -ErrorAction SilentlyContinue) {
+            throw 'W25B will not inspect/replace an existing task in CI'
+          }
+          $id=[guid]::NewGuid().ToString('N')
+          $folder=Join-Path $env:RUNNER_TEMP ('w25-' + $id)
+          $created=$false
+          New-Item -ItemType Directory -Path $folder -ErrorAction Stop | Out-Null
+          try {
+            $script=Join-Path $folder 'run_once.ps1'
+            Set-Content -LiteralPath $script -Value '# Synthetic task, never executed' -Encoding UTF8
+            $action=New-ScheduledTaskAction -Execute 'powershell.exe' -Argument ('-NoProfile -File "' + $script + '" -Channel file')
+            $trigger=New-ScheduledTaskTrigger -Once -At (Get-Date).AddMinutes(10) -RepetitionInterval (New-TimeSpan -Minutes 15) -RepetitionDuration (New-TimeSpan -Hours 4)
+            $identity=[System.Security.Principal.WindowsIdentity]::GetCurrent().Name
+            $principal=New-ScheduledTaskPrincipal -UserId $identity -LogonType Interactive -RunLevel Limited
+            $null=Register-ScheduledTask -TaskName $name -Action $action -Trigger $trigger -Principal $principal -ErrorAction Stop
+            $created=$true
+            $raw=& .\windows\w25_live_task_readonly_audit.ps1 -AuditLive -ITAuthorized
+            $result=$raw | ConvertFrom-Json
+            if ($result.status -ne 'LIVE_CONFIG_MATCH_NOT_RUN_ACCEPTANCE' -or
+                -not $result.read_only -or -not $result.checks.fifteen_minute_trigger_configured -or
+                -not $result.checks.runs_as_limited_user -or
+                $result.fifteen_minute_runs_observed -or $result.it_approved -or
+                $result.production_accepted -or $result.modifies_machine) {
+              throw 'W25B actual hosted registered task read-only audit was unsafe'
+            }
+            Write-Host 'W25B_REAL_HOSTED_TASK_CONFIG_READONLY_PASS_NOT_15MIN_RUNS'
+          } finally {
+            try {
+              if ($created) { Unregister-ScheduledTask -TaskName $name -Confirm:$false -ErrorAction Stop }
+            } finally {
+              if (Test-Path -LiteralPath $folder) { Remove-Item -LiteralPath $folder -Recurse -Force -ErrorAction Stop }
+            }
+          }
+          if (Get-ScheduledTask -TaskName $name -ErrorAction SilentlyContinue) {
+            throw 'W25B disposable hosted CI task remained'
+          }
+          Write-Host 'W25B_HOSTED_TASK_CLEANUP_PASS_NOT_INSTITUTIONAL_ACCEPTANCE'
