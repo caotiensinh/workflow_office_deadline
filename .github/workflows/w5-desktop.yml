@@ -196,6 +196,28 @@ jobs:
             throw 'W8 packaged UAT violated safe preflight constraints'
           }
           Write-Host 'W8_PACKAGED_PREFLIGHT_PASS_NOT_PHYSICAL_UAT'
+          # W19 packaged EXE read-only Win32 session diagnostic; NO GUI launch.
+          $sessionFile=Join-Path $env:RUNNER_TEMP 'w19-packaged-session.json'
+          if (Test-Path -LiteralPath $sessionFile) { throw 'Unexpected existing W19 session report' }
+          & $exe --session-check-file $sessionFile
+          if ($LASTEXITCODE -ne 0) { throw 'W19 numerical session diagnostic failed' }
+          for ($i=0; $i -lt 60 -and !(Test-Path -LiteralPath $sessionFile -PathType Leaf); $i++) {
+            Start-Sleep -Milliseconds 250
+          }
+          if (!(Test-Path -LiteralPath $sessionFile -PathType Leaf)) {
+            throw 'W19 packaged EXE session diagnostic did not write evidence'
+          }
+          $s=Get-Content -LiteralPath $sessionFile -Raw | ConvertFrom-Json
+          if (-not $s.live_windows_api_observed -or $s.human_interaction_observed -or
+              $s.production_accepted -or $s.actual_login_autorun_verified -or
+              $s.modifies_system -or $null -eq $s.process_session_id -or
+              $s.status -notmatch '^W19_') {
+            throw 'W19 packaged Windows numeric evidence violated no-GUI boundary'
+          }
+          if ($s.process_session_id -eq 0 -and $s.active_console_match) {
+            throw 'W19 Session 0 was falsely reported as active console'
+          }
+          Write-Host 'W19_PACKAGED_WIN32_SESSION_READONLY_PASS_NOT_HUMAN_GUI_UAT'
           Write-Host "W8_UAT_SHA256=$((Get-FileHash -LiteralPath $exe -Algorithm SHA256).Hash)"
       - name: W17 GUI operator handoff kit, SHA256 verification only
         shell: pwsh
