@@ -295,3 +295,15 @@ W13 is a readiness inspector, **not** authority to bypass managed PowerShell Exe
 - [ ] IT-approved real signed-in Session 1 *human* GUI Japanese/audio/ACK/Snooze and login Startup; scheduler/Outlook/recipient/SSO/privacy/three pilots remain external.
 
 **Matching an active console session is only a prerequisite, not independent physical GUI or production acceptance.** See `docs/PHASE_W19.md`.
+
+
+## Phase W20 — Parallel development lanes A + B (2026-10-20)
+
+**Original goal unchanged:** Python+Rust automate WF01–WF08 email, deadlines, documents, alerts, records and audit; human decisions and external changes stay under explicit human approval. Repository PUBLIC; use fictional data only.
+
+- [x] **Lane A (GUI UAT):** isolated branch `feat/w20a-gui-uat-self-verification`, PR #37. Root cause: one-click GUI previously showed success from the returned in-memory status without checking the immutable-new written report. Added immediate strict read-only W17 JSON review, fail-closed on missing/forged/contradictory reports, nine new Python tests. Final PR head `1fa53cb9692b0242cfb42fdc60e5b2fffe50d0b5`: **4/4 CI SUCCESS**, Linux **299/299** Python plus Rust #39445360362, Windows E2E #39445360572, W4 #39445360570, W5 GUI ZIP #39445360470. PR merged at `8b44c8c1771b4e9463e45d7e55db3c64a174a04d`, followed by exact main **4/4 CI SUCCESS** (#39445658466, #39445658536, #39445658779, #39445658566).
+- [x] **Lane B (native selfhost Rust):** isolated branch `feat/w20b-native-selfhost-session-probe`, PR #38, independent files from Lane A. Added standalone Rust numerical Win32 console probe with **9/9 Rust safety tests**, branch-scoped hosted build and CMD-only self-hosted inspection, SHA256-check before execution. Exact PR head `08b5e0c66e28173a28238efebe2892730d77f88a`: **4/4 CI SUCCESS** (#39445369285, #39445369283, #39445369270, #39445369453) and self-hosted run **#39445216471 SUCCESS**, actual runner **DESKTOP-14SCTF4** (not MRCAO). No GUI, Task Scheduler, Outlook, SMTP, policy changes or private data. PR merged after no-overlap check at `80579cc3677c52721c73d78117a6ac8b64f76761`.
+- [x] **Integration verification:** exact merged main commit `80579cc3677c52721c73d78117a6ac8b64f76761` **4/4 CI SUCCESS**: Linux Python **299/299** and native Rust including new W20B tests #39445969154; Windows Synthetic E2E #39445969134; W4 #39445969136; W5 packed GUI/session/ZIP #39445969180. Actual final ZIP and W18 tamper checks PASS, artifact **#12275936758**, inner ZIP SHA256 `782D0110F10500B85DAA7AC1F8312492CECBE71914AC62187E9BF847E46846C8`. This is not code signing.
+- [ ] **External true blockers:** real IT-authorized signed-in Session 1 operator needs to observe Japanese text/audio/focus/ACK/Snooze, authorized login Startup and 15-minute scheduled operation, approved Outlook read-only, approved recipient and 3 institution pilots. Neither independent agent-lane CI nor Session ID measurements proves a human action.
+
+**Original rollout: 2/6 technical CI gates verified; 0/8 production workflow signoffs.** A PR and passing CI are not equivalent to workplace deployment approval. See `docs/PHASE_W20A.md` and `docs/PHASE_W20B.md`.
