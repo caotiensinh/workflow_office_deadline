@@ -83,7 +83,9 @@ def main(argv=None):
         # Explicitly avoid opening/creating a workflow database.
         from .hr_evidence import draft_from_packet
         report=draft_from_packet(args.packet_file,as_of=args.as_of)
-        print(json.dumps(report,ensure_ascii=False,indent=2))
+        # Keep JSON portable even when Windows stdout defaults to cp1252/CP932.
+        # JSON parsers recover the full Japanese draft from Unicode escapes.
+        print(json.dumps(report,ensure_ascii=True,indent=2))
         return 0 if report['status']=='READY_FOR_HUMAN_REVIEW' else 3
     if args.cmd=='check-regulations':
         from .regulation import verify_reference
