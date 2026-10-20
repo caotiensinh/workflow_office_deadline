@@ -17,6 +17,7 @@ from . import desktop_app
 from . import interactive_session_w19 as session_guard
 from .field_uat import run_manual
 from .uat_review import review as review_uat_report
+from .uat_pair_w25a import reconcile as reconcile_uat_pair
 
 
 def _require_interactive_windows():
@@ -225,11 +226,32 @@ def main(argv=None):
                        help="W19 read-only Windows session diagnostic, without GUI")
     group.add_argument("--review-report-file",
                        help="W22A offline review of a saved fictional GUI self-report, no GUI")
+    group.add_argument("--pair-report-file",
+                       help="W25A verify both original self-report and handoff JSON without GUI")
+    parser.add_argument("--pair-summary-file",
+                        help="W25A W23 operator summary file paired with --pair-report-file")
+    parser.add_argument("--pair-output-file",
+                        help="W25A new exclusive JSON result file")
     parser.add_argument("--review-output-file",
                         help="New JSON summary file required for --review-report-file")
     args = parser.parse_args(argv)
     if bool(args.review_report_file) != bool(args.review_output_file):
         parser.error("W22A requires both review-report and review-output")
+    if any((args.pair_report_file, args.pair_summary_file, args.pair_output_file)):
+        if not all((args.pair_report_file, args.pair_summary_file, args.pair_output_file)):
+            parser.error("W25A requires pair-report, pair-summary and pair-output")
+        try:
+            result = reconcile_uat_pair(args.pair_report_file, args.pair_summary_file)
+            destination = Path(args.pair_output_file)
+            if destination.is_symlink() or not destination.parent.is_dir() or destination in (
+                    Path(args.pair_report_file), Path(args.pair_summary_file)):
+                raise ValueError("W25A unsafe output")
+            with destination.open("x", encoding="utf-8") as stream:
+                json.dump(result, stream, sort_keys=True)
+        except (OSError, ValueError, TypeError, UnicodeError):
+            # Packaged --windowed EXE must fail without exposing private paths.
+            raise SystemExit(2) from None
+        return
     if args.review_report_file:
         try:
             review_existing_uat(args.review_report_file, args.review_output_file)

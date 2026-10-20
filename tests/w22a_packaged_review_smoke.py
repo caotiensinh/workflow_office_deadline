@@ -1,6 +1,7 @@
 """Hosted-Windows proof: execute the built EXE in review-only mode, no GUI."""
 from __future__ import annotations
 import argparse
+import hashlib
 import json
 from pathlib import Path
 import subprocess
@@ -50,6 +51,52 @@ def run(exe, folder):
             or report.read_bytes()!=immutable):
             raise RuntimeError("W22A packaged evidence is unsafe")
         print("W22A_PACKAGED_REVIEW_EXE_PASS_SELF_ATTESTED_NOT_PHYSICAL_UAT")
+        # W25A run the REAL packaged no-console EXE on a bound report + W23
+        # summary pair. The whole test is synthetic and never opens GUI.
+        handoff=root/"w23_safe_summary.json"
+        paircheck=root/"w25_pair_result.json"
+        fixture=json.loads(report.read_text(encoding="utf-8"))
+        summary={
+            "phase":"W23B",
+            "status":"CONSISTENT_SELF_ATTESTATION_NOT_INDEPENDENTLY_VERIFIED",
+            "synthetic_only":True,
+            "source_report_sha256":hashlib.sha256(immutable).hexdigest().upper(),
+            "ack_receipts":1,"snooze_receipts":1,
+            "japanese_readable_self_report":True,
+            "sound_audible_self_report":True,
+            "window_interactive_self_report":True,
+            "human_gui_independently_verified":False,
+            "windows_login_autorun_verified":False,
+            "it_approved":False,"publisher_signature_verified":False,
+            "production_accepted":False,"outlook_accessed":False,"smtp_sent":False,
+        }
+        handoff.write_text(json.dumps(summary),encoding="utf-8")
+        handoff_old=handoff.read_bytes()
+        p2=subprocess.Popen([str(exe),"--pair-report-file",str(report),
+                             "--pair-summary-file",str(handoff),
+                             "--pair-output-file",str(paircheck)],
+                            stdin=subprocess.DEVNULL,stdout=subprocess.DEVNULL,
+                            stderr=subprocess.DEVNULL)
+        try:
+            for _ in range(80):
+                if paircheck.is_file():break
+                if p2.poll() is not None and p2.returncode != 0:
+                    raise RuntimeError("W25A packaged EXE returned nonzero")
+                time.sleep(0.25)
+            if not paircheck.is_file():
+                raise RuntimeError("W25A packaged EXE produced no pair review")
+            checked=json.loads(paircheck.read_text(encoding="utf-8"))
+            if (not checked.get("source_sha256_matches_handoff") or
+                checked.get("production_accepted") is not False or
+                checked.get("independent_human_gui_observation") is not False or
+                report.read_bytes()!=immutable or handoff.read_bytes()!=handoff_old):
+                raise RuntimeError("W25A packaged evidence verification unsafe")
+            print("W25A_PACKAGED_EXE_PAIR_SHA256_PASS_NOT_HUMAN_ACCEPTANCE")
+        finally:
+            if p2.poll() is None:
+                p2.terminate()
+                try:p2.wait(timeout=5)
+                except subprocess.TimeoutExpired:p2.kill()
     finally:
         if p.poll() is None:
             p.terminate()
