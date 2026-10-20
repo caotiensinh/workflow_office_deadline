@@ -32,3 +32,12 @@ Optional --at takes a timezone-aware ISO timestamp for deterministic simulation;
 - SQLite quick_check and grouped counts can be expensive on very large datasets; operational acceptance and thresholds are outstanding.
 - Never use confidential HR/student data in CI or this PUBLIC repository.
 - Institutional Outlook/Graph, SMTP, SSO/MFA/RBAC, privacy/retention, code signing, physical Windows UAT and three approved pilots remain unresolved.
+
+
+## W12 Verified engineering acceptance — 2026-10-20
+- PR #23 MERGED at 6534d14bcbc0afafd547b7b2355d996ffe00dbee.
+- PR head 82f43e977a79e41d308328263955d9f94d1f9610: Linux Python 185/185 + native Rust #39386732165 SUCCESS; Windows W12 read-only UNKNOWN/HTML E2E #39386732199 SUCCESS; Windows W4 #39386732167 SUCCESS; W5 Tk and unsigned EXE #39386732201 SUCCESS.
+- Exact main postmerge: #39386978272 (Linux/Rust), #39386977929 (Windows W12 E2E), #39386978083 (W4), #39386978059 (W5) — all SUCCESS.
+- W12 Windows tests verified UNKNOWN stays UNKNOWN; no case decision or SMTP retry, HTML output excludes invented private fixture text.
+- CI found and fixed an initial HTML join syntax error (protected suite refused to load), and a Windows test fixture SQLite handle that needed explicit close. Neither intermediate failure was counted as accepted.
+- Offline engineering acceptance only. No real account, signed-in endpoint, live SMTP recipient or production approved monitoring was tested.

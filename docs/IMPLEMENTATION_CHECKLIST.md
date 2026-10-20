@@ -203,7 +203,7 @@ See `docs/PHASE_W7.md`. UAT tooling is **not** equivalent to actual field or pro
 - [x] Privacy-safe aggregate-only JSON and static Japanese HTML dashboard, explicit no-overwrite export.
 - [x] Add 20 W12 regression tests, protected 185-test CI floor and native Windows synthetic incident E2E.
 - [x] Recheck original WF-01..08 scope and six institution rollout gates in docs/REQUIREMENTS_GAP_AUDIT_W12.md.
-- [ ] Merge W12 after 4/4 exact PR CI and verify 4/4 postmerge main CI, persist evidence.
+- [x] PR #23 MERGED at `6534d14bcbc0afafd547b7b2355d996ffe00dbee`; exact PR head `82f43e977a79e41d308328263955d9f94d1f9610` 4/4 CI SUCCESS (#39386732165 Linux 185/185 Python+Rust, #39386732199 Windows monitoring E2E, #39386732167 W4, #39386732201 Tk/EXE). Postmerge `main` 4/4 CI SUCCESS (#39386978272, #39386977929, #39386978083, #39386978059).
 - [ ] Institution-approved continuous monitoring, actual SMTP/DB incident reconciliation and approved 3-workflow pilot.
 
 No W12 monitor operation sends messages, changes cases, restarts services or performs production recovery.

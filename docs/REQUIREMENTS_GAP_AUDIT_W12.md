@@ -28,3 +28,10 @@ Total 2/6 rollout gates verified at CI level. No actual institutional production
 Security: GitHub API reports this repository PUBLIC, and the W8 self-hosted Windows diagnostic failed under Windows PowerShell ExecutionPolicy on DESKTOP-14SCTF4. No interactive Session ID and no field GUI sign-off can be inferred. Do not bypass managed machine policies without IT authorization.
 
 Next focus: security and privacy approvals, signed release, approved connected systems, field desktop and Task Scheduler, human-approved alert destination, and three measured pilots. UNKNOWN must not be blindly retried.
+
+
+## W12 verified checkpoint
+- PR #23 MERGED: 6534d14bcbc0afafd547b7b2355d996ffe00dbee; final PR CI 4/4 SUCCESS with 185 Python regressions and real Rust.
+- Four exact postmerge main workflows: #39386978272 (Linux/Rust), #39386977929 (Windows W12 outbox-health E2E), #39386978083 (W4), #39386978059 (W5) — all SUCCESS.
+- W12 implements privacy-safe local aggregate monitoring and a snapshot HTML dashboard, but continuous monitoring, on-site service/SMTP status and actual recovery remain **NOT VERIFIED**.
+- Original scope conclusion unchanged: 8/8 workflows have offline/synthetic code, 0/8 institution-approved production workflows; only 2/6 rollout gates passed at synthetic CI level.
