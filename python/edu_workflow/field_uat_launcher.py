@@ -6,6 +6,7 @@ login autorun, access Outlook, install startup items or approve business cases.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import sys
 import tempfile
@@ -61,6 +62,51 @@ def _report_path():
     return Path(tempfile.gettempdir()) / ("EDU_W8_Synthetic_UAT_" + uuid.uuid4().hex + ".json")
 
 
+def _operator_summary_path():
+    return Path(tempfile.gettempdir()) / (
+        "EDU_W23_Operator_Review_" + uuid.uuid4().hex + ".json")
+
+
+def write_operator_handoff(report_file, reviewed, *, output_file=None):
+    """One self-attested, privacy-safe IT handoff; never an approval."""
+    source = Path(report_file)
+    if (source.is_symlink() or not source.is_file() or
+            not 0 < source.stat().st_size <= 8192):
+        raise ValueError("Invalid fictional UAT source report")
+    # The same strict W17 report has already been validated in one_click;
+    # enforce it here too when called standalone, never trust a caller's dict.
+    checked = review_uat_report(source)
+    if reviewed != checked:
+        raise ValueError("Review report changed between UI and handoff")
+    if (checked["production_accepted"] or checked["it_approved"] or
+            checked["actual_physical_observation_independently_verified"]):
+        raise ValueError("Unauthorized acceptance in UAT handoff")
+    path = Path(output_file) if output_file is not None else _operator_summary_path()
+    if path.is_symlink() or not path.parent.is_dir():
+        raise ValueError("Handoff output must be a new file in an existing folder")
+    result = {
+        "phase": "W23B",
+        "status": checked["status"],
+        "synthetic_only": True,
+        "source_report_sha256": hashlib.sha256(source.read_bytes()).hexdigest().upper(),
+        "ack_receipts": checked["ack_receipts"],
+        "snooze_receipts": checked["snooze_receipts"],
+        "japanese_readable_self_report": checked["visual_japanese_self_report"],
+        "sound_audible_self_report": checked["sound_audible_self_report"],
+        "window_interactive_self_report": checked["window_interactive_self_report"],
+        "human_gui_independently_verified": False,
+        "windows_login_autorun_verified": False,
+        "it_approved": False,
+        "publisher_signature_verified": False,
+        "production_accepted": False,
+        "outlook_accessed": False,
+        "smtp_sent": False,
+    }
+    with path.open("x", encoding="utf-8") as output:
+        json.dump(result, output, ensure_ascii=True, sort_keys=True, indent=2)
+    return path
+
+
 def one_click():
     _require_interactive_windows()
     if not _ask_consent():
@@ -81,6 +127,7 @@ def one_click():
         if ((result["status"] == "DESKTOP_ACTIONS_AND_HUMAN_REPORT_COMPLETE") !=
                 (checked["status"] == "CONSISTENT_SELF_ATTESTATION_NOT_INDEPENDENTLY_VERIFIED")):
             raise ValueError("W20A_REPORT_IN_MEMORY_DISAGREEMENT")
+        handoff = write_operator_handoff(path, checked)
     except Exception:
         # A --windowed executable has no visible console. Fail visibly without
         # disclosing potentially sensitive path or exception arguments.
@@ -93,6 +140,7 @@ def one_click():
         ("自己申告レポートの整合性を確認しました。" if passed else
          "自己申告レポートは未完了です。確認項目を見直してください。") +
         "\n\nReport: " + str(path) +
+        "\n\nIT review summary: " + str(handoff) +
         "\n\nSelf-attestation only; NOT independent GUI, IT or production approval."
     )
     return result
