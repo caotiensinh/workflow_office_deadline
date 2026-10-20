@@ -1,0 +1,118 @@
+name: W16 Real Self-hosted Windows Session Readiness + Core E2E
+
+on:
+  push:
+    branches:
+      - feat/w16-session-readonly-e2e
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: w16-session-selfhost-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-tested-portable:
+    runs-on: windows-latest
+    timeout-minutes: 22
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Compile and test real native Rust
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          cargo test --manifest-path rust-core/Cargo.toml
+          if ($LASTEXITCODE -ne 0) { throw 'W15 Rust tests failed' }
+          cargo build --release --manifest-path rust-core/Cargo.toml
+          if ($LASTEXITCODE -ne 0) { throw 'W15 native Rust release compilation failed' }
+      - name: Package official portable CPython and project at this exact commit
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $stage = Join-Path $env:RUNNER_TEMP 'w15_bundle'
+          $archive = Join-Path $env:RUNNER_TEMP 'w15_embed_official.zip'
+          if (Test-Path -LiteralPath $stage) { throw 'W15 stage already exists' }
+          $url = 'https://www.python.org/ftp/python/3.12.10/python-3.12.10-embed-amd64.zip'
+          Invoke-WebRequest -Uri $url -OutFile $archive -UseBasicParsing -TimeoutSec 90
+          if (-not (Test-Path -LiteralPath $archive -PathType Leaf)) {
+            throw 'Official CPython embed ZIP missing'
+          }
+          Expand-Archive -LiteralPath $archive -DestinationPath $stage
+          $pth = Join-Path $stage 'python312._pth'
+          if (-not (Test-Path -LiteralPath $pth -PathType Leaf)) {
+            throw 'Official CPython embed archive invalid'
+          }
+          @('python312.zip','.') | Set-Content -LiteralPath $pth -Encoding ascii
+          Copy-Item -LiteralPath (Join-Path $PWD 'python\edu_workflow') -Destination (Join-Path $stage 'edu_workflow') -Recurse
+          Copy-Item -LiteralPath (Join-Path $PWD 'rust-core\target\release\edu_rules.exe') -Destination (Join-Path $stage 'edu_rules.exe')
+          Copy-Item -LiteralPath (Join-Path $PWD 'examples\cases.json') -Destination (Join-Path $stage 'cases.json')
+          Copy-Item -LiteralPath (Join-Path $PWD 'tests\w15_portable_selfhost_e2e.py') -Destination (Join-Path $stage 'w15_e2e.py')
+          Copy-Item -LiteralPath (Join-Path $PWD 'tests\w16_session_probe.py') -Destination (Join-Path $stage 'w16_probe.py')
+          python tests/w15_make_bundle_manifest.py --bundle $stage --commit $env:GITHUB_SHA
+          if ($LASTEXITCODE -ne 0) { throw 'W15 SHA manifest creation failed' }
+          $exe = Join-Path $stage 'python.exe'
+          & $exe (Join-Path $stage 'w15_e2e.py') --root (Join-Path $stage 'hosted-smoke')
+          if ($LASTEXITCODE -ne 0) { throw 'W15 official embedded Python/Rust hosted E2E failed' }
+          & $exe (Join-Path $stage 'w16_probe.py') --inspect --output (Join-Path $stage 'hosted-smoke\session.json')
+          if ($LASTEXITCODE -ne 0) { throw 'W16 hosted Windows API session read-only probe failed' }
+          $hostSession = Get-Content -LiteralPath (Join-Path $stage 'hosted-smoke\session.json') -Raw | ConvertFrom-Json
+          if (-not $hostSession.live_windows_api_observed -or $hostSession.gui_accepted -or
+              $hostSession.task_scheduler_checked -or $hostSession.production_accepted) {
+            throw 'W16 hosted session diagnostic falsely claimed user acceptance'
+          }
+          Write-Host 'W16_HOSTED_WINDOWS_READONLY_SESSION_PASS'
+          Remove-Item -LiteralPath (Join-Path $stage 'hosted-smoke') -Recurse -Force
+          Write-Host 'W15_HOSTED_TESTED_PORTABLE_BUNDLE_PASS'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: w16-tested-bundle-${{ github.run_id }}
+          path: ${{ runner.temp }}\w15_bundle
+          if-no-files-found: error
+          retention-days: 2
+
+  selfhost-cmd-e2e:
+    needs: build-tested-portable
+    runs-on: [self-hosted, Windows]
+    timeout-minutes: 12
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - name: Download the hosted-tested isolated application bundle
+        uses: actions/download-artifact@v4
+        with:
+          name: w16-tested-bundle-${{ github.run_id }}
+          path: ${{ runner.temp }}\w15-bundle-${{ github.run_id }}-${{ github.run_attempt }}
+      - name: Run Python + native Rust + SQLite + six file alerts via CMD, twice
+        shell: cmd
+        env:
+          W15_ROOT: ${{ runner.temp }}\w15-bundle-${{ github.run_id }}-${{ github.run_attempt }}
+        run: |
+          @echo off
+          if not exist "%W15_ROOT%\w15_manifest.json" exit /b 3
+          if not exist "%W15_ROOT%\python.exe" exit /b 4
+          if not exist "%W15_ROOT%\edu_rules.exe" exit /b 5
+          "%W15_ROOT%\python.exe" "%W15_ROOT%\w15_e2e.py" --root "%W15_ROOT%\selfhost-evidence"
+          if errorlevel 1 exit /b 10
+          "%W15_ROOT%\python.exe" "%W15_ROOT%\w16_probe.py" --inspect --output "%W15_ROOT%\selfhost-evidence\session.json"
+          if errorlevel 1 exit /b 11
+          echo W16_SELFHOST_SESSION_PROBE_PASS
+          echo W15_CMD_PYTHON_RUST_SQLITE_FILE_AUDIT_PASS
+          exit /b 0
+      - name: Preserve sanitized counters only
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: w16-selfhost-safe-evidence-${{ github.run_id }}
+          path: ${{ runner.temp }}\w15-bundle-${{ github.run_id }}-${{ github.run_attempt }}\selfhost-evidence\*.json
+          if-no-files-found: warn
+          retention-days: 3
