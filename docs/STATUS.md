@@ -37,3 +37,7 @@
 4. Choose Outlook Classic COM vs Graph after verifying the user's Outlook version and IT permissions.
 5. Enable and verify authorized email notifications with non-sensitive test recipient; resolve failure/unknown deliveries by inspection.
 6. Pilot the three highest-impact workflows, with audit log, human sign-off and rollback plan.
+
+## W9 updated evidence (2026-10-20)
+
+This older W1 snapshot above is historical, **not current totals**. See `docs/REQUIREMENTS_GAP_AUDIT_W9.md` for requirement-based scope: substantive offline/synthetic implementations in 6/8 workflows, two narrow scaffolds, 0/8 institution-approved production sign-offs, and 2/6 rollout gates CI-verified. The full Python suite reached **126/126 PASS** on W9 PR Linux CI; final W9 postmerge state must be checked against GitHub Actions. External Outlook, SMTP, SSO and end-user Windows pilots remain unverified.

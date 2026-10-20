@@ -161,3 +161,12 @@ See `docs/PHASE_W7.md`. UAT tooling is **not** equivalent to actual field or pro
 - [ ] IT-authorized login/logout Startup acceptance and approved Outlook/SMTP/SSO/privacy controls.
 
 **No Windows automated GUI result is a substitute for an observed, signed-in institutional desktop or approved production pilot.**
+
+## Phase W9 — WF-06 offline schedule conflict proposals + original-requirements audit (2026-10-20)
+
+- [x] Add bounded anonymous-only WF-06 `schedule-propose` CLI: available/busy intersections, timezone-aware JST, earliest candidate slots; no calendar writes or local database creation.
+- [x] Verify timezone/conflict, half-open interval, round-up, duplicate, malformed/PII and symlink/oversize negative test cases.
+- [ ] Final PR W9 4/4 CI PASS on the precise head including this checklist/report, merge and postmerge CI evidence.
+- [x] Trace original eight workflow requirements with engineering capability vs outstanding integrations and institutional sign-off in `docs/REQUIREMENTS_GAP_AUDIT_W9.md`.
+- [ ] Complete real WF-06 calendar and invitation workflow after explicit institution approval.
+- [ ] Institution end-user UAT, approved 15-minute Task Scheduler, real Outlook/SMTP/SSO and production pilot.

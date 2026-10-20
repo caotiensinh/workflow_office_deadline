@@ -35,6 +35,8 @@ def parser():
     sub.add_parser('alerts')
     sub.add_parser('audit')
     sub.add_parser('review-queue',help='Masked human-only exceptions: date verification, missing evidence and approval')
+    schedule=sub.add_parser('schedule-propose',help='WF-06: offline anonymous conflict-free meeting proposals; no calendar writes')
+    schedule.add_argument('--file',required=True,help='Anonymous structured availability JSON file')
     delivery=sub.add_parser('deliver',help='Explicit notification sending; console never marks delivered')
     delivery.add_argument('--channel',choices=['file','smtp','console'],default='console')
     delivery.add_argument('--out-dir',default=str(ROOT/'notifications'))
@@ -65,6 +67,11 @@ def main(argv=None):
     if args.cmd=='check-docx':
         criteria=json.loads(Path(args.criteria).read_text(encoding='utf-8'))
         print(json.dumps(validate_docx(args.file,criteria),ensure_ascii=False,indent=2))
+        return 0
+    if args.cmd=='schedule-propose':
+        # Do not open/create a workflow DB for a read-only calendar proposal.
+        from .schedule import propose_from_file
+        print(json.dumps(propose_from_file(args.file),ensure_ascii=False,indent=2))
         return 0
     with open_store(args.db) as con:
         if args.cmd=='import-json':
