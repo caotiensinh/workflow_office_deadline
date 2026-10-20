@@ -34,7 +34,8 @@ def parser():
     sub.add_parser('cases')
     sub.add_parser('alerts')
     sub.add_parser('audit')
-    sub.add_parser('review-queue',help='Masked human-only exceptions: date verification, missing evidence and approval')
+    review=sub.add_parser('review-queue',help='Masked exception queue incl. regulation source checks')
+    review.add_argument('--registry-file',help='local WF04 declared-source registry')
     schedule=sub.add_parser('schedule-propose',help='WF-06: offline anonymous conflict-free meeting proposals; no calendar writes')
     schedule.add_argument('--file',required=True,help='Anonymous structured availability JSON file')
     delivery=sub.add_parser('deliver',help='Explicit notification sending; console never marks delivered')
@@ -49,6 +50,11 @@ def parser():
     approval.add_argument('--case-id',required=True)
     approval.add_argument('--revision',type=int,required=True)
     approval.add_argument('--decision',choices=['approve','reject'],required=True)
+    approval.add_argument('--registry-file',help='required for REGULATION approvals')
+    regulation=sub.add_parser('check-regulations',help='WF04 offline check; no DB or legal conclusion')
+    regulation.add_argument('--registry-file',required=True)
+    regulation.add_argument('--reference',required=True,help='reference_id@version')
+    regulation.add_argument('--as-of',help='YYYY-MM-DD simulation date')
     doc=sub.add_parser('check-docx',help='Check required phrases in local DOCX')
     doc.add_argument('--file',required=True)
     doc.add_argument('--criteria',required=True)
@@ -68,6 +74,11 @@ def main(argv=None):
         criteria=json.loads(Path(args.criteria).read_text(encoding='utf-8'))
         print(json.dumps(validate_docx(args.file,criteria),ensure_ascii=False,indent=2))
         return 0
+    if args.cmd=='check-regulations':
+        from .regulation import verify_reference
+        result=verify_reference(args.registry_file,args.reference,as_of=args.as_of)
+        print(json.dumps(result,ensure_ascii=False,indent=2))
+        return 0 if result['status']=='SOURCE_SNAPSHOT_PASS' else 3
     if args.cmd=='schedule-propose':
         # Do not open/create a workflow DB for a read-only calendar proposal.
         from .schedule import propose_from_file
@@ -112,7 +123,7 @@ def main(argv=None):
         elif args.cmd=='audit':
             print(json.dumps(audit_list(con),ensure_ascii=False,indent=2))
         elif args.cmd=='review-queue':
-            print(json.dumps(review_queue(con),ensure_ascii=False,indent=2))
+            print(json.dumps(review_queue(con,registry_path=args.registry_file),ensure_ascii=False,indent=2))
         elif args.cmd=='deliver':
             print(json.dumps(dispatch(con,args.channel,args.out_dir),ensure_ascii=False))
         elif args.cmd=='confirm-deadline':
@@ -135,7 +146,8 @@ def main(argv=None):
                 raise PermissionError('approver local account not on EDU_APPROVER_USERS allowlist')
             action=args.decision.upper()
             human_confirm(f'{action} {args.case_id}')
-            case,rev=decide(con,args.case_id,'APPROVED' if args.decision=='approve' else 'REJECTED',actor,args.revision)
+            case,rev=decide(con,args.case_id,'APPROVED' if args.decision=='approve' else 'REJECTED',actor,args.revision,
+                            registry_path=args.registry_file)
             print(json.dumps({'case_id':case['case_id'],'status':case['status'],'revision':rev}))
         else: raise AssertionError('unhandled command')
     return 0
