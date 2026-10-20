@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "references": [
+    {
+      "reference_id": "SYN-REG-001",
+      "version": "V1",
+      "document": "wf04_synthetic_reference.txt",
+      "sha256": "d9e01a94a80e8489b02a32634446bfc55120521c09c8eb42f55d2ddd4eef8e3e",
+      "citation_id": "SECTION-1",
+      "authority_code": "DEMO-ONLY",
+      "effective_from": "2026-01-01",
+      "effective_until": "2027-01-01",
+      "human_reviewed": true,
+      "superseded_by": null
+    },
+    {
+      "reference_id": "SYN-REG-001",
+      "version": "V0",
+      "document": "wf04_synthetic_reference.txt",
+      "sha256": "d9e01a94a80e8489b02a32634446bfc55120521c09c8eb42f55d2ddd4eef8e3e",
+      "citation_id": "SECTION-1",
+      "authority_code": "DEMO-ONLY",
+      "effective_from": "2025-01-01",
+      "effective_until": "2026-01-01",
+      "human_reviewed": true,
+      "superseded_by": "V1"
+    }
+  ]
+}

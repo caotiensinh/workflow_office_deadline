@@ -170,3 +170,15 @@ See `docs/PHASE_W7.md`. UAT tooling is **not** equivalent to actual field or pro
 - [x] Trace original eight workflow requirements with engineering capability vs outstanding integrations and institutional sign-off in `docs/REQUIREMENTS_GAP_AUDIT_W9.md`.
 - [ ] Complete real WF-06 calendar and invitation workflow after explicit institution approval.
 - [ ] Institution end-user UAT, approved 15-minute Task Scheduler, real Outlook/SMTP/SSO and production pilot.
+
+## Phase W10 — WF-04 versioned regulation-source gate (2026-10-20)
+
+- [x] Implement offline bounded versioned reference registry with opaque IDs, citations and SHA-256 document integrity.
+- [x] Block missing, tampered, superseded, unreviewed or outside-declared-window sources without legal interpretation.
+- [x] Integrate REGULATION approval checks and pinned proof into revision-aware, atomic human decision/audit transaction; preserve manual rejection.
+- [x] Add masked `VERIFY_REGULATION_SOURCE` review queue and safe read-only CLI with nonpassing exit code.
+- [x] Add W10 negative/positive tests, plus Linux suite guard and native Windows WF-04 E2E gate.
+- [ ] Exact PR four CI checks and postmerge main four CI checks completed successfully.
+- [ ] Institutional sourcing/official validity, managed source identity/signatures, SSO/MFA/RBAC and real legal/HR reviewer sign-off.
+
+**Hash and a human_reviewed flag do NOT prove an official regulation is legally valid.** See `docs/PHASE_W10.md`.

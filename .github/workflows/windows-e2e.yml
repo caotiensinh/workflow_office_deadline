@@ -69,6 +69,28 @@ jobs:
           }
           if (Test-Path -LiteralPath $unusedDb) { throw 'W9 schedule illegally created a database' }
           Write-Host 'W9_WF06_WINDOWS_OFFLINE_PROPOSAL_PASS_NO_DB_NO_INVITES'
+      - name: W10 Windows regulation provenance E2E, no automated legal decision
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $env:PYTHONPATH = Join-Path $PWD 'python'
+          python -m unittest discover -s tests -p test_regulation_w10.py -v
+          if ($LASTEXITCODE -ne 0) { throw 'W10 regulation safety tests failed' }
+          $db = Join-Path $env:RUNNER_TEMP 'W10_MUST_NOT_EXIST.sqlite'
+          if (Test-Path -LiteralPath $db) { throw 'W10 isolated DB fixture already exists' }
+          $registry = Join-Path $PWD 'examples\wf04_regulation_registry.json'
+          $report = (python -m edu_workflow.cli --db $db check-regulations --registry-file $registry --reference SYN-REG-001@V1 --as-of 2026-10-20) | ConvertFrom-Json
+          if ($LASTEXITCODE -ne 0 -or $report.status -ne 'SOURCE_SNAPSHOT_PASS' -or
+              $report.official_authenticity_verified -or $report.legal_applicability_verified -or
+              -not $report.human_decision_required -or $report.external_actions_performed) {
+            throw 'W10 verification may not claim a legal conclusion or side effect'
+          }
+          $old = (python -m edu_workflow.cli --db $db check-regulations --registry-file $registry --reference SYN-REG-001@V0 --as-of 2026-10-20) | ConvertFrom-Json
+          if ($LASTEXITCODE -ne 3 -or $old.reason -ne 'SUPERSEDED_REFERENCE') {
+            throw 'W10 stale regulation should be blocked'
+          }
+          if (Test-Path -LiteralPath $db) { throw 'W10 read-only source check created a workflow database' }
+          Write-Host 'W10_WINDOWS_SOURCE_PROVENANCE_PASS_NO_LEGAL_APPROVAL_NO_DB'
       - name: W2 actual Windows EML intake and Rust deadline E2E
         shell: pwsh
         run: |

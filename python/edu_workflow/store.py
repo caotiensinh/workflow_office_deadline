@@ -135,7 +135,7 @@ def confirm_deadline(conn, case_id, due, actor, expected_revision, method):
         raise
 
 
-def review_queue(conn):
+def review_queue(conn, registry_path=None, as_of=None):
     """Return masked exception-only tasks. Routine work is never in this queue."""
     result = []
     for case, revision in get_cases(conn):
@@ -146,6 +146,14 @@ def review_queue(conn):
             reasons.append('VERIFY_DEADLINE')
         if case['kind'] in {'DOCUMENT', 'HR', 'REGULATION'} and not case.get('evidence_ref'):
             reasons.append('MISSING_EVIDENCE')
+        if case['kind'] == 'REGULATION':
+            from .regulation import verify_reference
+            try:
+                result = verify_reference(registry_path, case.get('evidence_ref'), as_of=as_of)
+                if result['status'] != 'SOURCE_SNAPSHOT_PASS':
+                    reasons.append('VERIFY_REGULATION_SOURCE')
+            except (ValueError, OSError):
+                reasons.append('VERIFY_REGULATION_SOURCE')
         if case['status'] == 'READY_FOR_APPROVAL' and case['approval_status'] == 'PENDING':
             reasons.append('APPROVAL_PENDING')
         if reasons:
@@ -195,7 +203,7 @@ def alert_list(conn, state=None):
 def audit_list(conn): return [dict(r) for r in conn.execute('SELECT * FROM audit ORDER BY id')]
 
 
-def decide(conn, case_id, decision, actor, expected_rev):
+def decide(conn, case_id, decision, actor, expected_rev, registry_path=None, as_of=None):
     """Persist approval, audit and revision atomically, never as separate commits."""
     conn.execute('BEGIN IMMEDIATE')
     try:
@@ -210,10 +218,19 @@ def decide(conn, case_id, decision, actor, expected_rev):
             raise ValueError('cannot approve: evidence_ref missing')
         if decision == 'APPROVED' and case.get('due_at') and not case.get('due_verified'):
             raise ValueError('cannot approve: deadline is not verified')
+        proof = None
+        if decision == 'APPROVED' and case['kind'] == 'REGULATION':
+            from .regulation import verify_for_approval
+            proof = verify_for_approval(registry_path, case.get('evidence_ref'), as_of=as_of)
         case['status'] = decision
         case['approval_status'] = decision
         validate_case(case)
         new_rev = _write_case(conn, case, rev, actor, 'HUMAN_' + decision, now_iso())
+        if proof is not None:
+            # Pin the checked source's opaque IDs and digests atomically to the
+            # human approval audit, never its free-form content.
+            conn.execute('UPDATE audit SET detail=? WHERE id=last_insert_rowid()',
+                         (json.dumps(proof, sort_keys=True),))
         conn.execute('INSERT INTO decisions(case_id,revision,actor,decision,made_at) VALUES(?,?,?,?,?)',
                      (case_id, new_rev, actor, decision, now_iso()))
         conn.commit()
