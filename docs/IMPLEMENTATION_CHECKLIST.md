@@ -220,3 +220,16 @@ No W12 monitor operation sends messages, changes cases, restarts services or per
 - [ ] Obtain real IT permission and human operator observation on a signed-in Windows endpoint, approved schedule, Outlook, test delivery, SSO/privacy and 3 signed pilots.
 
 W13 is a readiness inspector, **not** authority to bypass managed PowerShell ExecutionPolicy or launch production.
+
+## Phase W14 — Self-hosted CMD runner transport and offline Task Scheduler XML audit (2026-10-20)
+
+- [x] Read latest HEAD, original requirements, W13 checklist, prior self-hosted job failure logs and Task Scheduler installer before code.
+- [x] Add strictly bounded self-hosted Windows `cmd` transport probe, branch-scoped, no checkout/policy changes/host inspection; never count as machine UAT.
+- [x] Add offline fail-closed Task Scheduler XML audit for one enabled 15-minute low-rights, file-only action; no secrets or task execution.
+- [x] Add 17 W14 regression tests and hosted Windows XML audit E2E, protect 218-test CI minimum and preserve Rust regression.
+- [x] Record updated six rollout gates and risk/authority limits in `docs/REQUIREMENTS_GAP_AUDIT_W14.md`.
+- [ ] Verify standalone self-hosted CMD transport run and record exact job/runner/status (no assumption if queued or wrong host).
+- [ ] W14 PR 4/4 hosted CI PASS, merge, postmerge 4/4 main CI PASS and persist run IDs.
+- [ ] Institution IT authorization, observed 15-minute scheduled execution, live read-only Outlook, approved notification and three human pilots.
+
+**A valid exported XML or a self-hosted runner CMD echo is not institutional acceptance.**
