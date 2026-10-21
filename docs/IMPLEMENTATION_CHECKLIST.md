@@ -445,3 +445,19 @@ W13 is a readiness inspector, **not** authority to bypass managed PowerShell Exe
 - [ ] **Remaining engineering gates:** bot PR #61 requires human review and **explicit CI checks** before any merge; GitHub-token-created PR may not automatically trigger PR CI. W29B original PR #58 also awaits review. Real local Ollama inference, three independent autonomous coding agents, model-generated patch and CI auto-repair remain UNVERIFIED and are separate W31+ priorities. No production approval, workplace endpoint writes, or real Outlook authorized. Institutional rollout remains **2/6**, workflow production signoffs **0/8**.
 
 **Safety:** bot PR creation success does not grant permission to auto-merge, access real personal data, or approve human decisions.
+
+
+## Phase W31 — GitHub-bot PR review gating + real Ollama acceptance (2026-10-21 JST)
+
+**Mission fixed:** continuously choose authorized fictional-only Python+Rust education-office tasks and automate safely, without implying institutional approval from tests. Details and evidence: `docs/PHASE_W31.md`.
+
+- [x] **HEAD verified at W31 start:** `86bf863c9366a4072e4d549a10efc4928d643e3e`, one commit beyond W30 merge `f2cecfcaed9c920553eb3d850f9655f1a80cbb1e`.
+- [x] **W30 E2E independently confirmed:** W30 Actions run #39541564616 SUCCESS; actual GitHub Actions-created **PR #61** by `github-actions[bot]`, exact one docs path, head `8be674d832220985a228d85ac75b944fca4af5c3`. Standard PR CI `action_required`, not PASS. PR #61 remains unmerged; PR #58 also awaits review.
+- [x] **W31B independent Lane / PR #63 MERGED:** feature head `acbfc9d09ff4c724c391118684e1e6110d236fd8`, merge `ca1ecea1af01b1aa723321f26fc0e114eeb21dfe`. 13 new offline test cases PASS, hosted real read-only bot PR API audit **#39546933717 SUCCESS**, exact feature head 4/4 standard CI SUCCESS. Audit outputs `#61 HOLD_EXACT_SHA_CI_NOT_PROVEN`, `auto_merge=false`, `human_review_required=true`. No bot PR content executed.
+- [x] **Postmerge W31B Python test count**: main Linux job #119048015530 reports **457 tests PASS** (444 + 13); pin new bot gate/test/workflow in CI manifest and raise Python test floor to 457 in this checkpoint branch.
+- [x] **W31A independent Lane / PR #62 prepared and 4/4 standard CI PASS**, exact head `5cba2bebacc6130307f2e043c27dd63675e74d99`. Specialized workflow **#39546648473** hosted contract PASS, but **self-hosted Linux real Ollama job QUEUED**, not PASS. This is a strict no-GPU, RAM/CPU-bounded, 3 local Ollama model request acceptance; no claims of real inference until the job actually succeeds.
+- [ ] **W31A REAL local Ollama acceptance**: require an online authorized `[self-hosted, Linux]` runner assigned to THIS repository with an installed local Ollama service and 3 models each <=4 GiB; prove real inference receipt. Do not silently replace with hosted mock or bypass resource checks.
+- [ ] **W31+ true Autopilot still outstanding:** 3 independent coding-agent OS processes; model-authored safe patch; sandboxed tests/repair; real new PR; exact-HEAD CI; safe human-reviewed merge; demonstrated repeated self-continuation without a ChatGPT turn.
+- [ ] **Institution acceptance remains external:** signed-in real Session 1 GUI/audio, approved desktop scheduler natural recurrence, Outlook access/recipient privacy, three end-user signoffs, IT rights. Rollout **2/6**; production workflow signoffs **0/8**.
+
+**Evidence rule:** never count queued jobs, mock workers, action_required checks or PR creation as finished autonomous development.
