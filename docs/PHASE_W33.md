@@ -19,3 +19,9 @@
 - [ ] Repeated autonomous lifecycle with durable work lease/backlog: **NOT PROVEN** merely by a cron schedule.
 
 Only public synthetic data. Institution rollout 2/6, signoffs 0/8. Three OS processes are not three independent product coding agents.
+
+## Hosted real-OS-process checkpoint (2026-10-21 JST)
+
+- [x] Hosted run **#39568106515**, feature HEAD `65e45723981d505db44c70b4025a90d6e470df11`: **18/18 W33 regression tests PASS**; real three separate OS Python subprocesses executed a synthetic Ollama *fixture*; receipt `W33_HOSTED_THREE_REAL_OS_PROCESSES_FAKE_INFERENCE_NO_MODEL_CALLS`. This proves process isolation and control flow, **zero real inference calls**.
+- [ ] Real self-hosted job for #39568106515 was correctly **SKIPPED** because branch is not main and live vars are not authorized in this feature run. Earlier PR #62 live Linux job #119046212555 in run #39546648473 remains QUEUED; do not claim Linux Ollama success.
+- [ ] PR exact-HEAD standard 4/4 CI, independent review and real three-model receipt remain outstanding.
