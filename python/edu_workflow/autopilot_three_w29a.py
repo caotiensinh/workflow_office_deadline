@@ -12,6 +12,7 @@ import json
 import os
 import re
 import sys
+import urllib.error
 
 from .autopilot_probe_w28a import GIB, available_memory_bytes
 from .autopilot_worker_w27 import dispatch, local_ollama, safe_tasks
@@ -114,7 +115,7 @@ def main(argv=None, transport=local_ollama):
                      os.getloadavg()[0], os.cpu_count() or 0)
         print(json.dumps(result, sort_keys=True))
         return 0
-    except (OSError, ValueError, TypeError, KeyError):
+    except (OSError, ValueError, TypeError, KeyError, urllib.error.URLError):
         print("W29A_THREE_MODEL_RUN_BLOCKED_OR_UNVERIFIED", file=sys.stderr)
         return 2
 
