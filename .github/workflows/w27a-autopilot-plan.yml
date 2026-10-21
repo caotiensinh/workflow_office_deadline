@@ -1,0 +1,42 @@
+name: W27A Autopilot Backlog Planner (No Host Mutation)
+
+on:
+  schedule:
+    - cron: '0 0,12 * * *'
+  workflow_dispatch:
+  push:
+    branches:
+      - feat/w27a-agent-planner-durable
+
+permissions:
+  contents: read
+
+jobs:
+  deterministic-offline-backlog:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Produce safe AUTO vs BLOCKED_EXTERNAL plan (never launch agents)
+        run: |
+          mkdir -p "$RUNNER_TEMP/w27"
+          PYTHONPATH=python python -m edu_workflow.autopilot_plan_w27 --backlog autopilot/w27_backlog.json > "$RUNNER_TEMP/w27/plan.json"
+          python - "$RUNNER_TEMP/w27/plan.json" <<'PY'
+          import json,sys
+          p=json.load(open(sys.argv[1],encoding='utf8'))
+          assert p["status"]=="PLANNED_ONLY_NOT_RUNNING_AGENTS"
+          assert p["agents_spawned"]==0 and p["model_calls_executed"]==0
+          assert p["workflow_signoffs"]==0 and not p["production_accepted"]
+          assert len(p["blocked_external"])>0
+          print("W27A_DETERMINISTIC_UNATTENDED_PLAN_PASS_NOT_AI_AGENTS")
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: W27A-Autopilot-Safe-Backlog-Plan
+          path: ${{ runner.temp }}/w27/plan.json
+          retention-days: 7

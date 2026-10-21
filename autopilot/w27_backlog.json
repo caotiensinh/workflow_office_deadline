@@ -1,0 +1,61 @@
+{
+  "schema": 1,
+  "tasks": [
+    {
+      "id": "W27-DOCS",
+      "title": "Align current operator documentation with the verified rollout gates",
+      "domain": "documentation",
+      "kind": "AUTO_PROPOSAL",
+      "approval_required": false,
+      "description": "Produce proposed, non-executing documentation improvements comparing the requirements and current synthetic-only acceptance evidence. Human reviews before merge."
+    },
+    {
+      "id": "W27-QA",
+      "title": "Propose synthetic-only coverage for workflow recovery and audit gaps",
+      "domain": "qa-security",
+      "kind": "AUTO_PROPOSAL",
+      "approval_required": false,
+      "description": "Produce test-case proposals, not executable tests or code changes, using fictional workflows without modifying any host or customer data."
+    },
+    {
+      "id": "W27-UX",
+      "title": "Review Japanese operator guidance for consent-first desktop testing",
+      "domain": "ui",
+      "kind": "AUTO_PROPOSAL",
+      "approval_required": false,
+      "description": "Produce a concise Japanese copy proposal for the existing consent-first synthetic GUI UAT, with explicit distinction from production approval."
+    },
+    {
+      "id": "W27-IT",
+      "title": "Institution approval for signed-in Windows Session One GUI test",
+      "domain": "ui",
+      "kind": "BLOCKED_EXTERNAL",
+      "approval_required": true,
+      "description": "Independently authorized signed-in person needs to witness text, audio, focus and acknowledgement. Local AI cannot certify this."
+    },
+    {
+      "id": "W27-SCHEDULE",
+      "title": "Observe approved fifteen-minute recurrence on actual endpoint",
+      "domain": "python-rust",
+      "kind": "BLOCKED_EXTERNAL",
+      "approval_required": true,
+      "description": "Institution IT approves task policy and witnesses three naturally fired fifteen-minute executions on an authorized Windows computer."
+    },
+    {
+      "id": "W27-OUTLOOK",
+      "title": "Approve real Outlook read-only smoke and recipient privacy handling",
+      "domain": "qa-security",
+      "kind": "BLOCKED_EXTERNAL",
+      "approval_required": true,
+      "description": "Institution IT grants least-privilege mail access, verifies account identity and approves any synthetic recipient and privacy handling."
+    },
+    {
+      "id": "W27-PILOT",
+      "title": "Three institutional end-user pilots with actual signoffs",
+      "domain": "documentation",
+      "kind": "BLOCKED_EXTERNAL",
+      "approval_required": true,
+      "description": "Human operators independently review official regulation handling and sign three workflow pilots before a production deployment."
+    }
+  ]
+}
