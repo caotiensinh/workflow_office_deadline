@@ -1,0 +1,52 @@
+name: W26B Real Windows Startup Readonly Evidence
+
+on:
+  push:
+    branches:
+      - feat/w26b-startup-evidence-readonly
+
+permissions:
+  contents: read
+
+jobs:
+  hosted-windows-current-session-readonly:
+    runs-on: windows-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Create isolated synthetic Startup link, verify no autorun approval, remove
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          if ($env:RUNNER_ENVIRONMENT -ne 'github-hosted' -or $env:RUNNER_OS -ne 'Windows' -or
+              $env:GITHUB_ACTIONS -ne 'true') { throw 'W26B host must be disposable Windows' }
+          $id=[guid]::NewGuid().ToString('N')
+          $tmp=Join-Path $env:RUNNER_TEMP ('w26b-' + $id)
+          $startup=Join-Path $tmp 'startup'
+          $exe=Join-Path $tmp 'EDUNotifications.exe'
+          $db=Join-Path $tmp 'fictional.sqlite3'
+          New-Item -ItemType Directory -Path $startup -Force | Out-Null
+          try {
+            [IO.File]::WriteAllBytes($exe,[byte[]](1,2,3))
+            Set-Content -LiteralPath $db -Value 'synthetic-no-real-data' -Encoding UTF8
+            $plan=& .\windows\manage_desktop_startup.ps1 -PlanOnly -TestStartupDir $startup -Executable $exe -DbPath $db
+            $planObj=$plan | ConvertFrom-Json
+            if ($planObj.modifies_registry -or $planObj.modifies_task_scheduler) {
+              throw 'W26B preview claimed unsafe machine changes'
+            }
+            & .\windows\manage_desktop_startup.ps1 -Install -TestStartupDir $startup -Executable $exe -DbPath $db
+            $report=& .\windows\manage_desktop_startup.ps1 -Verify -TestStartupDir $startup -Executable $exe -DbPath $db
+            $info=$report | ConvertFrom-Json
+            if (-not $info.valid_link -or $info.desktop_process_in_current_session_now -or
+                $info.process_was_started_by_startup_verified -or
+                $info.independent_human_gui_observation_verified -or $info.it_approved -or
+                $info.production_accepted -or $info.actual_login_autorun_verified -or
+                $info.changes_machine) { throw 'W26B read-only Startup candidate has false acceptance' }
+            Write-Host 'W26B_HOSTED_STARTUP_LINK_READONLY_PROCESS_NEGATIVE_PASS_NOT_LOGIN_UAT'
+            & .\windows\manage_desktop_startup.ps1 -Remove -TestStartupDir $startup -Executable $exe -DbPath $db
+          } finally {
+            if (Test-Path -LiteralPath $tmp) { Remove-Item -LiteralPath $tmp -Recurse -Force }
+          }
+          Write-Host 'W26B_HOSTED_TEMP_STARTUP_CLEANUP_PASS'

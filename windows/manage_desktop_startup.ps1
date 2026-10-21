@@ -76,6 +76,26 @@ if ($exists) {
         [StringComparison]::OrdinalIgnoreCase)
 }
 if ($Verify) {
+    # W26B: at most a CURRENT-SNAPSHOT process candidate, not logon evidence.
+    # Inspect the exact packaged desktop executable in the current process
+    # session; never emit PID, username, executable path or command line.
+    $appRunningCurrentSession = $false
+    if ($sessionId -ne 0 -and $exists -and $targetMatches) {
+        foreach ($process in @(Get-Process -Name 'EDUNotifications' -ErrorAction SilentlyContinue)) {
+            try {
+                $candidatePath = [string]$process.Path
+                if ($process.SessionId -eq $sessionId -and $candidatePath -and
+                    [string]::Equals([IO.Path]::GetFullPath($candidatePath),
+                                     $ExpectedExecutable,
+                                     [StringComparison]::OrdinalIgnoreCase)) {
+                    $appRunningCurrentSession = $true
+                    break
+                }
+            } catch {
+                # Permission-limited process metadata must never grant a PASS.
+            }
+        }
+    }
     [ordered]@{
         mode = 'read-only-startup-verification'
         session_id = $sessionId
@@ -87,6 +107,11 @@ if ($Verify) {
         executable_exists = [bool](Test-Path -LiteralPath $ExpectedExecutable -PathType Leaf)
         database_exists = [bool](Test-Path -LiteralPath $DbPath -PathType Leaf)
         valid_link = [bool]($exists -and $owned -and $targetMatches -and $argumentsMatch)
+        desktop_process_in_current_session_now = [bool]$appRunningCurrentSession
+        process_was_started_by_startup_verified = $false
+        independent_human_gui_observation_verified = $false
+        it_approved = $false
+        production_accepted = $false
         actual_login_autorun_verified = $false
         changes_machine = $false
     } | ConvertTo-Json -Compress
