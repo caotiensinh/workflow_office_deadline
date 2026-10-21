@@ -185,8 +185,17 @@ class W34QueueWatchdog(unittest.TestCase):
             obj.jobs[1]["status"] = "in_progress"
             obj.jobs[1]["runner_id"] = 55
         stub.on_second_poll = turn_running
-        with self.assertRaises(ValueError):
-            cancel_obsolete(100, fetch=stub, now=NOW)
+        result = cancel_obsolete(100, fetch=stub, now=NOW)
+        self.assertEqual(result["status"], "STATE_CHANGED_NO_CANCEL")
+        self.assertFalse(result["cancel_requested"])
+        self.assertFalse(any(method == "POST" for _, method in stub.calls))
+
+    def test_current_head_queue_is_normal_no_action_not_ci_failure(self):
+        stub = RepoStub()
+        stub.sha = SHA_OLD
+        result = cancel_obsolete(100, fetch=stub, now=NOW)
+        self.assertEqual(result["status"], "NO_ELIGIBLE_OBSOLETE_QUEUE")
+        self.assertFalse(result["cancel_requested"])
         self.assertFalse(any(method == "POST" for _, method in stub.calls))
 
     def test_runner_inventory_403_must_not_mean_zero_runners(self):
