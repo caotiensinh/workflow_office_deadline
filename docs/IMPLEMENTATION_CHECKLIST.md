@@ -474,3 +474,24 @@ W13 is a readiness inspector, **not** authority to bypass managed PowerShell Exe
 - [ ] **Autonomous code loop still unfinished**: model-based task selection, 3 independent coding-agent processes, code patch + test, actual auto-repair, reviewed PR merge and repeat cycle. W31D proves CI dispatch, not autonomous model coding. Institutional rollout **2/6**, 0/8 production workflow signoffs.
 
 See `docs/PHASE_W31D.md` for exact acceptance criteria, evidence and remaining risks.
+
+
+## W34 — Diagnose stalled vs unassigned Autopilot runner (2026-10-21 JST)
+
+- [x] **W34 runner-watch code implemented:** `python/edu_workflow/autopilot_runner_watch_w34.py` classifies pending/unassigned vs runner-assigned vs active, optionally queries actual runner inventory without treating permission denied as zero runners, and never automatically kills active jobs.
+- [x] **Guarded obsolete-only cancellation contract:** two fresh full-state reads, queue age >=30min, no in-progress/assigned waiting jobs, old head superseded, newer SUCCESS on same workflow/current branch SHA; no cancellation when live task running or still current. Requires guarded main-only repo-var opt-in for a write-token job; currently no cancellation executed.
+- [x] **Real hosted audit PASS:** W34 run #39570350653 at code HEAD `056038a4fc27efa2ce6d1518c990702ee361c8cc` ran **25/25 focused tests PASS** and authenticated live REST audit. W31A `39546648473` has **0 active jobs, 1 queued job, 0 assigned queued runners**; current branch HEAD matches, so **NOT safe to cancel**. The only assigned runner was the completed hosted sibling. Runner inventory permissions unavailable, not proof of offline/busy state.
+- [ ] **W34 PR release:** verify 4/4 standard exact-HEAD CI and independent reviewer before merge; after merge hourly read-only watchdog may operate on main. Real Ollama inference still BLOCKED until an authorized Linux runner is assigned and ready for this repo.
+- [ ] **24/7 product AI coding acceptance:** still requires real local inference, model-generated safe patch/repair, reviewed PR merge and repeated autonomous product increments. Diagnostics do not satisfy this end-to-end milestone.
+
+See `docs/PHASE_W34.md`. Institutional rollout 2/6, signoffs 0/8 unchanged.
+
+
+## W35 — Two specific recovery gates (2026-10-22 JST)
+
+- [x] **Running task progress evidence:** W35 compares real GitHub job/step observations three times and preserves any job with a step transition, missing step data, unknown task type, unfinished work within declared timeout, or concurrent queued/unrecognized activity. Only allowlisted AI jobs exceeding reviewed job time budgets plus 15-min grace with unchanged active steps across two >=20-second intervals are candidates for an owner-opted-in GitHub run cancellation. No host-process kill or claim of guaranteed deadlock detection.
+- [x] **Obsolete queued exact-head job proof:** newer successful workflow run is insufficient without completed/success successor instances of **every formerly queued job**. Two full fresh API checks, same workflow/branch, latest branch HEAD, old run unassigned and >30m stale, no other active job; wrong job, mock-only hosted pass, skip or race => HOLD. Separate main-only `EDU_W34_ALLOW_OBSOLETE_RUN_CANCEL` opt-in.
+- [x] **Actual hosted evidence:** #39691756162 SUCCESS: 26 W34 + 30 W35 tests PASS, read-only GitHub queue/active inventory diagnostics PASS; no cancellation performed. W31A run #39546648473 still current and queued with no assigned runner; not obsolete.
+- [ ] **Final W35 acceptance/release:** exact final PR #71 HEAD standard 4/4 CI and specialized watchdog job PASS, independent review before merge; both write-enabled recovery paths skipped until explicitly authorized on main. No real hung job cancelled yet.
+- [ ] **Core product autonomy unaffected:** Linux self-hosted Ollama admission and AI-generated patch/test/repair/PR/merge loop remain unverified. No enterprise/Outlook/personal data operations.
+

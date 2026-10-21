@@ -1,0 +1,108 @@
+name: W34 Real Runner Queue Watchdog and Safe Obsolete Reconciliation
+
+on:
+  push:
+    branches:
+      - feat/w34-runner-queue-recovery
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: '37 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: w34-runner-queue-audit-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  runner-queue-diagnosis:
+    if: ${{ github.repository == 'caotiensinh/workflow_office_deadline' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify stale vs active runner contract and double-check cancellation guard
+        shell: bash
+        run: |
+          set -euo pipefail
+          PYTHONPATH=python python -m unittest discover -s tests -p test_autopilot_runner_watch_w34.py -v
+          PYTHONPATH=python python -m unittest discover -s tests -p test_autopilot_runner_recovery_w35.py -v
+          PYTHONPATH=python python -m edu_workflow.autopilot_runner_watch_w34
+          echo W34_CONTRACT_READ_ONLY_NO_RUN_CANCELLATION
+      - name: Inspect real W31A queued Linux job and available runner inventory
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          PYTHONPATH=python python -m edu_workflow.autopilot_runner_watch_w34 --live --run-id 39546648473 --inventory
+          PYTHONPATH=python python -m edu_workflow.autopilot_runner_recovery_w35 --live --run-id 39546648473
+          PYTHONPATH=python python -m edu_workflow.autopilot_runner_recovery_w35 --live --scan-queued
+          PYTHONPATH=python python -m edu_workflow.autopilot_runner_recovery_w35 --live --scan-active
+          echo W34_REAL_GITHUB_QUEUE_AUDITED_NO_KILL_NO_NEW_TASK_CLAIM
+
+  safe-obsolete-reconcile:
+    if: >-
+      github.repository == 'caotiensinh/workflow_office_deadline' &&
+      github.ref == 'refs/heads/main' &&
+      (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') &&
+      vars.EDU_W34_ALLOW_OBSOLETE_RUN_CANCEL == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      actions: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Cancel only a proven unassigned and superseded stale queued run
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          W34_CANCEL_OBSOLETE: 'true'
+          W34_MANUAL_DISPATCH: 'true'
+          EDU_W35_ACTIONS_WRITE: 'true'
+        run: |
+          set -euo pipefail
+          PYTHONPATH=python python -m edu_workflow.autopilot_runner_recovery_w35 --live --scan-queued --cancel-obsolete
+
+  overbudget-live-job-reconcile:
+    # Separate explicit owner authorization from obsolete queued job cleanup.
+    if: >-
+      github.repository == 'caotiensinh/workflow_office_deadline' &&
+      github.ref == 'refs/heads/main' &&
+      (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') &&
+      vars.EDU_W35_ALLOW_OVERBUDGET_CANCEL == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    permissions:
+      contents: read
+      actions: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Recheck 3 snapshots and cancel only time-budget-overrun trusted AI jobs
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EDU_W35_ACTIONS_WRITE: 'true'
+        run: |
+          set -euo pipefail
+          PYTHONPATH=python python -m edu_workflow.autopilot_runner_recovery_w35 --live --scan-active --cancel-stalled
