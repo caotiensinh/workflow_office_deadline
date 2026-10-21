@@ -1,0 +1,65 @@
+name: W26A Real schtasks MINUTE Trigger Audit
+
+on:
+  push:
+    branches:
+      - feat/w26a-schtasks-minute-trigger-compat
+
+permissions:
+  contents: read
+
+jobs:
+  disposable-hosted-schtasks-compat:
+    runs-on: windows-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: schtasks.exe /SC MINUTE /MO 15 native task and read-only audit
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          if ($env:RUNNER_ENVIRONMENT -ne 'github-hosted' -or $env:RUNNER_OS -ne 'Windows' -or
+              $env:GITHUB_ACTIONS -ne 'true') { throw 'W26A_HOSTED_ONLY' }
+          $name='EducationAIWorkflow'
+          if (Get-ScheduledTask -TaskName $name -ErrorAction SilentlyContinue) {
+            throw 'W26A existing task detected, refuse overwrite'
+          }
+          $id=[guid]::NewGuid().ToString('N')
+          $folder=Join-Path $env:RUNNER_TEMP ('w26a-' + $id)
+          $created=$false
+          New-Item -ItemType Directory -Path $folder -ErrorAction Stop | Out-Null
+          try {
+            $script=Join-Path $folder 'run_once.ps1'
+            Set-Content -LiteralPath $script -Value '# inert W26A synthetic, no user data or I/O' -Encoding UTF8
+            $cmd='powershell.exe -NoProfile -File "' + $script + '" -Channel file'
+            & schtasks.exe /Create /SC MINUTE /MO 15 /TN $name /TR $cmd /RL LIMITED
+            if ($LASTEXITCODE -ne 0) { throw 'W26A native schtasks create failed' }
+            $created=$true
+            $data=& .\windows\w25_live_task_readonly_audit.ps1 -AuditLive -ITAuthorized
+            $result=$data | ConvertFrom-Json
+            $safe=@($result.checks.PSObject.Properties | ForEach-Object { $_.Name + '=' + $_.Value }) -join ' '
+            Write-Host "W26A_SCHTASKS_NATIVE_BOOLEAN_CHECKS $safe"
+            if ($result.status -ne 'LIVE_CONFIG_MATCH_NOT_RUN_ACCEPTANCE' -or
+                -not $result.checks.fifteen_minute_trigger_configured -or
+                -not $result.checks.one_file_only_powershell_action -or
+                -not $result.checks.trigger_enabled -or
+                -not $result.checks.runs_as_limited_user -or
+                $result.fifteen_minute_runs_observed -or $result.it_approved -or
+                $result.production_accepted) { throw 'W26A installed minute-trigger failed strict read-only audit' }
+            Write-Host 'W26A_REAL_SCHTASKS_MINUTE_15_CONFIG_COMPAT_PASS_NOT_EXECUTION'
+          } finally {
+            try {
+              if ($created) {
+                & schtasks.exe /Delete /TN $name /F | Out-Null
+                if ($LASTEXITCODE -ne 0) { throw 'W26A cleanup failed' }
+              }
+            } finally {
+              if (Test-Path -LiteralPath $folder) { Remove-Item -LiteralPath $folder -Recurse -Force }
+            }
+          }
+          if (Get-ScheduledTask -TaskName $name -ErrorAction SilentlyContinue) {
+            throw 'W26A disposable task survived cleanup'
+          }
+          Write-Host 'W26A_HOSTED_NATIVE_TASK_CLEANUP_PASS_NOT_INSTITUTIONAL_ACCEPTANCE'

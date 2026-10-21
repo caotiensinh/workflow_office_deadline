@@ -32,8 +32,22 @@ $actions = @($task.Actions)
 $actionOk = $actions.Count -eq 1 -and
   [string]$actions[0].Execute -match '^(?i:powershell\.exe)$' -and
   [string]$actions[0].Arguments -cmatch '^-NoProfile -File "[A-Za-z]:\\(?:[A-Za-z0-9 _.-]+\\)*run_once\.ps1" -Channel file$'
-$intervalOk = [string]$xml.Task.Triggers.TimeTrigger.Repetition.Interval -eq 'PT15M'
-$triggerEnabled = (@($task.Triggers).Count -eq 1 -and [bool]$task.Triggers[0].Enabled)
+# Windows schtasks.exe /SC MINUTE and New-ScheduledTaskTrigger may export
+# different trigger shapes. Require exactly ONE supported registered trigger;
+# do not hard-code TimeTrigger (CalendarTrigger is also valid).
+$registeredTriggers = @($task.Triggers)
+$xmlTriggers = @($xml.Task.Triggers.ChildNodes | Where-Object {
+    $_.LocalName -in @('TimeTrigger','CalendarTrigger')
+})
+$allTriggerCount = @($xml.Task.Triggers.ChildNodes).Count
+$oneSupported = ($registeredTriggers.Count -eq 1 -and
+                 $xmlTriggers.Count -eq 1 -and $allTriggerCount -eq 1)
+$intervalOk = $false
+if ($oneSupported) {
+  $repetition = $xmlTriggers[0].SelectSingleNode("./*[local-name()='Repetition']/*[local-name()='Interval']")
+  $intervalOk = ($null -ne $repetition -and [string]$repetition.InnerText -eq 'PT15M')
+}
+$triggerEnabled = ($oneSupported -and [bool]$registeredTriggers[0].Enabled)
 $limitedOk = [string]$task.Principal.RunLevel -eq 'Limited'
 $activeOk = [string]$task.State -ne 'Disabled'
 $checks = [ordered]@{
