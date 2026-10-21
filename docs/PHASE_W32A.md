@@ -25,8 +25,8 @@ The existing `tests/test_autopilot_pr_gate_w31b.py` fixtures now include real AP
 
 ## Acceptance
 
-- [ ] New Python test floor **478** and project Rust plus Windows 4/4 CI SUCCESS on one exact PR head.
-- [ ] Real GitHub API audit of PR #66 returns `CI_VERIFIED_STILL_REQUIRES_HUMAN_REVIEW`, with `auto_merge=false`. PR #61 must remain HOLD unless four trusted exact-head runs exist.
+- [x] Exact feature HEAD `71b9c0d6cf709ab3fc1242cdd9a121c58a0c5063` completed **478/478 Python PASS and Rust success** on Hybrid CI #39557581567; Windows Synthetic #39557581682, W4 #39557581734 and W5 #39557581554 also completed SUCCESS, all at this exact SHA.
+- [x] Specialized GitHub-hosted W31B audit #39557575680 SUCCESS at same exact feature HEAD: 26/26 focused tests PASS and direct GitHub API audit of PR #66 prints `W32A_REAL_GITHUB_BOT_PR_66_FOUR_TRUSTED_WORKFLOWS_ID_PATH_ACTOR_SHA_PASS_NO_MERGE`; PR #61 remains HOLD, no merge.
 - [ ] After reviewed merge, verify 4/4 CI on the new `main` HEAD and report hashes.
 - [ ] External IT/Outlook, actual three Ollama requests on Linux and real 3 coding-agent loop remain separately UNVERIFIED.
 
