@@ -124,8 +124,10 @@ def obsolete_candidate(run, jobs, successor, branch_sha, now):
     return bool(jobs) and all(
         isinstance(j, dict) and
         j.get("status") in ("queued", "completed") and
-        (type(j.get("runner_id")) is not int or j["runner_id"] <= 0) and
-        not (isinstance(j.get("runner_name"), str) and j["runner_name"].strip()) and
+        (j.get("status") == "completed" or (
+            (type(j.get("runner_id")) is not int or j["runner_id"] <= 0) and
+            not (isinstance(j.get("runner_name"), str) and
+                 j["runner_name"].strip()))) and
         j.get("conclusion") != "failure"
         for j in jobs
     ) and any(j.get("status") == "queued" for j in jobs)
