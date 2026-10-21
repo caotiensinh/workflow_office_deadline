@@ -474,3 +474,16 @@ W13 is a readiness inspector, **not** authority to bypass managed PowerShell Exe
 - [ ] **Autonomous code loop still unfinished**: model-based task selection, 3 independent coding-agent processes, code patch + test, actual auto-repair, reviewed PR merge and repeat cycle. W31D proves CI dispatch, not autonomous model coding. Institutional rollout **2/6**, 0/8 production workflow signoffs.
 
 See `docs/PHASE_W31D.md` for exact acceptance criteria, evidence and remaining risks.
+
+
+## Phase W32A — Provenance-hardened autonomous CI gate (2026-10-21 JST)
+
+**Mission unchanged:** safe backlog → model code → tests → repair → reviewed PR → exact SHA CI → safe merge → repeat. Only real, verified working gates may be checked.
+
+- [x] **Observed W31D provenance:** PR #66 four `workflow_dispatch` CI SUCCESS records at head `b8e154bde4c786bec52c38c819208963409d697a` expose stable workflow IDs **388590017 / 388610038 / 389392239 / 389574496**, expected workflow file paths, trusted bot actor, head branch and repository.
+- [x] **W32A code and regression committed to feature branch:** exact-head CI gate now rejects a matching workflow *name* with incorrect ID/path/event/actor/repository/branch, and rejects older green if a later matching run failed or remains pending. 13 new negative regression cases; Python floor increased from 465 to **478**. These are implemented changes, not yet accepted until CI.
+- [ ] **W32A acceptance:** 4/4 standard CI at identical PR head, local hosted audit against actual bot PR #66 and a post-merge main pass. See `docs/PHASE_W32A.md`.
+- [ ] **W31A still externally blocked:** PR #62 open and real Linux three-Ollama job `119046212555` of run `39546648473` remains QUEUED (no actual model acceptance). Do not weaken resource policy or infer runner presence.
+- [ ] **PR human review pending:** #66 docs-only bot PR, #61 W30 and #58 original backlog PR remain unmerged unless authorized review conditions and exact-head CI satisfied.
+- [ ] **Full autonomous coding lifecycle still unverified:** model-author patch, independent coding processes, CI repair and repeat without human prompts. Real Outlook/endpoint/IT and production acceptance are excluded; rollout **2/6**, production workflow signoffs **0/8**.
+
