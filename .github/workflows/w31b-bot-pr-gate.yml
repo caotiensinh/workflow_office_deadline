@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - feat/w31b-safe-bot-pr-verification
+      - feat/w32a-trusted-bot-ci-provenance
   workflow_dispatch:
   schedule:
     - cron: '15 */6 * * *'
@@ -40,3 +41,22 @@ jobs:
           set -euo pipefail
           PYTHONPATH=python python -m edu_workflow.autopilot_pr_gate_w31b --live
           echo W31B_READ_ONLY_ACTUAL_BOT_PR_AUDIT_NO_MERGE
+      - name: W32A real live bot PR exact ID/path/actor acceptance
+        if: ${{ github.ref == 'refs/heads/feat/w32a-trusted-bot-ci-provenance' }}
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          PYTHONPATH=python python - <<'PY'
+          from edu_workflow.autopilot_pr_gate_w31b import audit
+          report = audit()
+          seen = {p["number"]: p for p in report["prs"]}
+          assert 66 in seen and 61 in seen
+          assert seen[66]["status"] == "CI_VERIFIED_STILL_REQUIRES_HUMAN_REVIEW"
+          assert seen[66]["exact_sha_ci"] is True
+          assert seen[61]["exact_sha_ci"] is False
+          assert all(not p["auto_merge"] and p["human_review_required"] for p in report["prs"])
+          assert report["remote_writes"] is False
+          print("W32A_REAL_GITHUB_BOT_PR_66_FOUR_TRUSTED_WORKFLOWS_ID_PATH_ACTOR_SHA_PASS_NO_MERGE")
+          PY
