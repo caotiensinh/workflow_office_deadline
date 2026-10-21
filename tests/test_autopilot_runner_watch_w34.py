@@ -131,9 +131,26 @@ class W34QueueWatchdog(unittest.TestCase):
         self.assertFalse(obsolete_candidate(old_run(), data, newer_success(),
                                             SHA_NEW, NOW))
 
-    def test_running_finished_jobs_assignment_prevents_cancel(self):
+    def test_completed_hosted_runner_does_not_block_old_queued_cleanup(self):
         data = jobs()
         data[0]["runner_id"] = 12
+        data[0]["runner_name"] = "ephemeral-completed-worker"
+        report = inspect(old_run(), data)
+        self.assertEqual(report["state"],
+                         "QUEUED_UNASSIGNED_RUNNER_OR_CAPACITY_UNKNOWN")
+        self.assertEqual(report["queued_assigned_jobs"], 0)
+        self.assertEqual(report["assigned_jobs"], 1)
+        self.assertTrue(obsolete_candidate(old_run(), data, newer_success(),
+                                           SHA_NEW, NOW))
+
+    def test_unassigned_queue_runner_id_zero_is_not_real_assignment(self):
+        data = jobs()
+        data[1]["runner_id"] = 0
+        self.assertEqual(inspect(old_run(), data)["queued_assigned_jobs"], 0)
+
+    def test_queued_assigned_runner_blocks_cancellation(self):
+        data = jobs()
+        data[1]["runner_id"] = 12
         self.assertFalse(obsolete_candidate(old_run(), data, newer_success(),
                                             SHA_NEW, NOW))
 
