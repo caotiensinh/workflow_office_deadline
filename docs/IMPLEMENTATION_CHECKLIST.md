@@ -474,3 +474,14 @@ W13 is a readiness inspector, **not** authority to bypass managed PowerShell Exe
 - [ ] **Autonomous code loop still unfinished**: model-based task selection, 3 independent coding-agent processes, code patch + test, actual auto-repair, reviewed PR merge and repeat cycle. W31D proves CI dispatch, not autonomous model coding. Institutional rollout **2/6**, 0/8 production workflow signoffs.
 
 See `docs/PHASE_W31D.md` for exact acceptance criteria, evidence and remaining risks.
+
+
+## W34 — Diagnose stalled vs unassigned Autopilot runner (2026-10-21 JST)
+
+- [x] **W34 runner-watch code implemented:** `python/edu_workflow/autopilot_runner_watch_w34.py` classifies pending/unassigned vs runner-assigned vs active, optionally queries actual runner inventory without treating permission denied as zero runners, and never automatically kills active jobs.
+- [x] **Guarded obsolete-only cancellation contract:** two fresh full-state reads, queue age >=30min, no in-progress/assigned waiting jobs, old head superseded, newer SUCCESS on same workflow/current branch SHA; no cancellation when live task running or still current. Requires guarded main-only repo-var opt-in for a write-token job; currently no cancellation executed.
+- [x] **Real hosted audit PASS:** W34 run #39570350653 at code HEAD `056038a4fc27efa2ce6d1518c990702ee361c8cc` ran **25/25 focused tests PASS** and authenticated live REST audit. W31A `39546648473` has **0 active jobs, 1 queued job, 0 assigned queued runners**; current branch HEAD matches, so **NOT safe to cancel**. The only assigned runner was the completed hosted sibling. Runner inventory permissions unavailable, not proof of offline/busy state.
+- [ ] **W34 PR release:** verify 4/4 standard exact-HEAD CI and independent reviewer before merge; after merge hourly read-only watchdog may operate on main. Real Ollama inference still BLOCKED until an authorized Linux runner is assigned and ready for this repo.
+- [ ] **24/7 product AI coding acceptance:** still requires real local inference, model-generated safe patch/repair, reviewed PR merge and repeated autonomous product increments. Diagnostics do not satisfy this end-to-end milestone.
+
+See `docs/PHASE_W34.md`. Institutional rollout 2/6, signoffs 0/8 unchanged.
