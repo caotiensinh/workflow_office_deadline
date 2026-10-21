@@ -189,14 +189,17 @@ def cancel_obsolete(run_id, fetch=gh_json, now=None):
     """Double-check all REST state immediately before a single narrow cancel."""
     before = check_run(run_id, fetch=fetch, now=now, inventory=False)
     if not before["cancel_safe_obsolete"] or before["active_jobs"]:
-        raise ValueError("No safe stale replacement proof")
+        return {"run_id": run_id, "status": "NO_ELIGIBLE_OBSOLETE_QUEUE",
+                "cancel_requested": False, "cancelled_running_jobs": False}
     # A fresh second GET is required; GitHub may assign a runner meanwhile.
     after = check_run(run_id, fetch=fetch, now=now, inventory=False)
     if not after["cancel_safe_obsolete"] or after["active_jobs"]:
-        raise ValueError("Run changed during safety recheck")
+        return {"run_id": run_id, "status": "STATE_CHANGED_NO_CANCEL",
+                "cancel_requested": False, "cancelled_running_jobs": False}
     fetch(f"repos/{REPO}/actions/runs/{run_id}/cancel", "POST")
     return {"run_id": run_id, "status": "OBSOLETE_QUEUED_RUN_CANCEL_REQUESTED",
-            "production_access": False, "cancelled_running_jobs": False}
+            "cancel_requested": True, "production_access": False,
+            "cancelled_running_jobs": False}
 
 
 def main(argv=None):
