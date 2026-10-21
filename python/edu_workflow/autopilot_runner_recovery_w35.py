@@ -91,9 +91,8 @@ def obsolete_snapshot(run_id, fetch=gh_json, *, now=None):
     records = successors.get("workflow_runs", [])
     if not isinstance(records, list):
         raise ValueError("Malformed workflow history")
-    if successors.get("total_count", 0) > len(records):
-        # Do not mistake a truncated result for an exhaustive search.
-        return result
+    # Partial history may omit an older successor; absence yields HOLD.
+    # Presence is verified against an individual exact-run job listing.
     seen = now or datetime.now(timezone.utc)
     for new in records:
         if not obsolete_candidate(old, jobs, new, sha, seen):
@@ -213,11 +212,12 @@ def cancel_stalled(run_id, fetch=gh_json, sleep=time.sleep, now=None):
     verdict, last = confirm_stall(run_id, fetch=fetch, sleep=sleep, now=now)
     if not verdict["safe_cancel"]:
         return verdict
-    # Third fresh snapshot blocks cancellation if any step or state advanced.
-    end = now() if now else datetime.now(timezone.utc)
+    # Require a *real second 20-second observation*, never synthetic time.
+    third_start = now() if now else datetime.now(timezone.utc)
+    sleep(MIN_OBSERVE_SECONDS)
+    third_end = now() if now else datetime.now(timezone.utc)
     final = active_snapshot(run_id, fetch)
-    again = overbudget_evidence(last, final,
-                                end - __import__("datetime").timedelta(seconds=20), end)
+    again = overbudget_evidence(last, final, third_start, third_end)
     if not again["safe_cancel"]:
         verdict["status"] = "LAST_MOMENT_PROGRESS_NO_CANCEL"
         verdict["safe_cancel"] = False
@@ -269,7 +269,8 @@ def main(argv=None):
         print("W35_AMBIGUOUS_WRITE_MODE_REFUSED", file=__import__("sys").stderr)
         return 2
     if args.cancel_obsolete or args.cancel_stalled:
-        if os.getenv("EDU_W35_ACTIONS_WRITE") != "true" or not os.getenv("GITHUB_REF") == "refs/heads/main":
+        if (os.getenv("EDU_W35_ACTIONS_WRITE") != "true"
+                or os.getenv("GITHUB_REF") != "refs/heads/main"):
             print("W35_MAIN_ONLY_WRITE_OPTIN_REQUIRED", file=__import__("sys").stderr)
             return 2
     try:
