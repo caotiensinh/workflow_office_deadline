@@ -1,0 +1,70 @@
+name: W33 Unattended Three OS Ollama Process Lane
+
+on:
+  push:
+    branches:
+      - feat/w33-autonomous-3process-loop
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+  schedule:
+    - cron: '17 * * * *'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: w33-unattended-process-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  hosted-real-process-synthetic-inference:
+    if: ${{ github.repository == 'caotiensinh/workflow_office_deadline' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify three separate OS workers using synthetic-only model fixture
+        env:
+          EDU_W33_SYNTHETIC: '1'
+        shell: bash
+        run: |
+          set -euo pipefail
+          PYTHONPATH=python python -m unittest discover -s tests -p test_autopilot_process_w33.py -v
+          PYTHONPATH=python python -m edu_workflow.autopilot_process_w33 --backlog autopilot/w27_backlog.json
+          PYTHONPATH=python python -m edu_workflow.autopilot_process_w33 --backlog autopilot/w27_backlog.json --execute --synthetic |
+            python -c 'import json,sys; x=json.load(sys.stdin); assert x["independent_os_processes"]==3 and x["actual_ollama_calls"]==0 and x["status"]=="THREE_SYNTHETIC_OS_PROCESSES_NOT_REAL_OLLAMA" and not x["git_writes"] and not x["model_authored_code_executed"]; print("W33_HOSTED_THREE_REAL_OS_PROCESSES_FAKE_INFERENCE_NO_MODEL_CALLS")'
+
+  selfhost-real-ollama-three-processes:
+    # No trusted model or device is enrolled merely by enabling the schedule.
+    # This job remains queued if there is no matching authorized Linux runner.
+    if: >-
+      github.repository == 'caotiensinh/workflow_office_deadline' &&
+      github.ref == 'refs/heads/main' &&
+      (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') &&
+      vars.EDU_AUTOPILOT_LIVE == 'true' &&
+      vars.EDU_AUTOPILOT_THREE_CPU_PROPOSALS_LIVE == 'true'
+    runs-on: [self-hosted, Linux]
+    timeout-minutes: 17
+    concurrency:
+      group: w33-three-process-real-ollama-lane
+      cancel-in-progress: false
+    env:
+      EDU_AUTOPILOT_ENABLE: '1'
+      EDU_AUTOPILOT_THREE_CPU_PROPOSALS: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Three independent CPU-budgeted installed Ollama subprocesses; hash-only public evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -r /proc/meminfo
+          PYTHONPATH=python python3 -m edu_workflow.autopilot_process_w33 --backlog autopilot/w27_backlog.json --execute |
+            python3 -c 'import json,sys; d=json.load(sys.stdin); assert d["status"]=="THREE_REAL_OS_OLLAMA_PROCESSES_VERIFIED" and d["independent_os_processes"]==3 and d["actual_ollama_calls"]==3 and not d["git_writes"] and not d["model_authored_code_executed"]; print("W33_LIVE_THREE_OS_CPU_OLLAMA_RECEIPT_NO_CODE_OR_GIT_WRITE")'
