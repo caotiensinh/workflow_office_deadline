@@ -54,7 +54,8 @@ jobs:
           set -euo pipefail
           title="Autopilot: deterministic backlog status (review required)"
           # No duplicate open bot PRs. If branch writes are blocked, FAIL openly.
-          if [ "$(gh pr list --state open --json title --jq "[.[] | select(.title == \\"$title\\")] | length")" != "0" ]; then
+          existing="$(gh pr list --state open --json title --jq '.[].title')"
+          if grep -Fqx -- "$title" <<< "$existing"; then
             echo W28B_EXISTING_REVIEW_PR_SKIP_NO_MERGE
             exit 0
           fi
