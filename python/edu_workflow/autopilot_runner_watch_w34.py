@@ -58,12 +58,18 @@ def inspect(run, jobs):
     if len(statuses) == 0 or not statuses.issubset(
             {"queued", "pending", "in_progress", "completed", "waiting"}):
         raise ValueError("Unknown GitHub job state")
-    assigned = [j for j in jobs if j.get("runner_id") is not None or j.get("runner_name")]
+    def is_assigned(job):
+        runner_id, runner_name = job.get("runner_id"), job.get("runner_name")
+        return ((type(runner_id) is int and runner_id > 0)
+                or (isinstance(runner_name, str) and bool(runner_name.strip())))
+
+    assigned = [j for j in jobs if is_assigned(j)]
     active = [j for j in jobs if j.get("status") == "in_progress"]
     queued = [j for j in jobs if j.get("status") in ("queued", "pending", "waiting")]
+    queued_assigned = [j for j in queued if is_assigned(j)]
     if active:
         state = "RUNNING_DO_NOT_CANCEL"
-    elif queued and assigned:
+    elif queued_assigned:
         state = "QUEUED_RUNNER_ASSIGNED_NO_PROGRESS_PROOF"
     elif queued:
         state = "QUEUED_UNASSIGNED_RUNNER_OR_CAPACITY_UNKNOWN"
@@ -74,7 +80,8 @@ def inspect(run, jobs):
     return {
         "state": state, "run_id": run.get("id"),
         "active_jobs": len(active), "queued_jobs": len(queued),
-        "assigned_jobs": len(assigned), "terminal_jobs": len(jobs)-len(active)-len(queued),
+        "assigned_jobs": len(assigned), "queued_assigned_jobs": len(queued_assigned),
+        "terminal_jobs": len(jobs)-len(active)-len(queued),
         "running_process_proven": bool(active),
         "runner_inventory_known": False,
         "automatic_kill_now": False,
@@ -117,7 +124,8 @@ def obsolete_candidate(run, jobs, successor, branch_sha, now):
     return bool(jobs) and all(
         isinstance(j, dict) and
         j.get("status") in ("queued", "completed") and
-        j.get("runner_id") is None and not j.get("runner_name") and
+        (type(j.get("runner_id")) is not int or j["runner_id"] <= 0) and
+        not (isinstance(j.get("runner_name"), str) and j["runner_name"].strip()) and
         j.get("conclusion") != "failure"
         for j in jobs
     ) and any(j.get("status") == "queued" for j in jobs)
