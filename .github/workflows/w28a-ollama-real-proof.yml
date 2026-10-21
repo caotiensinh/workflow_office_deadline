@@ -1,0 +1,52 @@
+name: W28A Bounded Local Ollama Proof
+
+on:
+  push:
+    branches:
+      - feat/w28a-local-ollama-real-proof
+  workflow_dispatch:
+  schedule:
+    - cron: '25 0 * * *'
+
+permissions:
+  contents: read
+
+jobs:
+  hosted-synthetic-probe-validation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Offline proof regression + dryrun (not real inference)
+        run: |
+          set -euo pipefail
+          PYTHONPATH=python python -m unittest discover -s tests -p 'test_autopilot_probe_w28a.py' -v
+          PYTHONPATH=python python -m edu_workflow.autopilot_probe_w28a
+          echo W28A_HOSTED_MOCK_ONLY_ZERO_REAL_MODEL_CALLS
+
+  permitted-linux-real-single-model-proof:
+    # Not active until a user-owned runner and small model are explicitly enabled.
+    if: ${{ (github.event_name == 'workflow_dispatch' || github.event_name == 'schedule') && github.ref == 'refs/heads/main' && vars.EDU_AUTOPILOT_LIVE == 'true' }}
+    runs-on: [self-hosted, Linux]
+    timeout-minutes: 6
+    concurrency:
+      group: edu-w28-single-local-ollama-proof
+      cancel-in-progress: false
+    env:
+      EDU_AUTOPILOT_ENABLE: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Real single-model nonce proof with memory/CPU bounds
+        shell: bash
+        run: |
+          set -euo pipefail
+          [ -r /proc/meminfo ] || { echo W28A_LINUX_MEMINFO_NOT_AVAILABLE; exit 2; }
+          PYTHONPATH=python python3 -m edu_workflow.autopilot_probe_w28a --execute
+          echo W28A_REAL_SINGLE_MODEL_PROBE_COMPLETED_NOT_THREE_WORKERS
