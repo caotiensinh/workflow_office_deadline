@@ -39,7 +39,7 @@ def candidate_model(tags):
 def available_memory_bytes(meminfo):
     if not isinstance(meminfo, str) or len(meminfo) > 16384:
         raise ValueError("Malformed Linux memory accounting")
-    found = re.search(r"^MemAvailable:\\s+(\\d+) kB$", meminfo, re.MULTILINE)
+    found = re.search(r"^MemAvailable:\s+(\d+) kB$", meminfo, re.MULTILINE)
     if found is None:
         raise ValueError("MemAvailable unavailable")
     return int(found.group(1)) * 1024
