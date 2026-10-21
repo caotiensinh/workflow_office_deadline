@@ -29,3 +29,8 @@
 | Live institution use / signed approvals | NO |
 
 All claims apply only to the named evidence, not a broader production guarantee.
+
+
+## W31D verified follow-up (2026-10-21 JST)
+
+The previously missing GitHub-bot PR → exact-head CI dispatch link is now verified by actual GitHub Actions: main run #39548563982 created reviewed PR #66 as `github-actions[bot]`; the bot PR head `b8e154bde4c786bec52c38c819208963409d697a` ran **four successful independent workflow_dispatch workflows** #39548578633, #39548580887, #39548582931, #39548585338. Main merge `02d5174e2108fc03cfe90a77866ffa902fd2c1c7` itself passed 4/4 standard CI, **465/465 Python tests** and Rust. PR #66 remains OPEN pending review. This is CI autonomy for a deterministic fictional docs PR, not AI-generated code or a repaired failing test. W31A Linux Ollama proof still QUEUED. Details: `docs/PHASE_W31D.md`.

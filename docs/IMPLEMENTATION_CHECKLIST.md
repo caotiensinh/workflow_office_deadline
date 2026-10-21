@@ -461,3 +461,16 @@ W13 is a readiness inspector, **not** authority to bypass managed PowerShell Exe
 - [ ] **Institution acceptance remains external:** signed-in real Session 1 GUI/audio, approved desktop scheduler natural recurrence, Outlook access/recipient privacy, three end-user signoffs, IT rights. Rollout **2/6**; production workflow signoffs **0/8**.
 
 **Evidence rule:** never count queued jobs, mock workers, action_required checks or PR creation as finished autonomous development.
+
+
+## W31D — Actual unattended GitHub bot PR + 4/4 exact-head workflow_dispatch (2026-10-21 JST)
+
+- [x] **W31D code / PR #65 MERGED**, exact feature HEAD `ec67ec29a8474df4202298779aa53f1fc119f279` with 5/5 CI SUCCESS; main merge `02d5174e2108fc03cfe90a77866ffa902fd2c1c7`.
+- [x] **GitHub Actions bot independently opened real PR #66** in main-push run **#39548563982 SUCCESS**, author `github-actions[bot]`, exact head `b8e154bde4c786bec52c38c819208963409d697a`, exactly one inert docs path. Never auto-merged.
+- [x] **Four independent CI workflows dispatched from trusted main to PR #66's exact bot HEAD and ALL PASSED**: Hybrid Linux/Python/Rust **#39548578633**, Windows Synthetic **#39548580887**, W4 **#39548582931**, W5 **#39548585338**. All four event=`workflow_dispatch`, status=completed, conclusion=success and same exact head SHA. PR-triggered runs `action_required` are not silently counted.
+- [x] **W31D postmerge main CI** exact `02d5174e2108fc03cfe90a77866ffa902fd2c1c7`: 4/4 standard workflows SUCCESS. Linux #39548563918 confirms **465/465 Python tests PASS**, Rust also successful; Windows #39548563917, W4 #39548563947, W5 #39548563983 succeeded.
+- [ ] **Human review / merge:** PR #66 is OPEN and awaits independent review. PR #61 also OPEN with earlier `action_required` PR checks; PR #58 remains OPEN. Do not merge with unreviewed evidence.
+- [ ] **W31A Ollama real worker acceptance:** PR #62 remains OPEN; hosted mocked/contract PASS, 4/4 standard CI PASS, `linux-real-ollama-acceptance` job of #39546648473 QUEUED. Need online authorized self-hosted Linux runner on this repo plus resource-approved three models. No 3 real calls proven.
+- [ ] **Autonomous code loop still unfinished**: model-based task selection, 3 independent coding-agent processes, code patch + test, actual auto-repair, reviewed PR merge and repeat cycle. W31D proves CI dispatch, not autonomous model coding. Institutional rollout **2/6**, 0/8 production workflow signoffs.
+
+See `docs/PHASE_W31D.md` for exact acceptance criteria, evidence and remaining risks.
