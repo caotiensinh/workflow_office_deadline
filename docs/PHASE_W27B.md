@@ -1,0 +1,16 @@
+# W27B — Three independent, local-Ollama *proposal* workers
+
+## Mission and non-negotiable boundaries
+W27 is intended to reduce repetitive human "continue" prompts in the Python+Rust office workflow project. No agent may run arbitrary shell commands or git mutations from model text. Only the institutional IT/user can approve real Outlook, task registration on production endpoints, SSO/MFA, actual receipt of SMTP, GUI Session 1, production rollout and business decisions.
+
+## Implementation
+`python/edu_workflow/autopilot_worker_w27.py` is standard-library-only. It accepts a strict fictional backlog and assigns the first three independently scoped safe AUTO_PROPOSAL items to a ThreadPoolExecutor with up to three **concurrent, separately prompted Ollama inference calls**. Models are auto-discovered via **loopback only** `http://127.0.0.1:11434/api/tags`; choose up to 3 installed local models, preferring qwen3-coder and other coding models. There is no model download, external model API, networking to company devices, arbitrary command execution, GitHub write, merge, or user/IT approval in the inference runtime. Model output must be strict JSON, task ID must match, `requires_human_review=true`, and proposals are written with exclusive-create under the runner/OS temp root, never over existing files or to the source tree.
+
+Without `--execute` this is a **dry run** with zero model calls. Actual execution requires both `--execute` and `EDU_AUTOPILOT_ENABLE=1`, plus a pre-existing output folder under `RUNNER_TEMP` or OS temp. Three inference calls can be concurrent; they are NOT independent external coding sessions with GitHub keys, they create **reviewable candidate proposals only**.
+
+`.github/workflows/w27b-ollama-proposals.yml`: hosted Ubuntu dry-run on feature branch; on main, scheduled twice daily. The actual Linux self-hosted model worker job is **skipped unless** a repository Actions variable `EDU_AUTOPILOT_LIVE=true` has deliberately been enabled by the repository administrator. This prevents an unknown company Linux/GPU runner from receiving an unattended Ollama workload before the local resource impact has been approved. Worker output is uploaded as a 7-day GitHub artifact, without any automatic pull request or publication to main. Each worker completes a bounded model call then stops; it is not a permanent daemon.
+
+## Acceptance and next implementation gates
+Unit tests demonstrate three actual distinct concurrent mock model calls, fail-closed JSON and approval boundaries, and no shell/github mutation in worker. True live workers require `EDU_AUTOPILOT_LIVE=true` plus an available Linux self-hosted runner and installed Ollama on 127.0.0.1:11434, verified via successful GitHub Action with three real model proposals; **until that appears do not claim agents were launched**.
+
+W28 should validate safe PR authoring in branch-isolated containers under predeclared scopes, ensure final policy review/CI and resource limits. No live production actions. W27 alone cannot honestly guarantee completion of all the outstanding work without IT/human approval.
