@@ -155,10 +155,7 @@ class W34QueueWatchdog(unittest.TestCase):
 
     def test_double_checked_safe_request_cancels_only_obsolete_run(self):
         stub = RepoStub()
-        with patch("edu_workflow.autopilot_runner_watch_w34.datetime") as clock:
-            clock.now.return_value = NOW
-            clock.fromisoformat.side_effect = datetime.fromisoformat
-            result = cancel_obsolete(100, fetch=stub)
+        result = cancel_obsolete(100, fetch=stub, now=NOW)
         self.assertEqual(result["status"], "OBSOLETE_QUEUED_RUN_CANCEL_REQUESTED")
         self.assertEqual(
             [method for _, method in stub.calls if method == "POST"], ["POST"])
@@ -171,11 +168,8 @@ class W34QueueWatchdog(unittest.TestCase):
             obj.jobs[1]["status"] = "in_progress"
             obj.jobs[1]["runner_id"] = 55
         stub.on_second_poll = turn_running
-        with patch("edu_workflow.autopilot_runner_watch_w34.datetime") as clock:
-            clock.now.return_value = NOW
-            clock.fromisoformat.side_effect = datetime.fromisoformat
-            with self.assertRaises(ValueError):
-                cancel_obsolete(100, fetch=stub)
+        with self.assertRaises(ValueError):
+            cancel_obsolete(100, fetch=stub, now=NOW)
         self.assertFalse(any(method == "POST" for _, method in stub.calls))
 
     def test_runner_inventory_403_must_not_mean_zero_runners(self):
