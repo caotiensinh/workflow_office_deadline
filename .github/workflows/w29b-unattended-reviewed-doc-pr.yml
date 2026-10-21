@@ -31,7 +31,7 @@ jobs:
   publish-reviewed-docs-only-pr:
     # The user explicitly authorized autonomous safe coding and PR creation;
     # this creates review-required PRs, NEVER merges, and runs only on main.
-    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && github.repository == 'caotiensinh/workflow_office_deadline' }}
+    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && github.repository == 'caotiensinh/workflow_office_deadline' && vars.EDU_AUTOPILOT_DOC_PR_LIVE == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 12
     concurrency:
@@ -79,5 +79,9 @@ jobs:
           git -c user.name=github-actions -c user.email=41898282+github-actions[bot]@users.noreply.github.com             commit -m "docs(autopilot): review fictional backlog snapshot"
           gh auth setup-git
           git push origin "$branch"
-          gh pr create --repo "$GITHUB_REPOSITORY" --base main --head "$branch" --title "$title"             --body "Review required. Deterministic fictional backlog snapshot only. This is NOT AI-generated code, IT approval, real deployment, or an auto-merge. GitHub GITHUB_TOKEN PR creation may not trigger normal pull_request CI; reviewers must require/check explicit CI before merge."
+          if ! gh pr create --repo "$GITHUB_REPOSITORY" --base main --head "$branch" --title "$title"             --body "Review required. Deterministic fictional backlog snapshot only. This is NOT AI-generated code, IT approval, real deployment, or an auto-merge. GitHub GITHUB_TOKEN PR creation may not trigger normal pull_request CI; reviewers must require/check explicit CI before merge."; then
+            git push origin --delete "$branch" || true
+            echo W29B_BLOCKED_GITHUB_ACTIONS_PR_POLICY_NO_AUTO_MERGE
+            exit 4
+          fi
           echo W29B_AUTOMATIC_REAL_DOCS_PR_CREATED_NO_MERGE
