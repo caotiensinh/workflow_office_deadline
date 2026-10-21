@@ -262,7 +262,7 @@ def queued_candidates(fetch=gh_json, *, limit=MAX_SCANNED_RUNS):
             and type(r.get("id")) is int][:limit]
 
 
-def active_candidates(fetch=gh_json, *, limit=5):
+def active_candidates(fetch=gh_json, *, limit=3):
     """Small bounded selection; unknown/paginated inventory means HOLD."""
     x = fetch(f"repos/{REPO}/actions/runs?status=in_progress&per_page=100")
     rows = x.get("workflow_runs")
