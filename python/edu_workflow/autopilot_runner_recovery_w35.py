@@ -317,8 +317,11 @@ def main(argv=None):
                 results.append(obsolete_snapshot(ident))
         print(json.dumps({"phase": "W35", "results": results}, sort_keys=True))
         return 0
-    except (OSError, ValueError, KeyError, TypeError):
-        print("W35_RECOVERY_FAIL_CLOSED", file=__import__("sys").stderr)
+    except (OSError, ValueError, KeyError, TypeError) as exc:
+        # Emit ONLY the exception class, not any GitHub response, username,
+        # file paths, secrets, or model content.
+        print("W35_RECOVERY_FAIL_CLOSED_TYPE=" + type(exc).__name__,
+              file=__import__("sys").stderr)
         return 2
 
 
