@@ -136,7 +136,7 @@ def runner_inventory(fetch=gh_json):
                     and r.get("busy") is False
                     and {"self-hosted", "Linux"}.issubset({
                         v.get("name") for v in r.get("labels", [])
-                        if isinstance(v, dict)})}
+                        if isinstance(v, dict)}))}
     except (OSError, ValueError, subprocess.SubprocessError):
         return {"available": False, "reason": "RUNNER_INVENTORY_PERMISSION_OR_API_UNAVAILABLE"}
 
