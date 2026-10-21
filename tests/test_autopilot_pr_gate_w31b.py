@@ -2,7 +2,7 @@
 import os
 import unittest
 from unittest.mock import patch
-from edu_workflow.autopilot_pr_gate_w31b import REPO, REQUIRED, gate, audit, main
+from edu_workflow.autopilot_pr_gate_w31b import REPO, REQUIRED, TRUSTED_WORKFLOWS, gate, audit, main
 
 SHA = 'e' * 40
 
@@ -17,9 +17,18 @@ def files():
              "patch": "@@ -0,0 +1 @@\n+Test", "additions": 1, "deletions": 0}]
 
 def runs(sha=SHA, conclusion="success"):
-    return [{"name": name, "head_sha": sha, "status": "completed",
-             "conclusion": conclusion, "event": "push"} for name in REQUIRED]
-
+    rows = []
+    for index, name in enumerate(sorted(REQUIRED)):
+        workflow_id, path = TRUSTED_WORKFLOWS[name]
+        rows.append({"id": 300000 + index, "run_attempt": 1,
+                     "name": name, "workflow_id": workflow_id, "path": path,
+                     "head_sha": sha, "head_branch": "autopilot/w31-test",
+                     "status": "completed", "conclusion": conclusion,
+                     "event": "workflow_dispatch",
+                     "repository": {"full_name": REPO},
+                     "head_repository": {"full_name": REPO},
+                     "actor": {"login": "github-actions[bot]"}})
+    return rows
 
 class TestBotGates(unittest.TestCase):
     def test_proven_exact_head_still_requires_review(self):
@@ -78,6 +87,84 @@ class TestBotGates(unittest.TestCase):
 
     def test_no_opt_in_means_no_network(self):
         self.assertEqual(main([]),0)
+
+    def test_forged_same_name_different_workflow_id_is_hold(self):
+        value = runs()
+        value[0]["workflow_id"] += 1
+        self.assertFalse(gate(pr(), files(), value)["exact_sha_ci"])
+
+    def test_workflow_path_mismatch_is_hold(self):
+        value = runs()
+        value[0]["path"] = ".github/workflows/attacker.yml"
+        self.assertFalse(gate(pr(), files(), value)["exact_sha_ci"])
+
+    def test_wrong_event_is_hold(self):
+        value = runs()
+        value[0]["event"] = "pull_request"
+        self.assertFalse(gate(pr(), files(), value)["exact_sha_ci"])
+
+    def test_wrong_actor_is_hold(self):
+        value = runs()
+        value[0]["actor"]["login"] = "untrusted-user"
+        self.assertFalse(gate(pr(), files(), value)["exact_sha_ci"])
+
+    def test_wrong_run_repository_is_hold(self):
+        value = runs()
+        value[0]["repository"]["full_name"] = "elsewhere/repo"
+        self.assertFalse(gate(pr(), files(), value)["exact_sha_ci"])
+
+    def test_wrong_head_repository_is_hold(self):
+        value = runs()
+        value[0]["head_repository"]["full_name"] = "elsewhere/repo"
+        self.assertFalse(gate(pr(), files(), value)["exact_sha_ci"])
+
+    def test_wrong_branch_is_hold(self):
+        value = runs()
+        value[0]["head_branch"] = "autopilot/stale"
+        self.assertFalse(gate(pr(), files(), value)["exact_sha_ci"])
+
+    def test_missing_workflow_provenance_is_hold(self):
+        value = runs()
+        del value[0]["workflow_id"]
+        self.assertFalse(gate(pr(), files(), value)["exact_sha_ci"])
+
+    def test_newer_failed_run_supersedes_older_green(self):
+        value = runs()
+        failed = dict(value[0])
+        failed["id"] = value[0]["id"] + 100
+        failed["conclusion"] = "failure"
+        value.append(failed)
+        self.assertFalse(gate(pr(), files(), value)["exact_sha_ci"])
+
+    def test_newer_pending_run_supersedes_older_green(self):
+        value = runs()
+        pending = dict(value[0])
+        pending["id"] = value[0]["id"] + 100
+        pending["status"] = "in_progress"
+        pending["conclusion"] = None
+        value.append(pending)
+        self.assertFalse(gate(pr(), files(), value)["exact_sha_ci"])
+
+    def test_retried_attempt_failure_overrides_initial_success(self):
+        value = runs()
+        retry = dict(value[0])
+        retry["run_attempt"] = 2
+        retry["conclusion"] = "failure"
+        value.append(retry)
+        self.assertFalse(gate(pr(), files(), value)["exact_sha_ci"])
+
+    def test_latest_authorized_success_wins_against_old_fail(self):
+        value = runs()
+        older = dict(value[0])
+        older["id"] = value[0]["id"] - 20
+        older["conclusion"] = "failure"
+        value.append(older)
+        self.assertTrue(gate(pr(), files(), value)["exact_sha_ci"])
+
+    def test_workflow_id_string_is_not_accepted(self):
+        value = runs()
+        value[0]["workflow_id"] = str(value[0]["workflow_id"])
+        self.assertFalse(gate(pr(), files(), value)["exact_sha_ci"])
 
 
 if __name__ == '__main__':
