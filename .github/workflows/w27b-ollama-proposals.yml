@@ -1,0 +1,73 @@
+name: W27B Isolated Local Ollama Proposal Workers
+
+on:
+  push:
+    branches:
+      - feat/w27b-ollama-worker-safe
+  workflow_dispatch:
+  schedule:
+    - cron: '10 0,12 * * *'
+
+permissions:
+  contents: read
+
+jobs:
+  hosted-verify-no-network:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Dry run does not call Ollama, shell or GitHub write API
+        run: |
+          python - <<'PY'
+          import json,tempfile,pathlib
+          root=pathlib.Path(tempfile.mkdtemp())
+          (root/'tasks.json').write_text(json.dumps({"schema":1,"tasks":[{
+            "id":"W27-DEMO","title":"Review fictional operator documents",
+            "description":"Provide a safe no-runtime proposal for offline documentation review",
+            "domain":"documentation","kind":"AUTO_PROPOSAL","approval_required":False
+          }]}))
+          import subprocess,sys,os
+          cmd=[sys.executable,'-m','edu_workflow.autopilot_worker_w27',
+               '--backlog',str(root/'tasks.json')]
+          result=subprocess.run(cmd,capture_output=True,text=True,check=True,
+                                env={**os.environ,'PYTHONPATH':'python'})
+          info=json.loads(result.stdout)
+          assert info['agents_started']==0 and info['status']=='DRY_RUN_NO_MODEL_CALL'
+          print('W27B_HOSTED_NO_OLLAMA_DRYRUN_PASS_NO_AGENTS_STARTED')
+          PY
+
+  live-local-proposal-workers:
+    # User-controlled one-time GitHub repo variable required before any
+    # self-hosted machine may receive model jobs.
+    if: ${{ (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && vars.EDU_AUTOPILOT_LIVE == 'true' }}
+    runs-on: [self-hosted, Linux]
+    timeout-minutes: 18
+    concurrency:
+      group: w27b-local-model-proposals
+      cancel-in-progress: false
+    env:
+      EDU_AUTOPILOT_ENABLE: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Run 3 independent localhost-only Ollama inference proposals
+        shell: bash
+        run: |
+          set -euo pipefail
+          [ -n "${RUNNER_TEMP:-}" ] && [ -d "$RUNNER_TEMP" ]
+          mkdir -p "$RUNNER_TEMP/w27-proposals"
+          PYTHONPATH=python python3 -m edu_workflow.autopilot_worker_w27 \
+            --backlog autopilot/w27_backlog.json \
+            --execute --output-dir "$RUNNER_TEMP/w27-proposals"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: W27B-Local-AI-Sandboxed-Proposals
+          path: ${{ runner.temp }}/w27-proposals/*.proposal.json
+          retention-days: 7
