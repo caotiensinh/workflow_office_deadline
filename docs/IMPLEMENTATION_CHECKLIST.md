@@ -474,3 +474,14 @@ W13 is a readiness inspector, **not** authority to bypass managed PowerShell Exe
 - [ ] **Autonomous code loop still unfinished**: model-based task selection, 3 independent coding-agent processes, code patch + test, actual auto-repair, reviewed PR merge and repeat cycle. W31D proves CI dispatch, not autonomous model coding. Institutional rollout **2/6**, 0/8 production workflow signoffs.
 
 See `docs/PHASE_W31D.md` for exact acceptance criteria, evidence and remaining risks.
+
+## W33 — Real autonomous worker-process substrate (2026-10-21 JST)
+
+- [x] **Code committed:** `python/edu_workflow/autopilot_process_w33.py`, 3 separate Python child OS processes, strict 3-model CPU admission and local Ollama only, worker-identity verification, no shell, no inherited GitHub token, fail-closed timeout, hash-only public receipt. Model text is review-only and never executed as code.
+- [x] **Hosted independent OS-process smoke succeeded**: #39568106515, 18/18 regression PASS at code HEAD `65e45723981d505db44c70b4025a90d6e470df11`; 3 separate actual OS processes executed **synthetic fixture**, zero real AI calls.
+- [ ] **Exact-feature-head 4/4 standard CI** and independent PR human review still required before merge. No autonomy milestone promotion for simulation.
+- [ ] **Three actual local Ollama models running in three OS child processes** on authorized Linux self-hosted runner required. W31A PR #62 job #119046212555 remains QUEUED; live W33 lane is main-only + repository-variable opt-in. Do not count any skipped/queued job as PASS.
+- [ ] **Full 24/7 self-developing product loop** still requires authenticated bounded backlog lease, true AI-authored code patch, isolated test/repair, safe CI PR publication, independent review and reviewed merge, repeated autonomously. A cron smoke and 3 process proposals are not this end goal.
+- [ ] **Public-only and institution safety**: no employee data, Outlook/IT/endpoint writes, rollout 2/6 and signoffs 0/8.
+
+See `docs/PHASE_W33.md` and `.github/workflows/w33-unattended-three-process.yml`.
