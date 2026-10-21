@@ -47,6 +47,7 @@ jobs:
           PYTHONPATH=python python -m edu_workflow.autopilot_runner_watch_w34 --live --run-id 39546648473 --inventory
           PYTHONPATH=python python -m edu_workflow.autopilot_runner_recovery_w35 --live --run-id 39546648473
           PYTHONPATH=python python -m edu_workflow.autopilot_runner_recovery_w35 --live --scan-queued
+          PYTHONPATH=python python -m edu_workflow.autopilot_runner_recovery_w35 --live --scan-active
           echo W34_REAL_GITHUB_QUEUE_AUDITED_NO_KILL_NO_NEW_TASK_CLAIM
 
   safe-obsolete-reconcile:
