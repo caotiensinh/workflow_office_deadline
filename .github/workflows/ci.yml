@@ -61,13 +61,20 @@ jobs:
               '.github/workflows/w25b-hosted-task-readonly-audit.yml',
               '.github/workflows/w26a-schtasks-minute-compat.yml',
               '.github/workflows/w26b-startup-readonly-evidence.yml',
+              'autopilot/w27_backlog.json',
+              'python/edu_workflow/autopilot_plan_w27.py',
+              'tests/test_autopilot_plan_w27a.py',
+              '.github/workflows/w27a-autopilot-plan.yml',
+              'python/edu_workflow/autopilot_worker_w27.py',
+              'tests/test_autopilot_worker_w27b.py',
+              '.github/workflows/w27b-ollama-proposals.yml',
           ]
           missing = [name for name in required if not pathlib.Path(name).is_file()]
           if missing:
               raise SystemExit(f'Missing safety regression suites: {missing}')
           count = unittest.defaultTestLoader.discover('tests').countTestCases()
-          if count < 379:
-              raise SystemExit(f'Safety test regression: expected at least 379 cases, found {count}')
+          if count < 409:
+              raise SystemExit(f'Safety test regression: expected at least 409 cases, found {count}')
           print(f'Regression test manifest PASS ({count} tests)')
           PY
       - name: W5 real Tk widgets in isolated virtual X display
