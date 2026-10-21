@@ -1,0 +1,104 @@
+name: W31A Real Local Three-Ollama Acceptance
+
+on:
+  push:
+    branches:
+      - feat/w31a-linux-real-ollama-acceptance
+  workflow_dispatch:
+  schedule:
+    - cron: '35 1 * * *'
+
+permissions:
+  contents: read
+
+jobs:
+  hosted-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify fail-closed three-worker admission contract (MOCK ONLY)
+        shell: bash
+        run: |
+          set -euo pipefail
+          PYTHONPATH=python python -m unittest discover -s tests -p test_autopilot_three_w29a.py -v
+          PYTHONPATH=python python -m edu_workflow.autopilot_three_w29a --backlog autopilot/w27_backlog.json
+          echo W31A_HOSTED_CONTRACT_ONLY_ZERO_REAL_CALLS
+
+  linux-real-ollama-acceptance:
+    # Explicitly requested W31 controlled real-run on this dedicated branch.
+    # After merge, daily/manual real runs require BOTH user-owned repository opt-ins.
+    if: >-
+      (github.event_name == 'push' && github.ref == 'refs/heads/feat/w31a-linux-real-ollama-acceptance' &&
+       github.repository == 'caotiensinh/workflow_office_deadline') ||
+      ((github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') &&
+       github.ref == 'refs/heads/main' && github.repository == 'caotiensinh/workflow_office_deadline' &&
+       vars.EDU_AUTOPILOT_LIVE == 'true' && vars.EDU_AUTOPILOT_THREE_CPU_PROPOSALS_LIVE == 'true')
+    runs-on: [self-hosted, Linux]
+    timeout-minutes: 15
+    concurrency:
+      group: edu-w31a-real-three-cpu-ollama
+      cancel-in-progress: false
+    env:
+      EDU_AUTOPILOT_ENABLE: '1'
+      EDU_AUTOPILOT_THREE_CPU_PROPOSALS: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Read-only capacity and localhost-model preflight
+        shell: bash
+        run: |
+          set -euo pipefail
+          PYTHONPATH=python python3 - <<'PY'
+          import os
+          from edu_workflow.autopilot_worker_w27 import local_ollama
+          from edu_workflow.autopilot_three_w29a import select_three_models, admit
+          from edu_workflow.autopilot_probe_w28a import available_memory_bytes, GIB
+          with open('/proc/meminfo', encoding='ascii') as stream:
+              mem = available_memory_bytes(stream.read(16385))
+          cores = os.cpu_count() or 0
+          load = os.getloadavg()[0]
+          inv = local_ollama('/api/tags')
+          try:
+              models = select_three_models(inv)
+          except ValueError as exc:
+              print('W31A_ADMISSION_BLOCKED: ' + str(exc))
+              raise
+          print('W31A_CAPACITY cores=%s load1=%.2f available_ram_gib=%.1f model_count=%s selected_model_gib=%s' %
+                (cores, load, mem / GIB, len(inv['models']), [round(size / GIB, 2) for _, size in models]))
+          admit(models, mem, load, cores)
+          print('W31A_CAPACITY_ADMITTED_THREE_CPU_MODELS')
+          PY
+      - name: Three REAL concurrent local CPU-only Ollama inference calls
+        shell: bash
+        run: |
+          set -euo pipefail
+          receipt="${RUNNER_TEMP}/w31a-three-ollama-receipt.json"
+          PYTHONPATH=python python3 -m edu_workflow.autopilot_three_w29a --backlog autopilot/w27_backlog.json --execute | tee "$receipt"
+          python3 - "$receipt" <<'PY'
+          import json, re, sys
+          with open(sys.argv[1], encoding='utf-8') as stream:
+              data = json.load(stream)
+          assert data['status'] == 'THREE_REAL_CPU_OLLAMA_PROPOSAL_CALLS_VERIFIED'
+          assert data['actual_model_calls'] == data['distinct_models_used'] == 3
+          assert data['parallel_inference_requests'] is True
+          assert data['independent_processes_proven'] is False
+          assert data['code_executed'] is False and data['github_write'] is False
+          assert data['human_review_required'] is True and data['production_accepted'] is False
+          assert len(data['proposal_hashes']) == 3
+          assert all(re.fullmatch(r'[0-9a-f]{64}', digest) for digest in data['proposal_hashes'])
+          print('W31A_REAL_THREE_CPU_OLLAMA_CALLS_VERIFIED_NOT_INDEPENDENT_AGENT_PROCESSES')
+          PY
+      - name: Upload privacy-minimized model receipt
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: W31A-real-ollama-hashed-receipt
+          path: ${{ runner.temp }}/w31a-three-ollama-receipt.json
+          retention-days: 3
