@@ -26,3 +26,13 @@ GitHub run `39546648473` on W31A feature branch was created `2026-10-21T04:55:07
 - [ ] Future watchdog observes heartbeat/actual work progress before ever considering stuck active-job termination; no process-level termination is implemented here.
 
 **No employee/Outlook/endpoint production data or IT control.** Scheduled diagnosis is autonomous but does not itself provide AI-generated-code/repair/PR/merge lifecycle.
+
+## Live GitHub-hosted acceptance — 2026-10-21 JST
+
+- Hosted workflow **#39570350653** PASS on source HEAD `056038a4fc27efa2ce6d1518c990702ee361c8cc`, **25/25 focused tests PASS** and real authenticated GitHub API queue query PASS.
+- Observed W31A workflow run **#39546648473**, Linux job **#119046212555**: `run_status=queued`, `active_jobs=0`, `queued_jobs=1`, **`queued_assigned_jobs=0`**, and current feature branch HEAD still matches `5cba2bebacc6130307f2e043c27dd63675e74d99`. Therefore `cancel_safe_obsolete=false`; no cancellation and no new inference claim.
+- The completed GitHub-hosted sibling carries its own historical runner assignment (`assigned_jobs=1`); that assignment does **not** prove that the waiting Linux Ollama job occupies a runner. A regression was found and fixed to distinguish these; both the API audit and tests confirm the correction.
+- GitHub's runner inventory API is inaccessible with this workflow's low-privilege token: `RUNNER_INVENTORY_PERMISSION_OR_API_UNAVAILABLE`. Whether a suitable runner is offline, busy in another repo, unavailable to this repository or absent is still UNVERIFIED; do not guess.
+- The restricted reconciliation job was **skipped** (feature branch, no main opt-in). No `actions:write` operation was attempted, no live process was killed, and current task must not be canceled until an independent safety condition is proven.
+
+**Operational next action:** check runner registration/assignment for repository `caotiensinh/workflow_office_deadline` in GitHub Settings → Actions → Runners, and ensure the authorized Linux server is online with local Ollama and enough RAM/CPU. Merely cancelling and re-queuing the same unassigned job cannot fix unavailable runner capacity.
