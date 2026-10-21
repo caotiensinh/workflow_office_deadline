@@ -485,3 +485,13 @@ See `docs/PHASE_W31D.md` for exact acceptance criteria, evidence and remaining r
 - [ ] **24/7 product AI coding acceptance:** still requires real local inference, model-generated safe patch/repair, reviewed PR merge and repeated autonomous product increments. Diagnostics do not satisfy this end-to-end milestone.
 
 See `docs/PHASE_W34.md`. Institutional rollout 2/6, signoffs 0/8 unchanged.
+
+
+## W35 — Two specific recovery gates (2026-10-22 JST)
+
+- [x] **Running task progress evidence:** W35 compares real GitHub job/step observations three times and preserves any job with a step transition, missing step data, unknown task type, unfinished work within declared timeout, or concurrent queued/unrecognized activity. Only allowlisted AI jobs exceeding reviewed job time budgets plus 15-min grace with unchanged active steps across two >=20-second intervals are candidates for an owner-opted-in GitHub run cancellation. No host-process kill or claim of guaranteed deadlock detection.
+- [x] **Obsolete queued exact-head job proof:** newer successful workflow run is insufficient without completed/success successor instances of **every formerly queued job**. Two full fresh API checks, same workflow/branch, latest branch HEAD, old run unassigned and >30m stale, no other active job; wrong job, mock-only hosted pass, skip or race => HOLD. Separate main-only `EDU_W34_ALLOW_OBSOLETE_RUN_CANCEL` opt-in.
+- [x] **Actual hosted evidence:** #39691756162 SUCCESS: 26 W34 + 30 W35 tests PASS, read-only GitHub queue/active inventory diagnostics PASS; no cancellation performed. W31A run #39546648473 still current and queued with no assigned runner; not obsolete.
+- [ ] **Final W35 acceptance/release:** exact final PR #71 HEAD standard 4/4 CI and specialized watchdog job PASS, independent review before merge; both write-enabled recovery paths skipped until explicitly authorized on main. No real hung job cancelled yet.
+- [ ] **Core product autonomy unaffected:** Linux self-hosted Ollama admission and AI-generated patch/test/repair/PR/merge loop remain unverified. No enterprise/Outlook/personal data operations.
+
