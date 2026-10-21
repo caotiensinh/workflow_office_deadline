@@ -175,13 +175,13 @@ def check_run(run_id, fetch=gh_json, now=None, *, inventory=False):
     return result
 
 
-def cancel_obsolete(run_id, fetch=gh_json):
+def cancel_obsolete(run_id, fetch=gh_json, now=None):
     """Double-check all REST state immediately before a single narrow cancel."""
-    before = check_run(run_id, fetch=fetch, inventory=False)
+    before = check_run(run_id, fetch=fetch, now=now, inventory=False)
     if not before["cancel_safe_obsolete"] or before["active_jobs"]:
         raise ValueError("No safe stale replacement proof")
     # A fresh second GET is required; GitHub may assign a runner meanwhile.
-    after = check_run(run_id, fetch=fetch, inventory=False)
+    after = check_run(run_id, fetch=fetch, now=now, inventory=False)
     if not after["cancel_safe_obsolete"] or after["active_jobs"]:
         raise ValueError("Run changed during safety recheck")
     fetch(f"repos/{REPO}/actions/runs/{run_id}/cancel", "POST")
