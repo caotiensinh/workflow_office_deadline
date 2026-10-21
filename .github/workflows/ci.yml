@@ -59,6 +59,8 @@ jobs:
               'tests/test_uat_pair_w25a.py',
               'windows/w25_live_task_readonly_audit.ps1',
               '.github/workflows/w25b-hosted-task-readonly-audit.yml',
+              '.github/workflows/w26a-schtasks-minute-compat.yml',
+              '.github/workflows/w26b-startup-readonly-evidence.yml',
           ]
           missing = [name for name in required if not pathlib.Path(name).is_file()]
           if missing:
