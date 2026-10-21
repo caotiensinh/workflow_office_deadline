@@ -254,18 +254,37 @@ def queued_candidates(fetch=gh_json, *, limit=MAX_SCANNED_RUNS):
             and type(r.get("id")) is int][:limit]
 
 
+def active_candidates(fetch=gh_json, *, limit=5):
+    """Small bounded selection; unknown/paginated inventory means HOLD."""
+    x = fetch(f"repos/{REPO}/actions/runs?status=in_progress&per_page=100")
+    rows = x.get("workflow_runs")
+    if not isinstance(rows, list) or type(x.get("total_count")) is not int:
+        raise ValueError("Incomplete in-progress run listing")
+    if x["total_count"] > len(rows):
+        raise ValueError("Active run listing truncated")
+    current = os.getenv("GITHUB_RUN_ID", "")
+    return [r["id"] for r in rows if isinstance(r, dict)
+            and type(r.get("id")) is int
+            and str(r["id"]) != current][:limit]
+
+
 def main(argv=None):
     p = argparse.ArgumentParser(description="W35 real Actions stall/obsolete audit")
     p.add_argument("--live", action="store_true")
     p.add_argument("--run-id", type=int)
     p.add_argument("--scan-queued", action="store_true")
+    p.add_argument("--scan-active", action="store_true")
+    p.add_argument("--inspect-active", action="store_true")
     p.add_argument("--cancel-obsolete", action="store_true")
     p.add_argument("--cancel-stalled", action="store_true")
     args = p.parse_args(argv)
     if not args.live:
         print(json.dumps({"phase": "W35", "status": "DRY_RUN_NO_GITHUB_CALLS"}))
         return 0
-    if args.cancel_obsolete and args.cancel_stalled:
+    if (sum((args.cancel_obsolete, args.cancel_stalled, args.inspect_active)) > 1
+            or (args.scan_active and args.scan_queued)
+            or (args.scan_active and args.cancel_obsolete)
+            or (args.scan_queued and (args.cancel_stalled or args.inspect_active))):
         print("W35_AMBIGUOUS_WRITE_MODE_REFUSED", file=__import__("sys").stderr)
         return 2
     if args.cancel_obsolete or args.cancel_stalled:
@@ -274,7 +293,8 @@ def main(argv=None):
             print("W35_MAIN_ONLY_WRITE_OPTIN_REQUIRED", file=__import__("sys").stderr)
             return 2
     try:
-        ids = queued_candidates() if args.scan_queued else [args.run_id]
+        ids = (queued_candidates() if args.scan_queued else
+               active_candidates() if args.scan_active else [args.run_id])
         if any(type(x) is not int or x <= 0 for x in ids):
             raise ValueError("Explicit --run-id required")
         results = []
@@ -283,6 +303,9 @@ def main(argv=None):
                 results.append(cancel_obsolete_verified(ident))
             elif args.cancel_stalled:
                 results.append(cancel_stalled(ident))
+            elif args.inspect_active or args.scan_active:
+                result, _ = confirm_stall(ident)
+                results.append(result)
             else:
                 results.append(obsolete_snapshot(ident))
         print(json.dumps({"phase": "W35", "results": results}, sort_keys=True))
