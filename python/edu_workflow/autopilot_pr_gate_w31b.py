@@ -15,6 +15,16 @@ REQUIRED = frozenset({
     "W5 Windows Desktop Package & User-Session Safety",
 })
 SHA = re.compile(r"[0-9a-f]{40}\Z")
+# Immutable GitHub workflow identities observed in successful W31D dispatches.
+# Display names are NOT sufficient proof of CI provenance.
+TRUSTED_WORKFLOWS = {
+    "Hybrid Workflow CI": (388590017, ".github/workflows/ci.yml"),
+    "Windows Synthetic E2E": (388610038, ".github/workflows/windows-e2e.yml"),
+    "W4 Windows Desktop Alert E2E": (389392239, ".github/workflows/w4-desktop.yml"),
+    "W5 Windows Desktop Package & User-Session Safety": (
+        389574496, ".github/workflows/w5-desktop.yml"),
+}
+
 DOC = re.compile(r"docs/autopilot-proposals/[A-Za-z0-9_-]+\.md\Z")
 
 
@@ -55,15 +65,38 @@ def gate(pr, files, runs):
     if len(names) != len(set(names)):
         return result
     result["status"] = "HOLD_EXACT_SHA_CI_NOT_PROVEN"
-    passes = set()
+    # Trust only the same workflow IDs and paths, dispatched by the bot
+    # for this branch/SHA from this repository. A duplicate workflow name,
+    # wrong event, stale actor or a newer failed run never counts as PASS.
+    latest = {}
     for item in runs:
         if not isinstance(item, dict) or item.get("head_sha") != head_sha:
             continue
-        if (item.get("name") in REQUIRED and item.get("status") == "completed"
-            and item.get("conclusion") == "success"
-            and item.get("event") in ("push", "pull_request", "workflow_dispatch")):
-            passes.add(item["name"])
-    if passes == REQUIRED:
+        identity = TRUSTED_WORKFLOWS.get(item.get("name"))
+        if identity is None:
+            continue
+        workflow_id, workflow_path = identity
+        if (type(item.get("workflow_id")) is not int or
+                item["workflow_id"] != workflow_id or
+                item.get("path") != workflow_path or
+                item.get("head_branch") != head.get("ref") or
+                item.get("event") != "workflow_dispatch" or
+                (item.get("repository") or {}).get("full_name") != REPO or
+                (item.get("head_repository") or {}).get("full_name") != REPO or
+                (item.get("actor") or {}).get("login") != "github-actions[bot]"):
+            continue
+        run_id, attempt = item.get("id"), item.get("run_attempt")
+        if (type(run_id) is not int or run_id < 1 or
+                type(attempt) is not int or attempt < 1):
+            continue
+        name = item["name"]
+        order = (run_id, attempt)
+        if name not in latest or order > latest[name][0]:
+            latest[name] = (order, item)
+    if set(latest) == REQUIRED and all(
+            item.get("status") == "completed" and
+            item.get("conclusion") == "success"
+            for _, item in latest.values()):
         result["status"] = "CI_VERIFIED_STILL_REQUIRES_HUMAN_REVIEW"
         result["exact_sha_ci"] = True
     return result
