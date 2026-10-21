@@ -474,3 +474,16 @@ W13 is a readiness inspector, **not** authority to bypass managed PowerShell Exe
 - [ ] **Autonomous code loop still unfinished**: model-based task selection, 3 independent coding-agent processes, code patch + test, actual auto-repair, reviewed PR merge and repeat cycle. W31D proves CI dispatch, not autonomous model coding. Institutional rollout **2/6**, 0/8 production workflow signoffs.
 
 See `docs/PHASE_W31D.md` for exact acceptance criteria, evidence and remaining risks.
+
+
+## Phase W32B — Trusted test-code candidate boundary (2026-10-21 JST)
+
+**Mission:** Backlog → AI proposed changes → code/test/repair → reviewed PR → CI → safe merge → loop, while institution approval stays with people.
+
+- [x] **Scoped engineering change committed on independent W32B branch**: static scenario-only source compiler and synthetic QA input; fixed `tests/test_autopilot_generated_w32b.py` output path with explicit staging opt-in, duplicate/unknown/malformed/injection/symlink/tamper refusal. No free-form model text executed.
+- [ ] **Real hosted acceptance**: run specialized W32B compiler contract and execute six generated Python tests; check exact branch SHA, plus 4/4 standard Linux/Rust+Windows CI.
+- [ ] **PR review and integration**: require independent review. No self-approval/merge.
+- [ ] **W31A Ollama actual CPU requests**: PR #62 open, real Linux job #119046212555 / workflow #39546648473 still queued. No inference proof.
+- [ ] **AI-source-code agents and recurring self-repair**: not implemented/proven by deterministic template generation. Institutional rollout 2/6, workflow signoffs 0/8.
+
+See `docs/PHASE_W32B.md`. Never count model-free rendered tests as AI-authored code.
