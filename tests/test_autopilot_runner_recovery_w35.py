@@ -222,6 +222,22 @@ class W35Recovery(unittest.TestCase):
         self.assertTrue(r["safe_cancel"])
         self.assertEqual(r["status"], "EXCEEDED_DECLARED_TIMEOUT_NO_STEP_TRANSITION")
 
+    def test_missing_step_details_never_confirm_stall(self):
+        a = active_bundle()
+        a["jobs"][0].pop("steps")
+        b = copy.deepcopy(a)
+        verdict = overbudget_evidence(a, b, NOW, NOW+timedelta(seconds=20))
+        self.assertFalse(verdict["safe_cancel"])
+        self.assertEqual(verdict["status"],
+                         "INSUFFICIENT_ACTIVE_STEP_EVIDENCE_KEEP_RUNNING")
+
+    def test_all_completed_steps_without_active_step_keep_work(self):
+        a = active_bundle()
+        a["jobs"][0]["steps"][0]["status"] = "completed"
+        b = copy.deepcopy(a)
+        verdict = overbudget_evidence(a, b, NOW, NOW+timedelta(seconds=20))
+        self.assertFalse(verdict["safe_cancel"])
+
     def test_unknown_job_timeout_never_auto_cancels(self):
         a = active_bundle(active_job(name="production-unknown"))
         b = copy.deepcopy(a)
