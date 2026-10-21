@@ -1,0 +1,42 @@
+name: W31B Read-Only Bot PR Exact-SHA Gate
+
+on:
+  push:
+    branches:
+      - feat/w31b-safe-bot-pr-verification
+  workflow_dispatch:
+  schedule:
+    - cron: '15 */6 * * *'
+
+permissions:
+  contents: read
+  actions: read
+  pull-requests: read
+
+jobs:
+  safe-bot-pr-audit:
+    if: ${{ github.repository == 'caotiensinh/workflow_office_deadline' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Fail-closed regression for untrusted bot PRs
+        shell: bash
+        run: |
+          set -euo pipefail
+          PYTHONPATH=python python -m unittest discover -s tests -p test_autopilot_pr_gate_w31b.py -v
+          PYTHONPATH=python python -m edu_workflow.autopilot_pr_gate_w31b
+          echo W31B_MOCK_GATE_TESTS_PASS_NOT_BOT_PR_CI
+      - name: Audit actual open bot PRs without checkout or writes
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          PYTHONPATH=python python -m edu_workflow.autopilot_pr_gate_w31b --live
+          echo W31B_READ_ONLY_ACTUAL_BOT_PR_AUDIT_NO_MERGE
