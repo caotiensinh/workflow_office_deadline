@@ -1,0 +1,9 @@
+# W29A — Three genuinely concurrent local Ollama proposals, CPU-only admission
+
+**Objective:** Move from W28's bounded one-model nonce proof and W27's simulated three threads to three controlled *real* parallel proposals. This is NOT three independent AI coding-agent processes or production software automation.
+
+`python/edu_workflow/autopilot_three_w29a.py` selects three **distinct locally installed** Ollama models at most 4 GiB on disk each, and requires at least 8 logical CPUs, system CPU load no higher than 50% of core count, and available RAM at least the larger of 12 GiB or twice the total model sizes plus 4 GiB. Runtime memory and GPU budget are not fully measured: inference requests explicitly set `num_gpu=0` (CPU-only), `num_thread=2`, `num_ctx=1024`, `num_predict=650`, `keep_alive=0`. Tasks must be the three approved AUTO_PROPOSAL items; human/IT BLOCKED_EXTERNAL tasks are excluded. Strict JSON schema and human-review requirement are enforced by W27's existing worker. Reject any failed model call; report hashes only, never publish generated proposal contents publicly. No model pulls, shell commands from models, repository edits, GitHub writes or confidential data.
+
+`.github/workflows/w29a-three-cpu-ollama.yml` runs **synthetic hosted tests only by default**. Real execution requires both `EDU_AUTOPILOT_LIVE=true` and **separate** `EDU_AUTOPILOT_THREE_CPU_PROPOSALS_LIVE=true` GitHub repository variables plus a main-branch scheduled/manual run targeting an authorized Linux self-hosted runner. Do not enable until the physical host is cleared for local inference; no GPU is intentionally used. A successful live run proves 3 *concurrent local inference requests*, not independent autonomous code agents, code patches, PRs or merge.
+
+Acceptance: exact feature-head specialized hosted workflow plus 4/4 regular CI. A real-run flag/result is recorded only if the self-hosted job actually succeeds. Main rollout still 2/6, workflow production 0/8.

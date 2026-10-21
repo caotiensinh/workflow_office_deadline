@@ -1,0 +1,49 @@
+name: W29A CPU-Budgeted Three Local Ollama Proposals
+on:
+  push:
+    branches:
+      - feat/w29a-controlled-three-ollama-workers
+  workflow_dispatch:
+  schedule:
+    - cron: '45 0 * * *'
+permissions:
+  contents: read
+jobs:
+  hosted-fail-closed-regressions:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validate three-request policy without real Ollama
+        run: |
+          set -euo pipefail
+          PYTHONPATH=python python -m unittest discover -s tests -p test_autopilot_three_w29a.py -v
+          PYTHONPATH=python python -m edu_workflow.autopilot_three_w29a --backlog autopilot/w27_backlog.json
+          echo W29A_HOSTED_THREE_REQUESTS_MOCK_PASS_ZERO_REAL_MODEL_CALLS
+  real-cpu-only-three-model-proposals:
+    # Authorization is separate from the W28 one-model probe.
+    if: ${{ (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main' && vars.EDU_AUTOPILOT_LIVE == 'true' && vars.EDU_AUTOPILOT_THREE_CPU_PROPOSALS_LIVE == 'true' }}
+    runs-on: [self-hosted, Linux]
+    timeout-minutes: 15
+    concurrency:
+      group: w29a-three-local-cpu-inferences
+      cancel-in-progress: false
+    env:
+      EDU_AUTOPILOT_ENABLE: '1'
+      EDU_AUTOPILOT_THREE_CPU_PROPOSALS: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Prove 3 independent bounded CPU-only model calls; no Git writes
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -r /proc/meminfo
+          PYTHONPATH=python python3 -m edu_workflow.autopilot_three_w29a --backlog autopilot/w27_backlog.json --execute
+          echo W29A_LOCAL_THREE_MODEL_RECEIPTS_NOT_AUTONOMOUS_CODE_AGENTS
