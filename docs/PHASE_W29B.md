@@ -1,0 +1,9 @@
+# W29B — First unattended *real* GitHub pull-request attempt, docs only
+
+User explicitly authorized safe autonomous repository coding/PR work while preserving IT approval and sensitive-workplace limits. W28B already creates deterministic repository-owned fictional backlog status, but its actual GitHub PR publisher was disabled behind `EDU_AUTOPILOT_DOC_PR_LIVE`; no unattended PR was observed.
+
+`.github/workflows/w29b-unattended-reviewed-doc-pr.yml` implements a **dedicated GitHub-hosted only main push job** which first checks there is no open PR with the fixed bot title, runs offline W28B regression, stages one specific deterministic document `docs/autopilot-proposals/BACKLOG_STATUS.md`, verifies exact staged pathname, commits to a new `autopilot/w29-backlog-<run_id>` branch, and tries opening a **review-required PR** with `gh`. It serializes attempts and never merges. Branch-scoped preview is read-only. No Ollama content, generated Python/Rust scripts, mail or real workplace data enter this branch.
+
+**Permission caveat:** GitHub may reject bot PR creation if repository Actions settings forbid this; observe actual hosted run after merging and record `BLOCKED_GITHUB_PERMISSION` instead of pretending success. PRs created via `GITHUB_TOKEN` can also lack normal automatic `pull_request` event workflows; human reviewer must explicitly require CI before merge (future CI dispatch automation). Avoid granting broad PAT credentials.
+
+Do not claim autonomous coding agents or auto-merge. All production/IT/pilot gates remain pending; rollout 2/6, production 0/8. Acceptance: 4/4 feature CI and hosted no-write preview. Confirm bot PR creation only via an actual postmerge hosted workflow log and created PR reference.
