@@ -1,0 +1,78 @@
+name: W28B Controlled Docs-Only Autopilot Pull Request
+
+on:
+  push:
+    branches:
+      - feat/w28b-safe-autopilot-pr-preparation
+  workflow_dispatch:
+  schedule:
+    - cron: '40 0 * * *'
+
+permissions:
+  contents: read
+
+jobs:
+  hosted-preview-with-no-github-write:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Regression and preview never write GitHub
+        run: |
+          set -euo pipefail
+          PYTHONPATH=python python -m unittest discover -s tests -p test_autopilot_pr_w28b.py -v
+          PYTHONPATH=python python -m edu_workflow.autopilot_pr_w28b --repo-root .
+          test ! -e docs/autopilot-proposals/BACKLOG_STATUS.md
+          echo W28B_HOSTED_PREVIEW_PASS_NO_PR_NO_MODEL_EXECUTION
+
+  opt-in-docs-only-pr:
+    # Explicit repo variable; scheduled on MAIN only, hosted (not self-hosted).
+    if: ${{ (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main' && vars.EDU_AUTOPILOT_DOC_PR_LIVE == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    permissions:
+      contents: write
+      pull-requests: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      EDU_AUTOPILOT_DOC_PR_ENABLE: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Create at most one review-required docs-only PR
+        shell: bash
+        run: |
+          set -euo pipefail
+          title="Autopilot: deterministic backlog status (review required)"
+          # No duplicate open bot PRs. If branch writes are blocked, FAIL openly.
+          if [ "$(gh pr list --state open --json title --jq "[.[] | select(.title == \\"$title\\")] | length")" != "0" ]; then
+            echo W28B_EXISTING_REVIEW_PR_SKIP_NO_MERGE
+            exit 0
+          fi
+          test -z "$(git status --porcelain)"
+          PYTHONPATH=python python -m edu_workflow.autopilot_pr_w28b --repo-root . --write
+          git add -- docs/autopilot-proposals/BACKLOG_STATUS.md
+          staged="$(git diff --cached --name-only)"
+          if [ -z "$staged" ]; then
+            echo W28B_NO_DOCS_DIFF_NO_PR
+            exit 0
+          fi
+          test "$staged" = docs/autopilot-proposals/BACKLOG_STATUS.md
+          branch="autopilot/w28-backlog-$GITHUB_RUN_ID"
+          git switch -c "$branch"
+          git -c user.name=github-actions -c user.email=41898282+github-actions[bot]@users.noreply.github.com \
+            commit -m "docs(autopilot): review deterministic backlog snapshot"
+          gh auth setup-git
+          git push origin "$branch"
+          gh pr create --base main --head "$branch" --title "$title" \
+            --body "Automated docs-only proposal generated from repository-controlled fictional backlog. Requires human review and full CI; NEVER auto-merged. No real mail or institutional approval implied."
+          echo W28B_REAL_GITHUB_DOCS_ONLY_PR_CREATED_PENDING_REVIEW_NO_MERGE
