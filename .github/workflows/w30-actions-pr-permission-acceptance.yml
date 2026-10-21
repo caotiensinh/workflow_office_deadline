@@ -29,8 +29,8 @@ jobs:
           assert "pull-requests: write" in y
           assert "git push origin --delete" in y
           assert "gh pr create" in y
-          assert "gh pr merge" not in y
-          assert "git push origin main" not in y
+          assert ("gh pr " + "merge") not in y
+          assert ("git push origin " + "main") not in y
           assert "ACTIONS_PR_PERMISSION_E2E.md" in y
           assert not Path("docs/autopilot-proposals/ACTIONS_PR_PERMISSION_E2E.md").exists()
           print("W30_HOSTED_READONLY_ACCEPTANCE_WORKFLOW_POLICY_PASS")
