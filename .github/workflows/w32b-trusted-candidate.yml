@@ -1,0 +1,42 @@
+name: W32B Synthetic Declarative Test Candidate Acceptance
+
+on:
+  push:
+    branches:
+      - feat/w32b-declarative-safe-test-candidate
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  trusted-candidate-acceptance:
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: W32B negative/positive proposal contract cases
+        shell: bash
+        run: |
+          set -euo pipefail
+          PYTHONPATH=python python -m unittest discover -s tests -p test_autopilot_candidate_w32b.py -v
+          PYTHONPATH=python python -m edu_workflow.autopilot_candidate_w32b --repo-root .
+          test ! -e tests/test_autopilot_generated_w32b.py
+          echo W32B_MODEL_OUTPUT_NOT_EXECUTED_DRYRUN_PASS
+      - name: Compile controlled candidate and run generated tests in isolated hosted checkout
+        shell: bash
+        env:
+          EDU_AUTOPILOT_TEST_STAGE: '1'
+        run: |
+          set -euo pipefail
+          PYTHONPATH=python python -m edu_workflow.autopilot_candidate_w32b --repo-root . --write
+          PYTHONPATH=python python -m edu_workflow.autopilot_candidate_w32b --repo-root . --verify
+          PYTHONPATH=python python -m unittest discover -s tests -p test_autopilot_generated_w32b.py -v
+          test "$(git status --porcelain)" = "?? tests/test_autopilot_generated_w32b.py"
+          echo W32B_TRUSTED_RENDERED_CODE_TESTED_NO_GITHUB_WRITE_NO_AUTO_MERGE

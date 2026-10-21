@@ -1,0 +1,12 @@
+{
+  "schema": 1,
+  "task_id": "W27-QA",
+  "scenarios": [
+    "valid_qa_proposal",
+    "duplicate_task_ids",
+    "blocked_without_approval",
+    "unknown_domain",
+    "unexpected_field",
+    "duplicate_json_keys"
+  ]
+}
