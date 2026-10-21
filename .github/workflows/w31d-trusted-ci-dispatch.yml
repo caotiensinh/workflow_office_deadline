@@ -1,0 +1,102 @@
+name: W31D One-Time Real Bot PR Exact-SHA CI Dispatch
+
+on:
+  push:
+    branches:
+      - main
+      - feat/w31d-trusted-exact-sha-ci-dispatch
+
+permissions:
+  contents: read
+
+jobs:
+  hosted-policy-preview:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify four trusted dispatch endpoints and no automatic merge
+        shell: bash
+        run: |
+          set -euo pipefail
+          PYTHONPATH=python python -m unittest discover -s tests -p test_autopilot_dispatch_w31d.py -v
+          echo W31D_HOSTED_POLICY_PREVIEW_NOT_REAL_CI_DISPATCH
+
+  one-time-bot-pr-and-dispatch:
+    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && github.repository == 'caotiensinh/workflow_office_deadline' && vars.EDU_AUTOPILOT_DOC_PR_LIVE == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    concurrency:
+      group: edu-w31d-one-time-exact-head-bot-ci
+      cancel-in-progress: false
+    permissions:
+      contents: write
+      pull-requests: write
+      actions: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Create exactly one GitHub Actions bot review PR and dispatch four CI suites
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF" = refs/heads/main
+          test "$GITHUB_REPOSITORY" = caotiensinh/workflow_office_deadline
+          path=docs/autopilot-proposals/W31D_TRUSTED_CI_DISPATCH.md
+          title="Autopilot W31D: trusted exact-SHA CI dispatch (review required)"
+          if [ -e "$path" ]; then
+            echo W31D_ALREADY_ACCEPTED_IN_MAIN_SKIP
+            exit 0
+          fi
+          known="$(gh pr list --repo "$GITHUB_REPOSITORY" --state all --limit 100 --json title --jq '.[].title')"
+          if grep -Fqx -- "$title" <<< "$known"; then
+            echo W31D_ONE_TIME_PR_ALREADY_EXISTS_SKIP
+            exit 0
+          fi
+          test -z "$(git status --porcelain)"
+          test -d docs/autopilot-proposals
+          umask 077
+          cat > "$path" <<'EOF'
+          <!-- W31D_GITHUB_TOKEN_EXACT_SHA_CI_DISPATCH_PROOF -->
+          # Trusted GitHub Actions CI dispatch smoke (fictional only)
+
+          This one-file document proves whether the protected GitHub Actions
+          publisher can open a review-required PR and then trigger the four
+          standard, read-only CI workflows at the generated branch's HEAD.
+
+          No real employee, mail, approval, Ollama inference or code edit.
+          CI success is not human review and this PR must NEVER auto-merge.
+          EOF
+          git add -- "$path"
+          staged="$(git diff --cached --name-only)"
+          test "$staged" = "$path"
+          test "$(git diff --cached --name-only | wc -l)" -eq 1
+          git diff --cached --check
+          branch="autopilot/w31d-trusted-ci-$GITHUB_RUN_ID"
+          git switch -c "$branch"
+          git -c user.name=github-actions -c user.email=41898282+github-actions[bot]@users.noreply.github.com commit -m "docs(autopilot): W31D exact-sha dispatch proof"
+          gh auth setup-git
+          git push origin "$branch"
+          if ! gh pr create --repo "$GITHUB_REPOSITORY" --base main --head "$branch" --title "$title" \
+            --body "GitHub Actions generated synthetic-only documentation. Four real GitHub-hosted CI workflow_dispatch runs are requested at this precise generated branch. Never auto-merge. Require all four exact-head SUCCESS plus independent human review; no local Ollama inference or production acceptance."; then
+            git push origin --delete "$branch" || true
+            echo W31D_BOT_PR_CREATION_FAILED_CLEANUP_ATTEMPTED
+            exit 4
+          fi
+          echo W31D_REAL_GITHUB_ACTIONS_BOT_PR_CREATED
+          # workflow_dispatch is the allowed GITHUB_TOKEN exception that can
+          # trigger a new workflow run; ordinary bot pull_request runs often
+          # remain action_required. These four workflows have read-only tokens.
+          for workflow in ci.yml windows-e2e.yml w4-desktop.yml w5-desktop.yml; do
+            echo "W31D_DISPATCH_REQUESTED_WORKFLOW=$workflow"
+            gh workflow run "$workflow" --repo "$GITHUB_REPOSITORY" --ref "$branch"
+          done
+          echo W31D_FOUR_REAL_CI_DISPATCHES_REQUESTED_NOT_CI_PASSED_NOT_MERGED

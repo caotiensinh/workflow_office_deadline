@@ -4,6 +4,7 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  workflow_dispatch:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.ref_name }}
@@ -85,13 +86,16 @@ jobs:
               'tests/test_autopilot_pr_gate_w31b.py',
               '.github/workflows/w31b-bot-pr-gate.yml',
               'docs/PHASE_W31.md',
+              'tests/test_autopilot_dispatch_w31d.py',
+              '.github/workflows/w31d-trusted-ci-dispatch.yml',
+              'docs/PHASE_W31D.md',
           ]
           missing = [name for name in required if not pathlib.Path(name).is_file()]
           if missing:
               raise SystemExit(f'Missing safety regression suites: {missing}')
           count = unittest.defaultTestLoader.discover('tests').countTestCases()
-          if count < 457:
-              raise SystemExit(f'Safety test regression: expected at least 457 cases, found {count}')
+          if count < 465:
+              raise SystemExit(f'Safety test regression: expected at least 465 cases, found {count}')
           print(f'Regression test manifest PASS ({count} tests)')
           PY
       - name: W5 real Tk widgets in isolated virtual X display
