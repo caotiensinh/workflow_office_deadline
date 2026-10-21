@@ -114,7 +114,7 @@ class WorkerW27BTests(unittest.TestCase):
                               transport=self.fake),2)
 
     def test_execute_creates_only_ephemeral_proposal(self):
-        with patch.dict(os.environ,{"EDU_AUTOPILOT_ENABLE":"1"}):
+        with patch.dict(os.environ,{"EDU_AUTOPILOT_ENABLE":"1", "RUNNER_TEMP":tempfile.gettempdir()}):
             code=main(["--backlog",str(self.backlog),"--execute",
                        "--output-dir",str(self.root)],transport=self.fake)
         self.assertEqual(code,0)
@@ -124,7 +124,7 @@ class WorkerW27BTests(unittest.TestCase):
         self.assertFalse(proposal["git_push_performed"])
 
     def test_second_execute_refuses_to_overwrite(self):
-        with patch.dict(os.environ,{"EDU_AUTOPILOT_ENABLE":"1"}):
+        with patch.dict(os.environ,{"EDU_AUTOPILOT_ENABLE":"1", "RUNNER_TEMP":tempfile.gettempdir()}):
             args=["--backlog",str(self.backlog),"--execute","--output-dir",str(self.root)]
             self.assertEqual(main(args,transport=self.fake),0)
             self.assertEqual(main(args,transport=self.fake),2)
