@@ -167,6 +167,14 @@ def overbudget_evidence(before, after, start, end):
     old_by_id = {j["id"]: j for j in aj}
     for job in active:
         old = old_by_id[job["id"]]
+        # GitHub may omit step details for an in-progress job. Absence is not
+        # proof of stalling; refuse to cancel unless a real active step exists.
+        steps = job.get("steps")
+        if (not isinstance(steps, list) or not steps
+                or not any(isinstance(s, dict) and
+                           s.get("status") == "in_progress" for s in steps)):
+            outcome["status"] = "INSUFFICIENT_ACTIVE_STEP_EVIDENCE_KEEP_RUNNING"
+            return outcome
         if old.get("status") != "in_progress":
             outcome["status"] = "PROGRESS_DETECTED_KEEP_RUNNING"
             return outcome
