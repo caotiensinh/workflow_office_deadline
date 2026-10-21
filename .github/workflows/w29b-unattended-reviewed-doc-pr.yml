@@ -1,0 +1,83 @@
+name: W29B Unattended Safe Docs PR On Main Update
+on:
+  push:
+    branches:
+      - main
+      - feat/w29b-unattended-reviewed-doc-pr
+
+permissions:
+  contents: read
+
+jobs:
+  hosted-no-write-proposal-preview:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify read-only preview and deterministic safety
+        shell: bash
+        run: |
+          set -euo pipefail
+          PYTHONPATH=python python -m unittest discover -s tests -p test_autopilot_pr_w28b.py -v
+          PYTHONPATH=python python -m edu_workflow.autopilot_pr_w28b --repo-root .
+          test ! -e docs/autopilot-proposals/BACKLOG_STATUS.md
+          echo W29B_HOSTED_READONLY_PREVIEW_NO_GITHUB_WRITES
+
+  publish-reviewed-docs-only-pr:
+    # The user explicitly authorized autonomous safe coding and PR creation;
+    # this creates review-required PRs, NEVER merges, and runs only on main.
+    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && github.repository == 'caotiensinh/workflow_office_deadline' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    concurrency:
+      group: edu-w29b-reviewed-docs-singleton
+      cancel-in-progress: false
+    permissions:
+      contents: write
+      pull-requests: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      EDU_AUTOPILOT_DOC_PR_ENABLE: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Publish only fixed-path deterministic fictional backlog documentation
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF" = refs/heads/main
+          test "$GITHUB_REPOSITORY" = caotiensinh/workflow_office_deadline
+          title="Autopilot: deterministic backlog status (review required)"
+          existing="$(gh pr list --repo "$GITHUB_REPOSITORY" --state open --json title --jq '.[].title')"
+          if grep -Fqx -- "$title" <<< "$existing"; then
+            echo W29B_EXISTING_REVIEW_PR_SKIP
+            exit 0
+          fi
+          test -z "$(git status --porcelain)"
+          PYTHONPATH=python python -m unittest discover -s tests -p test_autopilot_pr_w28b.py -v
+          PYTHONPATH=python python -m edu_workflow.autopilot_pr_w28b --repo-root . --write
+          git add -- docs/autopilot-proposals/BACKLOG_STATUS.md
+          staged="$(git diff --cached --name-only)"
+          if [ -z "$staged" ]; then
+            echo W29B_DOCS_UP_TO_DATE_NO_PR_NEEDED
+            exit 0
+          fi
+          test "$staged" = docs/autopilot-proposals/BACKLOG_STATUS.md
+          git diff --cached --check
+          test "$(git diff --cached --name-only | wc -l)" -eq 1
+          branch="autopilot/w29-backlog-$GITHUB_RUN_ID"
+          git switch -c "$branch"
+          git -c user.name=github-actions -c user.email=41898282+github-actions[bot]@users.noreply.github.com             commit -m "docs(autopilot): review fictional backlog snapshot"
+          gh auth setup-git
+          git push origin "$branch"
+          gh pr create --repo "$GITHUB_REPOSITORY" --base main --head "$branch" --title "$title"             --body "Review required. Deterministic fictional backlog snapshot only. This is NOT AI-generated code, IT approval, real deployment, or an auto-merge. GitHub GITHUB_TOKEN PR creation may not trigger normal pull_request CI; reviewers must require/check explicit CI before merge."
+          echo W29B_AUTOMATIC_REAL_DOCS_PR_CREATED_NO_MERGE
