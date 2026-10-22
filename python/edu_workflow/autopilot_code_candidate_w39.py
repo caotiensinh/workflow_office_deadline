@@ -281,10 +281,18 @@ def run_pipeline(output, *, fixture=None, model=None,
                             "num_ctx": 2048, "num_thread": 2, "num_gpu": 0}
             }
             calls += 1
-            response = transport(payload)
-            if not isinstance(response, dict):
-                raise ValueError("Invalid streaming model envelope")
-            source = parse_candidate(response.get("response"))
+            try:
+                response = transport(payload)
+                if not isinstance(response, dict):
+                    raise ValueError("Invalid streaming model envelope")
+                source = parse_candidate(response.get("response"))
+            except (ValueError, TypeError, KeyError, UnicodeError):
+                # Model content is untrusted. Allow one bounded correction
+                # prompt without exposing raw model bytes or unsafe code.
+                errors = ["invalid_json_or_source_policy"]
+                if attempt == MAX_CALLS-1:
+                    raise ValueError("Two malformed model source attempts") from None
+                continue
         source = validate_code(source)
         from tempfile import TemporaryDirectory
         with TemporaryDirectory(prefix="w39-sandbox-stage-") as tmp:
