@@ -178,6 +178,11 @@ def docker_verify(source, folder, *, runner=subprocess.run):
     test_file.write_text(TRUSTED_TESTS, encoding="utf-8")
     source_file.chmod(0o644)
     test_file.chmod(0o644)
+    # Docker user 65534 must traverse the mounted staging directory.
+    # Restrict it back immediately afterwards; only temporary public-source
+    # fixtures/candidates are placed here, never secrets or user records.
+    original_mode = folder.stat().st_mode & 0o777
+    folder.chmod(0o755)
     command = [
         "docker", "run", "--rm", "--pull=never",
         "--network=none", "--read-only",
@@ -212,6 +217,7 @@ def docker_verify(source, folder, *, runner=subprocess.run):
         for filepath in (source_file, test_file):
             if filepath.exists():
                 filepath.unlink()
+        folder.chmod(original_mode)
 
 
 def run_pipeline(output, *, fixture=None, model=None,
