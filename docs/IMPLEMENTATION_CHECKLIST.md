@@ -514,3 +514,15 @@ See `docs/PHASE_W33.md` and `.github/workflows/w33-unattended-three-process.yml`
 - [ ] **Separate GitHub Actions queue watchdog:** W34/W35 in PR #71 still requires independent review/merge; no live active process cancelled and no stale run cancelled without exact successor proof.
 
 See `docs/PHASE_W38.md`; institution rollout and signoffs unchanged (2/6, 0/8).
+
+
+## W39 — Model-authored bounded Python code candidate, actual Docker isolation, review-only PR gate (2026-10-22 JST)
+
+- [x] **Product implementation:** `python/edu_workflow/autopilot_code_candidate_w39.py` supports actual CPU-admitted local Ollama streaming `format=json` returning the complete new Python source of `deadline_priority(minutes_remaining:int,has_blocker:bool)`, fixed target path; strict AST/function/path/identity validation, fixed independent deadline boundary tests, max TWO model attempts using only trusted failure-case feedback. Does not write model code into checkout or expose GitHub write token. Output receipt explicitly differentiates `LIVE_OLLAMA_INFERENCE` from `SYNTHETIC_FIXTURE_NOT_AI`.
+- [x] **No-network container and publisher:** Docker image `python:3.12-alpine`, `--network=none --read-only --user=65534:65534 --cap-drop=ALL`, no-new-privileges, pids/CPU/memory cap, readonly source bind mount, result SHA256. A distinct, main-only opt-in hosted publisher rechecks AST and Docker tests before writing only the fixed new code path and creating a **review-required PR**; no automatic merge.
+- [x] **Actual hosted checkpoint (non-AI)**: #39739386204 SUCCESS on W39 work branch checkpoint, 28 focused Python tests PASS, real Docker acceptance PASS for a labelled **hand-written fixture**, deliberate incorrect deadline logic failed exact independent test cases, and fixture was rejected by the real-Ollama publisher identity gate. `model_calls=0` in this hosted proof.
+- [ ] **Final W39 review/release:** verify W39 specialized and all applicable full-suite jobs on final stacked PR HEAD, plus independent human review of new pipeline and its parent PR #70.
+- [ ] **Real model-generated code + publish acceptance:** Linux self-hosted runner and approved local model + Docker, opt-in W39 live variables, model-authored exact source, sandbox tests/repair, gated creation of a genuine code PR, exact SHA CI/review/merge/repeat remain unproven. W31A run #39546648473 was cancelled with no successful model inference evidence.
+- [ ] **24/7 multi-task product autonomy:** W39 standalone candidate lane not yet bound to W38 durable backlog leases, W34/W35 GitHub queue watchdog remains in separate PR #71; no claim of autonomous ongoing coding/merge.
+
+See `docs/PHASE_W39.md`; public synthetic only; institutional rollout 2/6 and signoffs 0/8 unchanged.

@@ -1,0 +1,6 @@
+{
+  "task_id": "W39-DEADLINE",
+  "path": "python/edu_workflow/deadline_priority_w39.py",
+  "code": "def deadline_priority(minutes_remaining: int, has_blocker: bool) -> str:\n    if has_blocker:\n        return \"BLOCKED\"\n    if minutes_remaining < 0:\n        return \"OVERDUE\"\n    if minutes_remaining <= 60:\n        return \"DUE_SOON\"\n    if minutes_remaining <= 1440:\n        return \"TODAY\"\n    return \"SCHEDULED\"\n",
+  "requires_human_review": true
+}
