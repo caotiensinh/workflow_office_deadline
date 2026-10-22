@@ -41,6 +41,8 @@ jobs:
           PYTHONPATH=python python -m edu_workflow.autopilot_process_w33 --backlog autopilot/w27_backlog.json
           PYTHONPATH=python python -m edu_workflow.autopilot_process_w33 --backlog autopilot/w27_backlog.json --execute --synthetic |
             python -c 'import json,sys; x=json.load(sys.stdin); assert x["independent_os_processes"]==3 and x["actual_ollama_calls"]==0 and x["status"]=="THREE_SYNTHETIC_OS_PROCESSES_NOT_REAL_OLLAMA" and not x["git_writes"] and not x["model_authored_code_executed"]; print("W33_HOSTED_THREE_REAL_OS_PROCESSES_FAKE_INFERENCE_NO_MODEL_CALLS")'
+          EDU_W37_SYNTHETIC_FAIL_TASK=W27-QA PYTHONPATH=python python -m edu_workflow.autopilot_process_w33 --backlog autopilot/w27_backlog.json --execute --synthetic |
+            python -c 'import json,sys; x=json.load(sys.stdin); assert x["independent_os_processes"]==3 and x["failed_lanes_replaced"]==1 and x["unique_tasks_completed"]==3 and x["actual_ollama_calls"]==0 and x["status"]=="THREE_SYNTHETIC_OS_PROCESSES_NOT_REAL_OLLAMA" and not x["git_writes"]; print("W37_REAL_OS_FAILURE_REPLACED_BY_APPROVED_BACKLOG_TASK_MODEL_FIXTURE_ONLY")'
 
   selfhost-real-ollama-three-processes:
     # No trusted model or device is enrolled merely by enabling the schedule.
