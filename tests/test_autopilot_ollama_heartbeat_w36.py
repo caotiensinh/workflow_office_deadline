@@ -242,5 +242,102 @@ class StreamHeartbeatW36(unittest.TestCase):
                          os.getpid())
 
 
+    def test_parent_kills_worker_with_zero_tokens_past_startup_grace(self):
+        class Hung:
+            pid = os.getpid()
+            returncode = None
+            killed = False
+            def communicate(self, payload=None, timeout=None):
+                if not self.killed:
+                    raise subprocess.TimeoutExpired("child-worker", timeout)
+                return "", ""
+            def kill(self):
+                self.killed = True
+        proc = Hung()
+        with patch("edu_workflow.autopilot_process_w33.time.monotonic",
+                   side_effect=[100.0, 270.0]):
+            with patch("edu_workflow.autopilot_process_w33.read_progress",
+                       return_value=0):
+                with self.assertRaises(ValueError):
+                    _collect(proc, {"task": {}, "model": "m"},
+                             self.root / "none.json")
+        self.assertTrue(proc.killed)
+
+    def test_parent_kills_worker_after_token_heartbeat_stops(self):
+        class Hung:
+            pid = os.getpid()
+            returncode = None
+            killed = False
+            def communicate(self, payload=None, timeout=None):
+                if not self.killed:
+                    raise subprocess.TimeoutExpired("worker", timeout)
+                return "", ""
+            def kill(self):
+                self.killed = True
+        proc = Hung()
+        with patch("edu_workflow.autopilot_process_w33.time.monotonic",
+                   side_effect=[100.0, 110.0, 205.0]):
+            with patch("edu_workflow.autopilot_process_w33.read_progress",
+                       side_effect=[1, 1]):
+                with self.assertRaises(ValueError):
+                    _collect(proc, {"task": {}, "model": "m"},
+                             self.root / "receipt.json")
+        self.assertTrue(proc.killed)
+
+    def test_parent_preserves_worker_when_token_count_advances(self):
+        payload = {
+            "task_id": "W27-QA", "role": "qa-security", "model": "m",
+            "status": "AI_PROPOSED_PENDING_REVIEW",
+            "human_review_required": True, "execution_performed": False,
+            "git_push_performed": False, "production_accepted": False,
+            "proposal": "Fictional review only, no code executed",
+            "validation": "Synthetic test only", "risks": [],
+            "worker_pid": os.getpid()
+        }
+        class Moving:
+            pid = os.getpid()
+            returncode = 0
+            calls = 0
+            killed = False
+            def communicate(self, data=None, timeout=None):
+                self.calls += 1
+                if self.calls <= 2:
+                    raise subprocess.TimeoutExpired("worker", timeout)
+                return json.dumps(payload), ""
+            def kill(self):
+                self.killed = True
+        proc = Moving()
+        with patch("edu_workflow.autopilot_process_w33.time.monotonic",
+                   side_effect=[100.0, 160.0, 240.0]):
+            with patch("edu_workflow.autopilot_process_w33.read_progress",
+                       side_effect=[1, 2, 2]):
+                output = _collect(proc, {"task": {}, "model": "m"},
+                                  self.root / "moving.json")
+        self.assertEqual(output["task_id"], "W27-QA")
+        self.assertFalse(proc.killed)
+
+    def test_absolute_cap_trumps_continuing_progress(self):
+        class Hung:
+            pid = os.getpid()
+            returncode = None
+            killed = False
+            def communicate(self, data=None, timeout=None):
+                if not self.killed:
+                    raise subprocess.TimeoutExpired("worker", timeout)
+                return "", ""
+            def kill(self):
+                self.killed = True
+        proc = Hung()
+        with patch("edu_workflow.autopilot_process_w33.time.monotonic",
+                   side_effect=[100.0, 800.0]):
+            with patch("edu_workflow.autopilot_process_w33.read_progress",
+                       return_value=5):
+                with self.assertRaises(ValueError):
+                    _collect(proc, {"task": {}, "model": "m"},
+                             self.root / "live.json")
+        self.assertTrue(proc.killed)
+
+
+
 if __name__ == "__main__":
     unittest.main()
