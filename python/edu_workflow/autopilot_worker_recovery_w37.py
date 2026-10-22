@@ -18,15 +18,17 @@ def _eligible(task):
             and task.get("approval_required") is False)
 
 
-def execute_lanes(primary, models, alternatives, *, spawn, collect):
+def execute_lanes(primary, models, alternatives, *, spawn, collect,
+                  on_success=None, on_failure=None):
     """Return completed lane records after at most one fresh task per failure.
 
     All initial workers are created before any waits; all complete/timeout
     independently. Successes are retained. Only failed slots may receive one
     DIFFERENT eligible task. All receipts require caller identity validation.
     """
-    if (len(primary) != MAX_LANES or len(models) != MAX_LANES
-            or len(set(models)) != MAX_LANES
+    lane_count = len(primary)
+    if (not 1 <= lane_count <= MAX_LANES or len(models) != lane_count
+            or len(set(models)) != lane_count
             or not all(_eligible(task) for task in primary)
             or len({t["id"] for t in primary}) != MAX_LANES
             or not isinstance(alternatives, list)
@@ -36,7 +38,7 @@ def execute_lanes(primary, models, alternatives, *, spawn, collect):
             != len(primary) + len(alternatives)):
         raise ValueError("Only distinct approved proposal tasks and models permitted")
     active = [(i, primary[i], models[i], spawn(primary[i], models[i], i, 0))
-              for i in range(MAX_LANES)]
+              for i in range(lane_count)]
     completed = {}
     failures = []
     with ThreadPoolExecutor(max_workers=MAX_LANES) as pool:
@@ -46,8 +48,12 @@ def execute_lanes(primary, models, alternatives, *, spawn, collect):
         for lane, task, model, proc, future in future_list:
             try:
                 item = future.result()
+                if on_success is not None:
+                    on_success(task, model, proc, item)
             except Exception:
                 # Nothing from child stderr or model error is printed publicly.
+                if on_failure is not None:
+                    on_failure(task, model, proc)
                 failures.append(lane)
             else:
                 completed[lane] = (task, model, proc, item)
@@ -71,9 +77,13 @@ def execute_lanes(primary, models, alternatives, *, spawn, collect):
             for lane, task, model, proc, future in future_list:
                 try:
                     item = future.result()
+                    if on_success is not None:
+                        on_success(task, model, proc, item)
                 except Exception:
+                    if on_failure is not None:
+                        on_failure(task, model, proc)
                     raise ValueError("Replacement worker failed (no infinite retries)") from None
                 completed[lane] = (task, model, proc, item)
-    if set(completed) != set(range(MAX_LANES)):
+    if set(completed) != set(range(lane_count)):
         raise ValueError("Partial worker results; cannot claim three successes")
     return [completed[i] for i in range(MAX_LANES)], recovered
