@@ -86,4 +86,4 @@ def execute_lanes(primary, models, alternatives, *, spawn, collect,
                 completed[lane] = (task, model, proc, item)
     if set(completed) != set(range(lane_count)):
         raise ValueError("Partial worker results; cannot claim three successes")
-    return [completed[i] for i in range(MAX_LANES)], recovered
+    return [completed[i] for i in range(lane_count)], recovered
