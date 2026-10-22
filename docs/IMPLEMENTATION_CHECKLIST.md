@@ -493,3 +493,12 @@ See `docs/PHASE_W33.md` and `.github/workflows/w33-unattended-three-process.yml`
 - [x] **Unit-level and hosted acceptance at code checkpoint:** GitHub run #39704981153 PASS, 18 W33 + 25 W36 focused tests PASS; synthetic 3 child OS-process acceptance PASS with actual Ollama calls=0. The real self-hosted Ollama job remained SKIPPED on feature branch, not considered PASS.
 - [ ] **Exact-final-HEAD PR #70 release:** four standard Linux/Rust+Windows CI and W33/W36 specialized PASS, independent review and authorized merge required. No real Ollama worker progress has been observed.
 - [ ] **W34/W35 cross-layer watchdog:** PR #71 separately protects against canceling active/queued GitHub jobs; internal token heartbeats are currently **local W33 process receipts**, not distributed GitHub job-heartbeat logs. No claim of 24/7 autonomous AI-authored patch/test/repair/PR/merge lifecycle.
+
+
+## W37 — Fail one worker, preserve useful siblings, dispatch fresh approved work (2026-10-22 JST)
+
+- [x] **W37 implementation integrated into W33/PR #70:** distinct allowed `AUTO_PROPOSAL` task-only replacement, three real OS subprocess slots, one bounded successor attempt per failed slot; successful workers preserved without reruns. No automatic repetition on failed replacement; no execution of model text, no external/IT/Outlook tasks.
+- [x] **Actual approved successor present:** added `W27-LEASE` as fourth synthetic proposal task in checked-in backlog, domain python-rust. Four blocked institution signoffs remain blocked.
+- [x] **Hosted GitHub acceptance at W37 code checkpoint:** run #39710399070 SUCCESS on SHA `0ebbca8d1bf7bd511970812f15842c09ea4dd987`. W33 18, W36 25, W37 13 tests PASS. Fault-injected a real OS child on W27-QA; fresh child on W27-LEASE returned valid **synthetic model fixture**, 3 unique completed tasks, zero real Ollama calls.
+- [ ] **Exact-final-HEAD CI and release**: require 4 standard Linux/Rust+Windows workflows plus W33/W36/W37 hosted acceptance completed/success on same final PR #70 SHA; independent human review/authorized merge only.
+- [ ] **Real 24/7 autonomous product loop remains unproven:** self-hosted Linux Ollama runner still not assigned for #62; actual model inference, durable task lease/restart, model-authored sandbox code patch/repair, reviewed PR and continuously looping unattended all pending. W37 is one missing process-level failure-recovery boundary, not full product autonomy.
