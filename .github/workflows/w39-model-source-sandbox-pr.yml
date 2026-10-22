@@ -55,6 +55,21 @@ jobs:
             echo "W39_BAD_FIXTURE_ACCEPTED_AS_REAL_AI" >&2
             exit 1
           fi
+          # Independent behavioral negative control: a wrong policy must FAIL
+          # with an exact trusted test-case identity, not merely Docker exit.
+          PYTHONPATH=python python - <<'PY'
+          from pathlib import Path
+          from tempfile import TemporaryDirectory
+          from edu_workflow.autopilot_code_candidate_w39 import docker_verify
+          bad = ('def deadline_priority(minutes_remaining: int, has_blocker: bool) -> str:\n'
+                 '    return "TODAY"\n')
+          with TemporaryDirectory(prefix="w39-negative-control-") as temp:
+              outcome = docker_verify(bad, Path(temp))
+          assert outcome["success"] is False
+          assert "test_zero_due_soon" in outcome["failed_cases"]
+          assert "test_overdue_negative_one" in outcome["failed_cases"]
+          print("W39_REAL_DOCKER_REJECTS_WRONG_MODEL_SOURCE_LOGIC")
+          PY
           echo "W39_NO_REAL_OLLAMA_CALLS_NO_GITHUB_PATCH_PUBLISHED"
 
   real-ollama-source-candidate:
