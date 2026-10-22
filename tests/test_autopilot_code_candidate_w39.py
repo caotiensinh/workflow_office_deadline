@@ -268,6 +268,52 @@ class W39CodeCandidates(unittest.TestCase):
         self.assertEqual(len(calls), 2)
         self.assertEqual(list(self.output.iterdir()), [])
 
+    def test_invalid_model_json_is_repaired_once_without_leaking_text(self):
+        from edu_workflow import autopilot_code_candidate_w39 as m
+        with patch.dict(os.environ, {
+            "EDU_AUTOPILOT_ENABLE": "1", "EDU_W39_MODEL_CODE_ENABLE": "1",
+            "EDU_W39_FIXTURE_ONLY": "0"}):
+            with patch.object(m, "local_ollama", return_value={
+                "models": [{"name": "small:1", "size": 1024**3}]}):
+                with patch.object(m, "available_memory_bytes", return_value=16*1024**3):
+                    with patch.object(m.os, "cpu_count", return_value=8):
+                        with patch.object(m.os, "getloadavg", return_value=(0, 0, 0)):
+                            calls = []
+                            def inference(payload):
+                                calls.append(payload)
+                                if len(calls)==1:
+                                    return {"response": '{"private":"bad contract","code":"print(1)"}'}
+                                return {"response": json.dumps(candidate())}
+                            result = run_pipeline(
+                                self.output, model="small:1", transport=inference,
+                                sandbox=sandbox_ok)
+        self.assertEqual(result["model_calls"], 2)
+        self.assertEqual(result["origin"], LIVE_LABEL)
+        self.assertIn("invalid_json_or_source_policy", calls[1]["prompt"])
+        self.assertNotIn("private", calls[1]["prompt"])
+        self.assertFalse(result["git_writes"])
+
+    def test_second_malformed_model_response_fails_no_artifact(self):
+        from edu_workflow import autopilot_code_candidate_w39 as m
+        with patch.dict(os.environ, {
+            "EDU_AUTOPILOT_ENABLE": "1", "EDU_W39_MODEL_CODE_ENABLE": "1",
+            "EDU_W39_FIXTURE_ONLY": "0"}):
+            with patch.object(m, "local_ollama", return_value={
+                "models": [{"name": "small:1", "size": 1024**3}]}):
+                with patch.object(m, "available_memory_bytes", return_value=16*1024**3):
+                    with patch.object(m.os, "cpu_count", return_value=8):
+                        with patch.object(m.os, "getloadavg", return_value=(0, 0, 0)):
+                            calls = []
+                            def inference(payload):
+                                calls.append(payload)
+                                return {"response": '{"bad":"unsafe production"}'}
+                            with self.assertRaisesRegex(ValueError,
+                                                        "Two malformed"):
+                                run_pipeline(self.output, model="small:1",
+                                             transport=inference, sandbox=sandbox_ok)
+        self.assertEqual(len(calls), 2)
+        self.assertEqual(list(self.output.iterdir()), [])
+
     def test_no_execute_is_true_dry_run(self):
         from io import StringIO
         with patch("sys.stdout", new_callable=StringIO) as output:
