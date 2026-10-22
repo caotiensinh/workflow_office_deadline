@@ -190,6 +190,21 @@ class LeaseStore:
                 (state, lease["task_id"]))
         return state
 
+    def available_task_ids(self, *, now):
+        """Select only never-run or expired-reclaimable tasks on restart.
+
+        Exhausted expired leases become FAILED on claim; never return terminal
+        DONE/FAILED as ready work.
+        """
+        now = _time(now)
+        with self._connect() as con:
+            rows = con.execute("""SELECT task_id FROM lease_tasks
+                WHERE state='PENDING' AND attempts < ?
+                OR state='LEASED' AND deadline<=? AND attempts < ?
+                ORDER BY task_id""",
+                (MAX_ATTEMPTS, now, MAX_ATTEMPTS)).fetchall()
+        return {r[0] for r in rows}
+
     def inspect(self):
         """Read-only, token-free public summary; no task text or model data."""
         with self._connect() as con:
