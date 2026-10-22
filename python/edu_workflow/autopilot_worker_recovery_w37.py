@@ -30,7 +30,7 @@ def execute_lanes(primary, models, alternatives, *, spawn, collect,
     if (not 1 <= lane_count <= MAX_LANES or len(models) != lane_count
             or len(set(models)) != lane_count
             or not all(_eligible(task) for task in primary)
-            or len({t["id"] for t in primary}) != MAX_LANES
+            or len({t["id"] for t in primary}) != lane_count
             or not isinstance(alternatives, list)
             or len(alternatives) > 100
             or not all(_eligible(task) for task in alternatives)
