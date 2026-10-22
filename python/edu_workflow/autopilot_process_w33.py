@@ -22,6 +22,7 @@ import urllib.error
 from .autopilot_ollama_heartbeat_w36 import Heartbeat, read_progress, stream_generate
 from .autopilot_probe_w28a import available_memory_bytes
 from .autopilot_worker_recovery_w37 import execute_lanes
+from .autopilot_task_lease_w38 import LeaseStore, authorized_state_db
 from .autopilot_three_w29a import admit, select_three_models
 from .autopilot_worker_w27 import local_ollama, proposed_task, safe_tasks
 
@@ -92,7 +93,7 @@ def worker(stdin, stdout, *, synthetic=False):
     stdout.write(json.dumps(report, sort_keys=True) + "\n")
 
 
-def _collect(proc, payload, heartbeat_path=None):
+def _collect(proc, payload, heartbeat_path=None, on_progress=None):
     """Observe actual model tokens, never equate clock ticks to progress.
 
     Live worker: startup grace 165s; after first response fragment allow 90s
@@ -116,6 +117,8 @@ def _collect(proc, payload, heartbeat_path=None):
             chunks = read_progress(heartbeat_path, proc.pid)
             now = time.monotonic()
             if chunks > seen_chunks:
+                if on_progress is not None:
+                    on_progress(chunks)
                 seen_chunks, last_progress = chunks, now
             if (now-started > MAX_REAL_ABSOLUTE_SECONDS or
                     (seen_chunks == 0 and now-started > MAX_WORKER_SECONDS) or
@@ -133,23 +136,31 @@ def _collect(proc, payload, heartbeat_path=None):
     return result
 
 
-def launch(tasks, models, *, synthetic=False, python=None, alternatives=()):
+def launch(tasks, models, *, synthetic=False, python=None, alternatives=(),
+           store=None):
     """Preserve useful worker successes; replace failures with different tasks.
 
     All first-round OS children are started and observed independently.
     A stuck worker is killed by _collect's bounded heartbeat deadlines; only
     its failed slot may receive one distinct approved pending AUTO_PROPOSAL.
     """
-    if (len(tasks) != 3 or len(models) != 3 or
-            len({t["id"] for t in tasks}) != 3 or
-            len(set(models)) != 3):
-        raise ValueError("Three distinct authorized tasks/models required")
+    if (not 1 <= len(tasks) <= 3 or len(models) != len(tasks) or
+            len({t["id"] for t in tasks}) != len(tasks) or
+            len(set(models)) != len(models)):
+        raise ValueError("One-to-three distinct authorized tasks/models required")
     processes = []
+    owned_leases = {}
+    owner = f"w38-{os.getpid()}-{time.time_ns() % 100000000}"
     temp = tempfile.TemporaryDirectory(prefix="edu-w36-private-hb-")
     try:
         def spawn(task, model, lane, round_num):
             if task["kind"] != "AUTO_PROPOSAL" or task["approval_required"] is not False:
                 raise ValueError("Blocked external task")
+            lease = None
+            if store is not None:
+                lease = store.claim(task, owner, now=int(time.time()), ttl=165)
+                if lease is None:
+                    raise ValueError("Task already leased, done or exhausted")
             command = [python or sys.executable, "-m",
                        "edu_workflow.autopilot_process_w33", "--worker"]
             if synthetic:
@@ -171,29 +182,60 @@ def launch(tasks, models, *, synthetic=False, python=None, alternatives=()):
                 stderr=subprocess.DEVNULL, text=True, env=env)
             item = (proc, {"task": task, "model": model}, heartbeat_path)
             processes.append(item)
+            if lease is not None:
+                owned_leases[id(proc)] = lease
             return item
 
         def collect(item):
             proc, payload, heartbeat_path = item
-            return _collect(proc, payload, heartbeat_path)
+            callback = None
+            if store is not None and heartbeat_path is not None:
+                lease = owned_leases[id(proc)]
+                callback = lambda n: store.renew_progress(
+                    lease, chunks=n, now=int(time.time()), ttl=90)
+            return _collect(proc, payload, heartbeat_path,
+                            on_progress=callback)
 
-        completed, recovered = execute_lanes(
-            tasks, models, list(alternatives), spawn=spawn, collect=collect)
-        results = []
-        for (task, model, (proc, _, _), item) in completed:
+        def verify(task, model, item_proc, item):
+            proc = item_proc[0]
             if (item["task_id"] != task["id"] or item["model"] != model or
                 item["human_review_required"] is not True or
                 item["execution_performed"] is not False or
                 item["git_push_performed"] is not False or
                 item["production_accepted"] is not False or
-                type(item["worker_pid"]) is not int or
-                item["worker_pid"] != proc.pid or
+                type(item["worker_pid"]) is not int or item["worker_pid"] != proc.pid or
                 not isinstance(item["proposal"], str) or
                 not 20 <= len(item["proposal"]) <= 4000):
                 raise ValueError("Worker identity or review violation")
+
+        def on_success(task, model, item_proc, item):
+            verify(task, model, item_proc, item)
+            if store is not None:
+                proc = item_proc[0]
+                store.complete(
+                    owned_leases[id(proc)],
+                    result_digest=hashlib.sha256(
+                        item["proposal"].encode("utf-8")).hexdigest(),
+                    now=int(time.time()))
+
+        def on_failure(task, model, item_proc):
+            if store is not None:
+                proc = item_proc[0]
+                try:
+                    store.fail(owned_leases[id(proc)], now=int(time.time()))
+                except ValueError:
+                    # If deadline expired, leave lease for fenced reclaim.
+                    pass
+
+        completed, recovered = execute_lanes(
+            tasks, models, list(alternatives), spawn=spawn, collect=collect,
+            on_success=on_success, on_failure=on_failure)
+        results = []
+        for (task, model, item_proc, item) in completed:
+            verify(task, model, item_proc, item)
             results.append(item)
-        if len({r["worker_pid"] for r in results}) != 3:
-            raise ValueError("Not three distinct OS processes")
+        if len({r["worker_pid"] for r in results}) != len(tasks):
+            raise ValueError("Worker process identity collision")
         return results
     finally:
         for proc, _, _ in processes:
@@ -204,11 +246,26 @@ def launch(tasks, models, *, synthetic=False, python=None, alternatives=()):
 
 
 def run(backlog, *, synthetic=False, transport=local_ollama, meminfo=None,
-        load=None, cores=None):
+        load=None, cores=None, state_dir=None):
     eligible = [t for t in safe_tasks(backlog) if t["kind"] == "AUTO_PROPOSAL"]
+    store = None
+    if state_dir is not None:
+        store = LeaseStore(authorized_state_db(state_dir))
+        store.seed(backlog)
+        ready = store.available_task_ids(now=int(time.time()))
+        eligible = [task for task in eligible if task["id"] in ready]
     tasks = eligible[:3]
-    if len(tasks) != 3:
-        raise ValueError("Exactly three safe backlog tasks required")
+    if not tasks and store is not None:
+        return {
+            "phase": "W38",
+            "status": "IDLE_NO_APPROVED_READY_TASKS",
+            "actual_ollama_calls": 0,
+            "independent_os_processes": 0,
+            "durable_state_enabled": True,
+            "git_writes": False, "auto_merge": False,
+            "production_accepted": False}
+    if (not tasks or (store is None and len(tasks) != 3)):
+        raise ValueError("No admissible worker tasks")
     if synthetic:
         models = SYNTHETIC_MODELS
         # Synthetic admission is intentionally fake; do NOT label as real.
@@ -217,8 +274,8 @@ def run(backlog, *, synthetic=False, transport=local_ollama, meminfo=None,
         models = select_three_models(transport("/api/tags"))
         admit(models, available_memory_bytes(meminfo),
               load, cores)
-    reports = launch(tasks, [m for m, _ in models], synthetic=synthetic,
-                     alternatives=eligible[3:])
+    reports = launch(tasks, [m for m, _ in models[:len(tasks)]],
+                     synthetic=synthetic, alternatives=eligible[3:], store=store)
     replaced_count = sum(r["task_id"] != t["id"] for r, t in zip(reports, tasks))
     return {
         "phase": "W33", "status": (
@@ -227,7 +284,8 @@ def run(backlog, *, synthetic=False, transport=local_ollama, meminfo=None,
         "independent_os_processes": len({x["worker_pid"] for x in reports}),
         "failed_lanes_replaced": replaced_count,
         "unique_tasks_completed": len({x["task_id"] for x in reports}),
-        "actual_ollama_calls": 0 if synthetic else 3,
+        "actual_ollama_calls": 0 if synthetic else len(reports),
+        "durable_state_enabled": store is not None,
         "proposal_hashes": [
             hashlib.sha256(x["proposal"].encode("utf-8")).hexdigest()
             for x in reports
@@ -245,6 +303,7 @@ def main(argv=None):
     parser.add_argument("--execute", action="store_true")
     parser.add_argument("--synthetic", action="store_true")
     parser.add_argument("--worker", action="store_true")
+    parser.add_argument("--state-dir", help="Persistent owner-approved directory outside git")
     args = parser.parse_args(argv)
     try:
         if args.worker:
@@ -259,7 +318,7 @@ def main(argv=None):
         if args.synthetic:
             if os.environ.get("EDU_W33_SYNTHETIC") != "1":
                 raise ValueError("Synthetic smoke not authorized")
-            receipt = run(args.backlog, synthetic=True)
+            receipt = run(args.backlog, synthetic=True, state_dir=args.state_dir)
         else:
             if (os.environ.get("EDU_AUTOPILOT_ENABLE") != "1" or
                 os.environ.get("EDU_AUTOPILOT_THREE_CPU_PROPOSALS") != "1" or
@@ -268,7 +327,8 @@ def main(argv=None):
             with open("/proc/meminfo", encoding="ascii") as stream:
                 meminfo = stream.read(16385)
             receipt = run(args.backlog, meminfo=meminfo,
-                          load=os.getloadavg()[0], cores=os.cpu_count() or 0)
+                          load=os.getloadavg()[0], cores=os.cpu_count() or 0,
+                          state_dir=args.state_dir)
         print(json.dumps(receipt, sort_keys=True))
         return 0
     except (OSError, ValueError, TypeError, KeyError, UnicodeError,
