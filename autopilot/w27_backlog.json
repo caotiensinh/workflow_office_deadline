@@ -26,6 +26,14 @@
       "description": "Produce a concise Japanese copy proposal for the existing consent-first synthetic GUI UAT, with explicit distinction from production approval."
     },
     {
+      "id": "W27-LEASE",
+      "title": "Design durable synthetic Autopilot task lease and recovery contract",
+      "domain": "python-rust",
+      "kind": "AUTO_PROPOSAL",
+      "approval_required": false,
+      "description": "Propose source-level state transitions and synthetic regression cases for one bounded task lease, owner heartbeat, successor dispatch and fail-closed recovery. Do not operate actual Outlook, endpoints, production infrastructure, or merge changes."
+    },
+    {
       "id": "W27-IT",
       "title": "Institution approval for signed-in Windows Session One GUI test",
       "domain": "ui",

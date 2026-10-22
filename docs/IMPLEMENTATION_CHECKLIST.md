@@ -474,3 +474,43 @@ W13 is a readiness inspector, **not** authority to bypass managed PowerShell Exe
 - [ ] **Autonomous code loop still unfinished**: model-based task selection, 3 independent coding-agent processes, code patch + test, actual auto-repair, reviewed PR merge and repeat cycle. W31D proves CI dispatch, not autonomous model coding. Institutional rollout **2/6**, 0/8 production workflow signoffs.
 
 See `docs/PHASE_W31D.md` for exact acceptance criteria, evidence and remaining risks.
+
+## W33 — Real autonomous worker-process substrate (2026-10-21 JST)
+
+- [x] **Code committed:** `python/edu_workflow/autopilot_process_w33.py`, 3 separate Python child OS processes, strict 3-model CPU admission and local Ollama only, worker-identity verification, no shell, no inherited GitHub token, fail-closed timeout, hash-only public receipt. Model text is review-only and never executed as code.
+- [x] **Hosted independent OS-process smoke succeeded**: #39568106515, 18/18 regression PASS at code HEAD `65e45723981d505db44c70b4025a90d6e470df11`; 3 separate actual OS processes executed **synthetic fixture**, zero real AI calls.
+- [ ] **Exact-feature-head 4/4 standard CI** and independent PR human review still required before merge. No autonomy milestone promotion for simulation.
+- [ ] **Three actual local Ollama models running in three OS child processes** on authorized Linux self-hosted runner required. W31A PR #62 job #119046212555 remains QUEUED; live W33 lane is main-only + repository-variable opt-in. Do not count any skipped/queued job as PASS.
+- [ ] **Full 24/7 self-developing product loop** still requires authenticated bounded backlog lease, true AI-authored code patch, isolated test/repair, safe CI PR publication, independent review and reviewed merge, repeated autonomously. A cron smoke and 3 process proposals are not this end goal.
+- [ ] **Public-only and institution safety**: no employee data, Outlook/IT/endpoint writes, rollout 2/6 and signoffs 0/8.
+
+See `docs/PHASE_W33.md` and `.github/workflows/w33-unattended-three-process.yml`.
+
+
+## W36 — Three-process Ollama token heartbeat and bounded recovery (2026-10-22 JST)
+
+- [x] **Real transport implemented on W33 feature branch:** live local CPU-only Ollama `stream=true` parser, numeric-only per-child private atomic heartbeat, true token-chunk increments (no clock heartbeat), parent PID/count verification, zero-chunk startup 165s, no-chunk-progress 90s and absolute run 600s bounded stop. Three isolated child processes, GitHub credentials withheld, synthetic fixtures clearly separate.
+- [x] **Unit-level and hosted acceptance at code checkpoint:** GitHub run #39704981153 PASS, 18 W33 + 25 W36 focused tests PASS; synthetic 3 child OS-process acceptance PASS with actual Ollama calls=0. The real self-hosted Ollama job remained SKIPPED on feature branch, not considered PASS.
+- [ ] **Exact-final-HEAD PR #70 release:** four standard Linux/Rust+Windows CI and W33/W36 specialized PASS, independent review and authorized merge required. No real Ollama worker progress has been observed.
+- [ ] **W34/W35 cross-layer watchdog:** PR #71 separately protects against canceling active/queued GitHub jobs; internal token heartbeats are currently **local W33 process receipts**, not distributed GitHub job-heartbeat logs. No claim of 24/7 autonomous AI-authored patch/test/repair/PR/merge lifecycle.
+
+
+## W37 — Fail one worker, preserve useful siblings, dispatch fresh approved work (2026-10-22 JST)
+
+- [x] **W37 implementation integrated into W33/PR #70:** distinct allowed `AUTO_PROPOSAL` task-only replacement, three real OS subprocess slots, one bounded successor attempt per failed slot; successful workers preserved without reruns. No automatic repetition on failed replacement; no execution of model text, no external/IT/Outlook tasks.
+- [x] **Actual approved successor present:** added `W27-LEASE` as fourth synthetic proposal task in checked-in backlog, domain python-rust. Four blocked institution signoffs remain blocked.
+- [x] **Hosted GitHub acceptance at W37 code checkpoint:** run #39710399070 SUCCESS on SHA `0ebbca8d1bf7bd511970812f15842c09ea4dd987`. W33 18, W36 25, W37 13 tests PASS. Fault-injected a real OS child on W27-QA; fresh child on W27-LEASE returned valid **synthetic model fixture**, 3 unique completed tasks, zero real Ollama calls.
+- [ ] **Exact-final-HEAD CI and release**: require 4 standard Linux/Rust+Windows workflows plus W33/W36/W37 hosted acceptance completed/success on same final PR #70 SHA; independent human review/authorized merge only.
+- [ ] **Real 24/7 autonomous product loop remains unproven:** self-hosted Linux Ollama runner still not assigned for #62; actual model inference, durable task lease/restart, model-authored sandbox code patch/repair, reviewed PR and continuously looping unattended all pending. W37 is one missing process-level failure-recovery boundary, not full product autonomy.
+
+
+## W38 — Durable restart-safe local Autopilot task leases (2026-10-22 JST)
+
+- [x] **Integrated into W33/W37 OS worker lifecycle:** SQLite durable `PENDING → LEASED → DONE`, bounded retry/failure, owner+random token fencing, `BEGIN IMMEDIATE` atomic claims, task-fingerprint immutability and hash-only output receipt. An expired or superseded owner cannot record success. Heartbeat extends lease only on increasing actual model fragment count; startup/idle/absolute deadlines remain capped.
+- [x] **Partial success preserved across restart:** completed sibling task results are persisted individually before other failed slots are reconciled; no accepted result is rerun even if a different lane fails with no available alternative. Coordinator processes 1–3 available tasks, and returns an explicit IDLE receipt when all tasks have completed.
+- [x] **Real GitHub-hosted acceptance on source checkpoint:** run #39713803434 SUCCESS, W33 18 + W36 25 + W37 13 + W38 25 focused regressions PASS. Real OS child-process exercise with **synthetic Ollama responses**: 3 completed → next invocation 1 remaining → next invocation IDLE. Parallel SQLite owner claims, crash reclaim, fencing, max attempts and fail-without-successor persisted results covered. This proves OS orchestration and SQLite behavior **within hosted runner temp storage**, not real Ollama calls or a rebooted persistent Linux host.
+- [ ] **Release:** require all 4 standard Linux/Rust+Windows GitHub CI and specialized hosted acceptance SUCCESS on exact **final** PR #70 SHA; independent human review before merge. Persisted runner directory opt-in remains unconfigured/unverified.
+- [ ] **Operational proof:** authorized Linux self-hosted runner for repo and 3 installed admissible Ollama models, local shared persistent directory, actual streaming heartbeat, real restart/resume, and AI-authored sandbox patch/repair/PR/reviewed merge/repeated unattended product development. Run #39546648473 remains queued, no live inference PASS.
+- [ ] **Separate GitHub Actions queue watchdog:** W34/W35 in PR #71 still requires independent review/merge; no live active process cancelled and no stale run cancelled without exact successor proof.
+
+See `docs/PHASE_W38.md`; institution rollout and signoffs unchanged (2/6, 0/8).

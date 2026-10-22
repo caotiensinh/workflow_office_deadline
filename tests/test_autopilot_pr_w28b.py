@@ -33,8 +33,15 @@ class W28BDocsTests(unittest.TestCase):
 
     def test_backlog_preserves_actual_blocked_external(self):
         info=prepare(self.root)
-        self.assertEqual(info["auto_proposal_count"],3)
+        self.assertEqual(info["auto_proposal_count"],4)
         self.assertEqual(info["blocked_external_count"],4)
+        tasks = load_backlog(self.root/"autopilot/w27_backlog.json")
+        self.assertEqual(
+            {t["id"] for t in tasks if t["kind"]=="AUTO_PROPOSAL"},
+            {"W27-DOCS","W27-QA","W27-UX","W27-LEASE"})
+        self.assertEqual(
+            {t["id"] for t in tasks if t["kind"]=="BLOCKED_EXTERNAL"},
+            {"W27-IT","W27-SCHEDULE","W27-OUTLOOK","W27-PILOT"})
 
     def test_write_requires_explicit_one_time_optin(self):
         with patch.dict(os.environ,{"EDU_AUTOPILOT_DOC_PR_ENABLE":"0"}):

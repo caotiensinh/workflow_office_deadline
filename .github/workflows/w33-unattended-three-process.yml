@@ -1,0 +1,92 @@
+name: W33 Unattended Three OS Ollama Process Lane
+
+on:
+  push:
+    branches:
+      - feat/w33-autonomous-3process-loop
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+  schedule:
+    - cron: '17 * * * *'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: w33-unattended-process-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  hosted-real-process-synthetic-inference:
+    if: ${{ github.repository == 'caotiensinh/workflow_office_deadline' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify three separate OS workers using synthetic-only model fixture
+        env:
+          EDU_W33_SYNTHETIC: '1'
+        shell: bash
+        run: |
+          set -euo pipefail
+          PYTHONPATH=python python -m unittest discover -s tests -p test_autopilot_process_w33.py -v
+          PYTHONPATH=python python -m unittest discover -s tests -p test_autopilot_ollama_heartbeat_w36.py -v
+          PYTHONPATH=python python -m unittest discover -s tests -p test_autopilot_worker_recovery_w37.py -v
+          PYTHONPATH=python python -m unittest discover -s tests -p test_autopilot_task_lease_w38.py -v
+          PYTHONPATH=python python -m edu_workflow.autopilot_process_w33 --backlog autopilot/w27_backlog.json
+          PYTHONPATH=python python -m edu_workflow.autopilot_process_w33 --backlog autopilot/w27_backlog.json --execute --synthetic |
+            python -c 'import json,sys; x=json.load(sys.stdin); assert x["independent_os_processes"]==3 and x["actual_ollama_calls"]==0 and x["status"]=="THREE_SYNTHETIC_OS_PROCESSES_NOT_REAL_OLLAMA" and not x["git_writes"] and not x["model_authored_code_executed"]; print("W33_HOSTED_THREE_REAL_OS_PROCESSES_FAKE_INFERENCE_NO_MODEL_CALLS")'
+          EDU_W37_SYNTHETIC_FAIL_TASK=W27-QA PYTHONPATH=python python -m edu_workflow.autopilot_process_w33 --backlog autopilot/w27_backlog.json --execute --synthetic |
+            python -c 'import json,sys; x=json.load(sys.stdin); assert x["independent_os_processes"]==3 and x["failed_lanes_replaced"]==1 and x["unique_tasks_completed"]==3 and x["actual_ollama_calls"]==0 and x["status"]=="THREE_SYNTHETIC_OS_PROCESSES_NOT_REAL_OLLAMA" and not x["git_writes"]; print("W37_REAL_OS_FAILURE_REPLACED_BY_APPROVED_BACKLOG_TASK_MODEL_FIXTURE_ONLY")'
+          # Hosted ephemeral SQLite proves restart/reclaim behavior, NOT live 24h persistence.
+          lease_dir="$(mktemp -d)"
+          chmod 700 "$lease_dir"
+          export EDU_W38_PERSISTENT_LEASES=1
+          PYTHONPATH=python python -m edu_workflow.autopilot_process_w33 --backlog autopilot/w27_backlog.json --execute --synthetic --state-dir "$lease_dir" |
+            python -c 'import json,sys; x=json.load(sys.stdin); assert x["independent_os_processes"]==3 and x["durable_state_enabled"] and x["actual_ollama_calls"]==0; print("W38_SQLITE_FIRST_THREE_CHILDREN_FIXTURE_PASS")'
+          PYTHONPATH=python python -m edu_workflow.autopilot_process_w33 --backlog autopilot/w27_backlog.json --execute --synthetic --state-dir "$lease_dir" |
+            python -c 'import json,sys; x=json.load(sys.stdin); assert x["independent_os_processes"]==1 and x["durable_state_enabled"] and x["actual_ollama_calls"]==0; print("W38_SQLITE_RESTART_ONE_REMAINING_TASK_FIXTURE_PASS")'
+          PYTHONPATH=python python -m edu_workflow.autopilot_process_w33 --backlog autopilot/w27_backlog.json --execute --synthetic --state-dir "$lease_dir" |
+            python -c 'import json,sys; x=json.load(sys.stdin); assert x["status"]=="IDLE_NO_APPROVED_READY_TASKS" and x["actual_ollama_calls"]==0; print("W38_SQLITE_TERMINAL_IDLE_NO_RERUN_FIXTURE_PASS")'
+
+  selfhost-real-ollama-three-processes:
+    # No trusted model or device is enrolled merely by enabling the schedule.
+    # This job remains queued if there is no matching authorized Linux runner.
+    if: >-
+      github.repository == 'caotiensinh/workflow_office_deadline' &&
+      github.ref == 'refs/heads/main' &&
+      (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') &&
+      vars.EDU_AUTOPILOT_LIVE == 'true' &&
+      vars.EDU_AUTOPILOT_THREE_CPU_PROPOSALS_LIVE == 'true'
+    runs-on: [self-hosted, Linux]
+    timeout-minutes: 17
+    concurrency:
+      group: w33-three-process-real-ollama-lane
+      cancel-in-progress: false
+    env:
+      EDU_AUTOPILOT_ENABLE: '1'
+      EDU_AUTOPILOT_THREE_CPU_PROPOSALS: '1'
+      EDU_W38_PERSISTENT_LEASES: ${{ vars.EDU_W38_PERSISTENT_LEASES }}
+      EDU_W38_STATE_DIR: ${{ vars.EDU_W38_STATE_DIR }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Three independent CPU-budgeted installed Ollama subprocesses; hash-only public evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -r /proc/meminfo
+          opts=()
+          if [[ "${EDU_W38_PERSISTENT_LEASES:-0}" == "1" ]]; then
+            test -n "${EDU_W38_STATE_DIR:-}"
+            opts+=(--state-dir "$EDU_W38_STATE_DIR")
+          fi
+          PYTHONPATH=python python3 -m edu_workflow.autopilot_process_w33 --backlog autopilot/w27_backlog.json --execute "${opts[@]}" |
+            python3 -c 'import json,sys; d=json.load(sys.stdin); assert d["status"] in ("THREE_REAL_OS_OLLAMA_PROCESSES_VERIFIED","IDLE_NO_APPROVED_READY_TASKS") and not d["git_writes"] and not d["production_accepted"] and d["actual_ollama_calls"]==d["independent_os_processes"] and (d["independent_os_processes"]==0 or d["ollama_stream_progress_verified"] is True); print("W38_LIVE_CPU_OLLAMA_OR_VERIFIED_IDLE_RECEIPT_NO_MODEL_TEXT")'
