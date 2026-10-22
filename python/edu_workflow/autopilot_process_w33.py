@@ -74,9 +74,9 @@ def worker(stdin, stdout, *, synthetic=False):
         re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_.:-]{1,100}", model) is None):
         raise ValueError("Unsafe worker dispatch")
     if synthetic:
-        if os.environ.get("EDU_W37_SYNTHETIC_FAIL_ONCE") == "1" and synthetic:
-        raise ValueError("Synthetic first-lane failure fixture")
-    transport = fake_ollama
+        if os.environ.get("EDU_W37_SYNTHETIC_FAIL_ONCE") == "1":
+            raise ValueError("Synthetic first-lane failure fixture")
+        transport = fake_ollama
         heartbeat = None
     else:
         path = os.environ.get("EDU_W36_HEARTBEAT_PATH")
