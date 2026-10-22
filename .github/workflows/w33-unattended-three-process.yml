@@ -36,6 +36,7 @@ jobs:
         run: |
           set -euo pipefail
           PYTHONPATH=python python -m unittest discover -s tests -p test_autopilot_process_w33.py -v
+          PYTHONPATH=python python -m unittest discover -s tests -p test_autopilot_ollama_heartbeat_w36.py -v
           PYTHONPATH=python python -m edu_workflow.autopilot_process_w33 --backlog autopilot/w27_backlog.json
           PYTHONPATH=python python -m edu_workflow.autopilot_process_w33 --backlog autopilot/w27_backlog.json --execute --synthetic |
             python -c 'import json,sys; x=json.load(sys.stdin); assert x["independent_os_processes"]==3 and x["actual_ollama_calls"]==0 and x["status"]=="THREE_SYNTHETIC_OS_PROCESSES_NOT_REAL_OLLAMA" and not x["git_writes"] and not x["model_authored_code_executed"]; print("W33_HOSTED_THREE_REAL_OS_PROCESSES_FAKE_INFERENCE_NO_MODEL_CALLS")'
@@ -67,4 +68,4 @@ jobs:
           set -euo pipefail
           test -r /proc/meminfo
           PYTHONPATH=python python3 -m edu_workflow.autopilot_process_w33 --backlog autopilot/w27_backlog.json --execute |
-            python3 -c 'import json,sys; d=json.load(sys.stdin); assert d["status"]=="THREE_REAL_OS_OLLAMA_PROCESSES_VERIFIED" and d["independent_os_processes"]==3 and d["actual_ollama_calls"]==3 and not d["git_writes"] and not d["model_authored_code_executed"]; print("W33_LIVE_THREE_OS_CPU_OLLAMA_RECEIPT_NO_CODE_OR_GIT_WRITE")'
+            python3 -c 'import json,sys; d=json.load(sys.stdin); assert d["status"]=="THREE_REAL_OS_OLLAMA_PROCESSES_VERIFIED" and d["independent_os_processes"]==3 and d["actual_ollama_calls"]==3 and d["ollama_stream_progress_verified"] is True and not d["git_writes"] and not d["model_authored_code_executed"]; print("W33_LIVE_THREE_OS_CPU_OLLAMA_RECEIPT_NO_CODE_OR_GIT_WRITE")'
