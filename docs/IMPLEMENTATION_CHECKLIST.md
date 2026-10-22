@@ -485,3 +485,11 @@ See `docs/PHASE_W31D.md` for exact acceptance criteria, evidence and remaining r
 - [ ] **Public-only and institution safety**: no employee data, Outlook/IT/endpoint writes, rollout 2/6 and signoffs 0/8.
 
 See `docs/PHASE_W33.md` and `.github/workflows/w33-unattended-three-process.yml`.
+
+
+## W36 — Three-process Ollama token heartbeat and bounded recovery (2026-10-22 JST)
+
+- [x] **Real transport implemented on W33 feature branch:** live local CPU-only Ollama `stream=true` parser, numeric-only per-child private atomic heartbeat, true token-chunk increments (no clock heartbeat), parent PID/count verification, zero-chunk startup 165s, no-chunk-progress 90s and absolute run 600s bounded stop. Three isolated child processes, GitHub credentials withheld, synthetic fixtures clearly separate.
+- [x] **Unit-level and hosted acceptance at code checkpoint:** GitHub run #39704981153 PASS, 18 W33 + 25 W36 focused tests PASS; synthetic 3 child OS-process acceptance PASS with actual Ollama calls=0. The real self-hosted Ollama job remained SKIPPED on feature branch, not considered PASS.
+- [ ] **Exact-final-HEAD PR #70 release:** four standard Linux/Rust+Windows CI and W33/W36 specialized PASS, independent review and authorized merge required. No real Ollama worker progress has been observed.
+- [ ] **W34/W35 cross-layer watchdog:** PR #71 separately protects against canceling active/queued GitHub jobs; internal token heartbeats are currently **local W33 process receipts**, not distributed GitHub job-heartbeat logs. No claim of 24/7 autonomous AI-authored patch/test/repair/PR/merge lifecycle.
