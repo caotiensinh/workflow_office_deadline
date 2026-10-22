@@ -58,8 +58,8 @@ class W37Supervisor(unittest.TestCase):
         self.assertEqual(results[0][0]["id"], "W27-DOCS")
         self.assertEqual(results[1][0]["id"], "W27-EXTRA")
         self.assertEqual(results[2][0]["id"], "W27-UX")
-        self.assertEqual([x["id"] for x in completed].count("W27-DOCS"), 1)
-        self.assertEqual([x["id"] for x in completed].count("W27-UX"), 1)
+        self.assertEqual(completed.count("W27-DOCS"), 1)
+        self.assertEqual(completed.count("W27-UX"), 1)
         self.assertEqual(replaced, [{"failed_task_id": "W27-QA",
                                      "replacement_task_id": "W27-EXTRA"}])
 
