@@ -1,0 +1,151 @@
+name: W39 Model Authored Source Docker Acceptance and Reviewable PR
+
+on:
+  push:
+    branches: [feat/w39-model-authored-safe-patch]
+  pull_request:
+    branches: [main, feat/w33-autonomous-3process-loop]
+  workflow_dispatch:
+  schedule:
+    - cron: '43 * * * *'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: w39-patch-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  hosted-sandbox-fixture-contract:
+    if: ${{ github.repository == 'caotiensinh/workflow_office_deadline' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 9
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Run real W39 source-validation and bounded-repair safety regression
+        shell: bash
+        run: |
+          set -euo pipefail
+          PYTHONPATH=python python -m unittest discover -s tests -p test_autopilot_code_candidate_w39.py -v
+      - name: Pre-pull fixed Docker image on GitHub-hosted only
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker pull python:3.12-alpine >/dev/null
+          docker image inspect python:3.12-alpine --format '{{.Id}}' |
+            grep -Eq '^sha256:[0-9a-f]{64}$'
+      - name: Actually test human-authored source fixture inside no-network Docker
+        shell: bash
+        env:
+          EDU_W39_FIXTURE_ONLY: '1'
+        run: |
+          set -euo pipefail
+          mkdir -m 700 "$RUNNER_TEMP/w39-handwritten-fixture"
+          PYTHONPATH=python python -m edu_workflow.autopilot_code_candidate_w39             --execute --fixture autopilot/w39_handwritten_test_fixture.json             --output-dir "$RUNNER_TEMP/w39-handwritten-fixture" |
+            python -c 'import json,sys; d=json.load(sys.stdin); assert d["origin"]=="SYNTHETIC_FIXTURE_NOT_AI" and d["model_calls"]==0 and d["trusted_tests"]==11 and d["sandbox_verified"] and not d["git_writes"] and not d["auto_merged"]; print("W39_DOCKER_ACTUAL_HUMAN_SOURCE_FIXTURE_NOT_AI")'
+          PYTHONPATH=python python -m edu_workflow.autopilot_code_candidate_w39             --execute --verify-artifact "$RUNNER_TEMP/w39-handwritten-fixture" |
+            python -c 'import json,sys; d=json.load(sys.stdin); assert d["publisher_sandbox_verified"] and d["human_review_required"]; print("W39_INDEPENDENT_REVALIDATION_FIXTURE_ONLY")'
+          if PYTHONPATH=python python -m edu_workflow.autopilot_code_candidate_w39                --execute --verify-artifact "$RUNNER_TEMP/w39-handwritten-fixture" --require-live; then
+            echo "W39_BAD_FIXTURE_ACCEPTED_AS_REAL_AI" >&2
+            exit 1
+          fi
+          echo "W39_NO_REAL_OLLAMA_CALLS_NO_GITHUB_PATCH_PUBLISHED"
+
+  real-ollama-source-candidate:
+    if: >-
+      github.repository == 'caotiensinh/workflow_office_deadline' &&
+      github.ref == 'refs/heads/main' &&
+      (github.event_name == 'workflow_dispatch' || github.event_name == 'schedule') &&
+      vars.EDU_W39_AI_CODE_ENABLED == 'true' &&
+      vars.EDU_W39_SANDBOX_APPROVED == 'true'
+    runs-on: [self-hosted, Linux]
+    timeout-minutes: 17
+    permissions:
+      contents: read
+    env:
+      EDU_AUTOPILOT_ENABLE: '1'
+      EDU_W39_MODEL_CODE_ENABLE: '1'
+      EDU_W39_MODEL_NAME: ${{ vars.EDU_W39_MODEL_NAME }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Verify pre-authorized Docker image and installed local model
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$EDU_W39_MODEL_NAME"
+          test -r /proc/meminfo
+          docker image inspect python:3.12-alpine >/dev/null
+          mkdir -m 700 "$RUNNER_TEMP/w39-ai-generated"
+      - name: CPU-only Ollama actually authors code; Docker tests and repairs once
+        shell: bash
+        run: |
+          set -euo pipefail
+          PYTHONPATH=python python3 -m edu_workflow.autopilot_code_candidate_w39             --execute --model "$EDU_W39_MODEL_NAME"             --output-dir "$RUNNER_TEMP/w39-ai-generated" |
+            python3 -c 'import json,sys; d=json.load(sys.stdin); assert d["origin"]=="LIVE_OLLAMA_INFERENCE" and 1<=d["model_calls"]<=2 and d["sandbox_verified"] and not d["git_writes"] and not d["auto_merged"]; print("W39_REAL_MODEL_SOURCE_PASSED_SANDBOX_READY_FOR_PR_REVIEW")'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: w39-model-source-${{ github.run_id }}
+          path: |
+            ${{ runner.temp }}/w39-ai-generated/deadline_priority_w39.py
+            ${{ runner.temp }}/w39-ai-generated/receipt.json
+          retention-days: 3
+          if-no-files-found: error
+
+  publish-tested-code-pr:
+    needs: [real-ollama-source-candidate]
+    if: >-
+      github.repository == 'caotiensinh/workflow_office_deadline' &&
+      github.ref == 'refs/heads/main' &&
+      needs.real-ollama-source-candidate.result == 'success' &&
+      vars.EDU_W39_PR_PUBLISH_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 9
+    permissions:
+      contents: write
+      pull-requests: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/download-artifact@v4
+        with:
+          name: w39-model-source-${{ github.run_id }}
+          path: ${{ runner.temp }}/w39-received
+      - name: Independently re-check source and no-network Docker tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker pull python:3.12-alpine >/dev/null
+          PYTHONPATH=python python -m edu_workflow.autopilot_code_candidate_w39             --execute --verify-artifact "$RUNNER_TEMP/w39-received" --require-live |
+            python -c 'import json,sys; x=json.load(sys.stdin); assert x["publisher_sandbox_verified"] and x["human_review_required"]; print("W39_SOURCE_REVERIFIED_BY_TRUSTED_HOSTED_RUNNER")'
+      - name: Create one fixed-path, review-required PR from current main SHA
+        shell: bash
+        run: |
+          set -euo pipefail
+          branch="autopilot/w39-deadline-${GITHUB_SHA:0:12}"
+          if gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/$branch" >/dev/null 2>&1; then
+            echo "W39_ALREADY_PROPOSED_FOR_CURRENT_MAIN_NO_DUPLICATE"
+            exit 0
+          fi
+          gh api -X POST "repos/$GITHUB_REPOSITORY/git/refs"             -f "ref=refs/heads/$branch" -f "sha=$GITHUB_SHA" >/dev/null
+          input="$(mktemp)"
+          trap 'rm -f "$input"' EXIT
+          chmod 600 "$input"
+          encoded="$(base64 -w0 "$RUNNER_TEMP/w39-received/deadline_priority_w39.py")"
+          jq -n             --arg message "feat(w39): model-authored sandbox-tested deadline priority candidate"             --arg branch "$branch" --arg content "$encoded"             '{message:$message,branch:$branch,content:$content}' >"$input"
+          gh api -X PUT             "repos/$GITHUB_REPOSITORY/contents/python/edu_workflow/deadline_priority_w39.py"             --input "$input" >/dev/null
+          gh pr create --repo "$GITHUB_REPOSITORY" --base main --head "$branch"             --title "W39 model-authored deadline priority (review required)"             --body "Model-authored real Python candidate, local Ollama only, AST-gated and independently Docker-tested without network or Git credentials. Human review plus exact-head CI required before merge. No Outlook or production data; no auto-approval/auto-merge."
+          echo "W39_REVIEW_REQUIRED_PR_CREATED_NO_AUTOMERGE"
