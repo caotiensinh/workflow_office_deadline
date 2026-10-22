@@ -15,8 +15,11 @@ from pathlib import Path
 import re
 import subprocess
 import sys
+import tempfile
+import time
 import urllib.error
 
+from .autopilot_ollama_heartbeat_w36 import Heartbeat, read_progress, stream_generate
 from .autopilot_probe_w28a import available_memory_bytes
 from .autopilot_three_w29a import admit, select_three_models
 from .autopilot_worker_w27 import local_ollama, proposed_task, safe_tasks
@@ -24,6 +27,8 @@ from .autopilot_worker_w27 import local_ollama, proposed_task, safe_tasks
 SYNTHETIC_MODELS = [("w33-test-a", 1), ("w33-test-b", 1), ("w33-test-c", 1)]
 MAX_CHILD_OUTPUT = 65536
 MAX_WORKER_SECONDS = 165
+MAX_REAL_ABSOLUTE_SECONDS = 600
+MAX_REAL_NO_TOKEN_SECONDS = 90
 WORKER_KEYS = frozenset({
     "task_id", "role", "model", "status", "human_review_required",
     "execution_performed", "git_push_performed", "production_accepted",
@@ -42,15 +47,18 @@ def fake_ollama(route, payload):
     })}
 
 
-def cpu_transport(route, payload):
+def cpu_transport(route, payload, *, progress=None):
     if route != "/api/generate" or not isinstance(payload, dict):
         raise ValueError("Only local bounded generation is permitted")
     safe = dict(payload)
     safe["options"] = {"temperature": 0.1, "num_predict": 650,
                        "num_ctx": 1024, "num_thread": 2, "num_gpu": 0}
-    safe["stream"] = False
+    safe["stream"] = progress is not None
     safe["keep_alive"] = 0
-    return local_ollama(route, safe)
+    # The live worker always supplies a private heartbeat callback; synthetic
+    # and legacy direct unit calls keep the old non-streaming test contract.
+    return (stream_generate(safe, progress=progress) if progress is not None
+            else local_ollama(route, safe))
 
 
 def worker(stdin, stdout, *, synthetic=False):
@@ -64,61 +72,103 @@ def worker(stdin, stdout, *, synthetic=False):
         not isinstance(model, str) or
         re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_.:-]{1,100}", model) is None):
         raise ValueError("Unsafe worker dispatch")
-    transport = fake_ollama if synthetic else cpu_transport
+    if synthetic:
+        transport = fake_ollama
+        heartbeat = None
+    else:
+        path = os.environ.get("EDU_W36_HEARTBEAT_PATH")
+        if not path:
+            raise ValueError("Live worker requires private progress receipt")
+        heartbeat = Heartbeat(path)
+        transport = lambda route, payload: cpu_transport(
+            route, payload, progress=heartbeat.progress)
     report = proposed_task(task, model, transport)
+    if heartbeat is not None:
+        heartbeat.completed()
     report["worker_pid"] = os.getpid()
     stdout.write(json.dumps(report, sort_keys=True) + "\n")
 
 
-def _collect(proc, payload):
-    try:
-        out, _ = proc.communicate(json.dumps(payload), timeout=MAX_WORKER_SECONDS)
-    except subprocess.TimeoutExpired:
-        proc.kill()
-        proc.communicate()
-        raise ValueError("Child worker timed out")
+def _collect(proc, payload, heartbeat_path=None):
+    """Observe actual model tokens, never equate clock ticks to progress.
+
+    Live worker: startup grace 165s; after first response fragment allow 90s
+    without more tokens, with absolute cap 600s. Synthetic mode retains
+    original hard limit. Child stdout is consumed privately.
+    """
+    started = time.monotonic()
+    last_progress, seen_chunks = started, 0
+    first_input = json.dumps(payload)
+    while True:
+        try:
+            out, _ = proc.communicate(
+                first_input, timeout=5 if heartbeat_path else MAX_WORKER_SECONDS)
+            break
+        except subprocess.TimeoutExpired:
+            first_input = None
+            if heartbeat_path is None:
+                proc.kill()
+                proc.communicate()
+                raise ValueError("Synthetic worker hard deadline")
+            chunks = read_progress(heartbeat_path, proc.pid)
+            now = time.monotonic()
+            if chunks > seen_chunks:
+                seen_chunks, last_progress = chunks, now
+            if (now-started > MAX_REAL_ABSOLUTE_SECONDS or
+                    (seen_chunks == 0 and now-started > MAX_WORKER_SECONDS) or
+                    (seen_chunks > 0 and now-last_progress > MAX_REAL_NO_TOKEN_SECONDS)):
+                proc.kill()
+                proc.communicate()
+                raise ValueError("Real worker no-token/absolute deadline")
     if proc.returncode != 0 or len(out) > MAX_CHILD_OUTPUT:
         raise ValueError("Child worker failed or output too large")
     result = json.loads(out)
     if not isinstance(result, dict) or set(result) != WORKER_KEYS:
         raise ValueError("Untrusted worker result shape")
+    if heartbeat_path and read_progress(heartbeat_path, proc.pid) < 1:
+        raise ValueError("No actual Ollama token-progress proof")
     return result
 
 
 def launch(tasks, models, *, synthetic=False, python=None):
-    """Spawn all three OS subprocesses BEFORE waiting for results.
+    """Spawn three independent workers, with Linux-local token progress.
 
-    No shell, no Git token propagation, no arbitrary model-authored process.
-    Child stderr and model text are never echoed to the public CI log.
+    Isolated ephemeral numeric-only heartbeats for the *real* path; no model
+    output, Git token, prompt, API URL or sensitive data goes into receipts.
     """
     if (len(tasks) != 3 or len(models) != 3 or
             len({t["id"] for t in tasks}) != 3 or
             len(set(models)) != 3):
         raise ValueError("Three distinct authorized tasks/models required")
     processes = []
+    temp = tempfile.TemporaryDirectory(prefix="edu-w36-private-hb-")
     try:
-        for task, model in zip(tasks, models):
+        for index, (task, model) in enumerate(zip(tasks, models)):
             if task["kind"] != "AUTO_PROPOSAL" or task["approval_required"] is not False:
                 raise ValueError("Blocked external task")
             command = [python or sys.executable, "-m",
                        "edu_workflow.autopilot_process_w33", "--worker"]
             if synthetic:
                 command.append("--synthetic")
-            # Minimize environment; never pass GH_TOKEN/GITHUB_TOKEN/secrets
             env = {k: v for k, v in os.environ.items()
                    if k in {"PATH", "PYTHONPATH", "HOME", "LANG", "LC_ALL",
                             "SYSTEMROOT", "WINDIR", "VIRTUAL_ENV"}}
+            heartbeat_path = None
             if synthetic:
                 env["EDU_W33_SYNTHETIC"] = "1"
+            else:
+                heartbeat_path = str(Path(temp.name) / f"worker-{index}.json")
+                env["EDU_W36_HEARTBEAT_PATH"] = heartbeat_path
             proc = subprocess.Popen(
                 command, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
                 stderr=subprocess.DEVNULL, text=True, env=env
             )
-            processes.append((proc, {"task": task, "model": model}))
+            processes.append((proc, {"task": task, "model": model}, heartbeat_path))
         with ThreadPoolExecutor(max_workers=3) as pool:
-            futures = [pool.submit(_collect, proc, payload) for proc, payload in processes]
+            futures = [pool.submit(_collect, proc, payload, heart)
+                       for proc, payload, heart in processes]
             results = [f.result() for f in futures]
-        for item, task, model, (proc, _) in zip(results, tasks, models, processes):
+        for item, task, model, (proc, _, _) in zip(results, tasks, models, processes):
             if (item["task_id"] != task["id"] or item["model"] != model or
                 item["human_review_required"] is not True or
                 item["execution_performed"] is not False or
@@ -133,10 +183,11 @@ def launch(tasks, models, *, synthetic=False, python=None):
             raise ValueError("Not three distinct OS processes")
         return results
     finally:
-        for proc, _ in processes:
+        for proc, _, _ in processes:
             if proc.poll() is None:
                 proc.kill()
             proc.wait()
+        temp.cleanup()
 
 
 def run(backlog, *, synthetic=False, transport=local_ollama, meminfo=None,
@@ -163,6 +214,7 @@ def run(backlog, *, synthetic=False, transport=local_ollama, meminfo=None,
             hashlib.sha256(x["proposal"].encode("utf-8")).hexdigest()
             for x in reports
         ],
+        "ollama_stream_progress_verified": not synthetic,
         "model_authored_code_executed": False, "git_writes": False,
         "human_review_required": True, "auto_merge": False,
         "production_accepted": False,
