@@ -242,6 +242,20 @@ def run_pipeline(output, *, fixture=None, model=None,
                         0 < m["size"] <= MAX_MODEL_BYTES
                         for m in models)):
             raise ValueError("Requested small local model not installed")
+        try:
+            installed_size = next(
+                m["size"] for m in models
+                if isinstance(m, dict) and m.get("name") == model
+                and type(m.get("size")) is int)
+            with open("/proc/meminfo", encoding="ascii") as stream:
+                meminfo = stream.read(16385)
+            available = available_memory_bytes(meminfo)
+            cpus = os.cpu_count() or 0
+            if (cpus < 4 or os.getloadavg()[0] > cpus * 0.5
+                    or available < max(6 * GIB, 2 * installed_size + 2 * GIB)):
+                raise ValueError("Real AI coding exceeds Linux CPU/RAM admission")
+        except (OSError, StopIteration):
+            raise ValueError("Linux resource evidence unavailable") from None
         origin = LIVE_LABEL
         transport = transport or stream_generate
         calls = 0
