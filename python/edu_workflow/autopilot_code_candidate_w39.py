@@ -187,8 +187,11 @@ def docker_verify(source, folder, *, runner=subprocess.run):
         "--tmpfs=/tmp:rw,nosuid,noexec,size=16m",
         "--mount", f"type=bind,src={folder},dst=/work,readonly",
         "--workdir=/work", "--entrypoint=python",
-        DOCKER_IMAGE, "-I", "-B", "-m", "unittest",
-        "-v", "test_deadline_w39"
+        DOCKER_IMAGE, "-I", "-B", "-c",
+        ("import sys,unittest;sys.path.insert(0,'/work');"
+         "suite=unittest.defaultTestLoader.loadTestsFromName('test_deadline_w39');"
+         "result=unittest.TextTestRunner(verbosity=2).run(suite);"
+         "sys.exit(0 if result.wasSuccessful() else 1)")
     ]
     try:
         run = runner(command, capture_output=True, timeout=45, text=True,
