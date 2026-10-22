@@ -238,6 +238,33 @@ class W38DurableLease(unittest.TestCase):
         self.assertEqual(by_id["W27-QA"]["attempts"], 2)
         self.assertEqual(by_id["W27-DOCS"]["attempts"], 1)
 
+    def test_no_successor_still_persists_two_sibling_completions(self):
+        from edu_workflow.autopilot_process_w33 import run
+        three_only = self.root / "three-backlog.json"
+        three_only.write_text(json.dumps({
+            "schema": 1, "tasks": self.tasks[:3]
+        }), encoding="utf-8")
+        with patch.dict(os.environ, {
+            "EDU_W38_PERSISTENT_LEASES": "1",
+            "EDU_W37_SYNTHETIC_FAIL_TASK": "W27-QA"
+        }):
+            with self.assertRaisesRegex(ValueError, "No distinct authorized"):
+                run(three_only, synthetic=True, state_dir=str(self.root))
+        persisted = {
+            row["task_id"]: row for row in
+            LeaseStore(self.root/"autopilot-proposals.sqlite3").inspect()
+        }
+        self.assertEqual(persisted["W27-DOCS"]["state"], "DONE")
+        self.assertEqual(persisted["W27-UX"]["state"], "DONE")
+        self.assertEqual(persisted["W27-QA"]["state"], "PENDING")
+        with patch.dict(os.environ, {"EDU_W38_PERSISTENT_LEASES": "1",
+                                     "EDU_W37_SYNTHETIC_FAIL_TASK": ""}):
+            result = run(three_only, synthetic=True, state_dir=str(self.root))
+        self.assertEqual(result["independent_os_processes"], 1)
+        self.assertEqual(result["unique_tasks_completed"], 1)
+        self.assertTrue(all(row["state"] == "DONE" for row in
+                            LeaseStore(self.root/"autopilot-proposals.sqlite3").inspect()))
+
     def test_integrated_write_denied_without_state_optin(self):
         from edu_workflow.autopilot_process_w33 import run
         with patch.dict(os.environ, {"EDU_W38_PERSISTENT_LEASES": "0"}):
