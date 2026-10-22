@@ -21,6 +21,7 @@ import urllib.error
 
 from .autopilot_ollama_heartbeat_w36 import Heartbeat, read_progress, stream_generate
 from .autopilot_probe_w28a import available_memory_bytes
+from .autopilot_worker_recovery_w37 import execute_lanes
 from .autopilot_three_w29a import admit, select_three_models
 from .autopilot_worker_w27 import local_ollama, proposed_task, safe_tasks
 
@@ -73,7 +74,9 @@ def worker(stdin, stdout, *, synthetic=False):
         re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_.:-]{1,100}", model) is None):
         raise ValueError("Unsafe worker dispatch")
     if synthetic:
-        transport = fake_ollama
+        if os.environ.get("EDU_W37_SYNTHETIC_FAIL_ONCE") == "1" and synthetic:
+        raise ValueError("Synthetic first-lane failure fixture")
+    transport = fake_ollama
         heartbeat = None
     else:
         path = os.environ.get("EDU_W36_HEARTBEAT_PATH")
@@ -130,11 +133,12 @@ def _collect(proc, payload, heartbeat_path=None):
     return result
 
 
-def launch(tasks, models, *, synthetic=False, python=None):
-    """Spawn three independent workers, with Linux-local token progress.
+def launch(tasks, models, *, synthetic=False, python=None, alternatives=()):
+    """Preserve useful worker successes; replace failures with different tasks.
 
-    Isolated ephemeral numeric-only heartbeats for the *real* path; no model
-    output, Git token, prompt, API URL or sensitive data goes into receipts.
+    All first-round OS children are started and observed independently.
+    A stuck worker is killed by _collect's bounded heartbeat deadlines; only
+    its failed slot may receive one distinct approved pending AUTO_PROPOSAL.
     """
     if (len(tasks) != 3 or len(models) != 3 or
             len({t["id"] for t in tasks}) != 3 or
@@ -143,7 +147,7 @@ def launch(tasks, models, *, synthetic=False, python=None):
     processes = []
     temp = tempfile.TemporaryDirectory(prefix="edu-w36-private-hb-")
     try:
-        for index, (task, model) in enumerate(zip(tasks, models)):
+        def spawn(task, model, lane, round_num):
             if task["kind"] != "AUTO_PROPOSAL" or task["approval_required"] is not False:
                 raise ValueError("Blocked external task")
             command = [python or sys.executable, "-m",
@@ -156,19 +160,27 @@ def launch(tasks, models, *, synthetic=False, python=None):
             heartbeat_path = None
             if synthetic:
                 env["EDU_W33_SYNTHETIC"] = "1"
+                if (round_num == 0 and
+                        os.environ.get("EDU_W37_SYNTHETIC_FAIL_TASK") == task["id"]):
+                    env["EDU_W37_SYNTHETIC_FAIL_ONCE"] = "1"
             else:
-                heartbeat_path = str(Path(temp.name) / f"worker-{index}.json")
+                heartbeat_path = str(Path(temp.name) / f"worker-{lane}-{round_num}.json")
                 env["EDU_W36_HEARTBEAT_PATH"] = heartbeat_path
             proc = subprocess.Popen(
                 command, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-                stderr=subprocess.DEVNULL, text=True, env=env
-            )
-            processes.append((proc, {"task": task, "model": model}, heartbeat_path))
-        with ThreadPoolExecutor(max_workers=3) as pool:
-            futures = [pool.submit(_collect, proc, payload, heart)
-                       for proc, payload, heart in processes]
-            results = [f.result() for f in futures]
-        for item, task, model, (proc, _, _) in zip(results, tasks, models, processes):
+                stderr=subprocess.DEVNULL, text=True, env=env)
+            item = (proc, {"task": task, "model": model}, heartbeat_path)
+            processes.append(item)
+            return item
+
+        def collect(item):
+            proc, payload, heartbeat_path = item
+            return _collect(proc, payload, heartbeat_path)
+
+        completed, recovered = execute_lanes(
+            tasks, models, list(alternatives), spawn=spawn, collect=collect)
+        results = []
+        for (task, model, (proc, _, _), item) in completed:
             if (item["task_id"] != task["id"] or item["model"] != model or
                 item["human_review_required"] is not True or
                 item["execution_performed"] is not False or
@@ -178,7 +190,8 @@ def launch(tasks, models, *, synthetic=False, python=None):
                 item["worker_pid"] != proc.pid or
                 not isinstance(item["proposal"], str) or
                 not 20 <= len(item["proposal"]) <= 4000):
-                raise ValueError("Child identity or review violation")
+                raise ValueError("Worker identity or review violation")
+            results.append(item)
         if len({r["worker_pid"] for r in results}) != 3:
             raise ValueError("Not three distinct OS processes")
         return results
@@ -192,7 +205,8 @@ def launch(tasks, models, *, synthetic=False, python=None):
 
 def run(backlog, *, synthetic=False, transport=local_ollama, meminfo=None,
         load=None, cores=None):
-    tasks = [t for t in safe_tasks(backlog) if t["kind"] == "AUTO_PROPOSAL"][:3]
+    eligible = [t for t in safe_tasks(backlog) if t["kind"] == "AUTO_PROPOSAL"]
+    tasks = eligible[:3]
     if len(tasks) != 3:
         raise ValueError("Exactly three safe backlog tasks required")
     if synthetic:
@@ -203,12 +217,16 @@ def run(backlog, *, synthetic=False, transport=local_ollama, meminfo=None,
         models = select_three_models(transport("/api/tags"))
         admit(models, available_memory_bytes(meminfo),
               load, cores)
-    reports = launch(tasks, [m for m, _ in models], synthetic=synthetic)
+    reports = launch(tasks, [m for m, _ in models], synthetic=synthetic,
+                     alternatives=eligible[3:])
+    replaced_count = sum(r["task_id"] != t["id"] for r, t in zip(reports, tasks))
     return {
         "phase": "W33", "status": (
             "THREE_SYNTHETIC_OS_PROCESSES_NOT_REAL_OLLAMA"
             if synthetic else "THREE_REAL_OS_OLLAMA_PROCESSES_VERIFIED"),
         "independent_os_processes": len({x["worker_pid"] for x in reports}),
+        "failed_lanes_replaced": replaced_count,
+        "unique_tasks_completed": len({x["task_id"] for x in reports}),
         "actual_ollama_calls": 0 if synthetic else 3,
         "proposal_hashes": [
             hashlib.sha256(x["proposal"].encode("utf-8")).hexdigest()
