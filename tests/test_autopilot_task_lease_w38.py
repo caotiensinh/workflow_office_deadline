@@ -190,6 +190,71 @@ class W38DurableLease(unittest.TestCase):
             with self.assertRaises(ValueError):
                 authorized_state_db(str(Path.cwd()))
 
+    def test_integrated_real_os_children_resume_one_remaining_task_then_idle(self):
+        from edu_workflow.autopilot_process_w33 import run
+        with patch.dict(os.environ, {"EDU_W38_PERSISTENT_LEASES": "1"}):
+            result = run(self.backlog, synthetic=True, state_dir=str(self.root))
+            self.assertEqual(result["independent_os_processes"], 3)
+            self.assertTrue(result["durable_state_enabled"])
+            self.assertEqual(result["actual_ollama_calls"], 0)
+            self.assertEqual(
+                sum(x["state"]=="DONE" for x in LeaseStore(self.root /
+                      "autopilot-proposals.sqlite3").inspect()), 3)
+            second = run(self.backlog, synthetic=True, state_dir=str(self.root))
+            self.assertEqual(second["independent_os_processes"], 1)
+            self.assertEqual(second["unique_tasks_completed"], 1)
+            third = run(self.backlog, synthetic=True, state_dir=str(self.root))
+            self.assertEqual(third["status"], "IDLE_NO_APPROVED_READY_TASKS")
+            self.assertEqual(third["actual_ollama_calls"], 0)
+            self.assertEqual(
+                sum(x["state"]=="DONE" for x in LeaseStore(self.root /
+                    "autopilot-proposals.sqlite3").inspect()), 4)
+
+    def test_integrated_failed_worker_keeps_completed_siblings_across_restart(self):
+        from edu_workflow.autopilot_process_w33 import run
+        with patch.dict(os.environ, {
+            "EDU_W38_PERSISTENT_LEASES": "1",
+            "EDU_W37_SYNTHETIC_FAIL_TASK": "W27-QA",
+        }):
+            first = run(self.backlog, synthetic=True, state_dir=str(self.root))
+        self.assertEqual(first["failed_lanes_replaced"], 1)
+        self.assertEqual(first["unique_tasks_completed"], 3)
+        fresh = LeaseStore(self.root / "autopilot-proposals.sqlite3").inspect()
+        by_id = {d["task_id"]:d for d in fresh}
+        self.assertEqual(by_id["W27-DOCS"]["state"], "DONE")
+        self.assertEqual(by_id["W27-UX"]["state"], "DONE")
+        self.assertEqual(by_id["W27-LEASE"]["state"], "DONE")
+        self.assertEqual(by_id["W27-QA"]["state"], "PENDING")
+        self.assertEqual(by_id["W27-DOCS"]["attempts"], 1)
+        with patch.dict(os.environ, {"EDU_W38_PERSISTENT_LEASES": "1"},
+                        clear=False):
+            with patch.dict(os.environ, {"EDU_W37_SYNTHETIC_FAIL_TASK": ""},
+                            clear=False):
+                second = run(self.backlog, synthetic=True, state_dir=str(self.root))
+        self.assertEqual(second["unique_tasks_completed"], 1)
+        status = LeaseStore(self.root / "autopilot-proposals.sqlite3").inspect()
+        by_id = {d["task_id"]:d for d in status}
+        self.assertEqual(by_id["W27-QA"]["state"], "DONE")
+        self.assertEqual(by_id["W27-QA"]["attempts"], 2)
+        self.assertEqual(by_id["W27-DOCS"]["attempts"], 1)
+
+    def test_integrated_write_denied_without_state_optin(self):
+        from edu_workflow.autopilot_process_w33 import run
+        with patch.dict(os.environ, {"EDU_W38_PERSISTENT_LEASES": "0"}):
+            with self.assertRaises(ValueError):
+                run(self.backlog, synthetic=True, state_dir=str(self.root))
+        self.assertFalse((self.root/"autopilot-proposals.sqlite3").exists())
+
+    def test_restart_available_task_excludes_leased_and_done(self):
+        now = 1000
+        first = self.store.claim(self.tasks[0], "owner-A", now=now, ttl=60)
+        second = self.store.claim(self.tasks[1], "owner-B", now=now, ttl=60)
+        self.store.complete(second, result_digest=DIGEST, now=1001)
+        self.assertNotIn("W27-DOCS", self.store.available_task_ids(now=1059))
+        self.assertNotIn("W27-QA", self.store.available_task_ids(now=1100))
+        self.assertIn("W27-DOCS", self.store.available_task_ids(now=1060))
+        self.assertIn("W27-LEASE", self.store.available_task_ids(now=1060))
+
     def test_no_external_service_or_code_execution_in_staging(self):
         self.assertEqual(len(self.store.inspect()), 4)
         self.assertFalse(any("outlook" in item["task_id"].lower()
